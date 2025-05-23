@@ -10,45 +10,11 @@
     "online": "Połączenie przywrócone"
   },
   "navigation": {
-    "dashboard": "Panel główny",
-    "worlds": "Światy RPG",
-    "campaigns": "Kampanie",
-    "characters": "Postacie",
-    "locations": "Lokacje",
-    "items": "Przedmioty",
-    "events": "Wydarzenia",
-    "factions": "Frakcje",
-    "storyArcs": "Wątki fabularne",
-    "notes": "Notatki",
-    "sessions": "Sesje",
-    "visualizations": "Wizualizacje",
-    "mindMap": "Mapa myśli",
-    "timeline": "Oś czasu",
-    "relationshipWeb": "Sieć relacji",
-    "entityManager": "Menedżer encji",
-    "aiTools": "Narzędzia AI",
-    "settings": "Ustawienia",
-    "profile": "Profil",
-    "help": "Pomoc",
-    "about": "O aplikacji",
-    "expandMenu": "Rozwiń menu",
-    "collapseMenu": "Zwiń menu",
-    "admin": "Administrator",
-    "gameContent": "Zawartość gry",
-    "charactersAndNpcs": "Postacie i BN",
-    "worldElements": "Elementy świata",
-    "narrative": "Narracja",
-    "visualization": "Wizualizacja",
-    "tools": "Narzędzia",
-    "aiBrain": "Mózg AI",
-    "livePlay": "Gra na żywo",
-    "mediaLibrary": "Biblioteka mediów",
-    "createInteractiveMindMaps": "Twórz interaktywne mapy myśli",
-    "viewCampaignEventsChronologically": "Zobacz wydarzenia kampanii chronologicznie",
-    "visualizeCharacterRelationships": "Wizualizuj relacje postaci",
-    "accessTheAiAssistant": "Dostęp do asystenta AI",
-    "toolsForRunningLiveGameSessions": "Narzędzia do prowadzenia sesji na żywo",
-    "manageMediaFilesForCampaigns": "Zarządzaj plikami mediów dla kampanii"
+    "backToCharacters": "Powrót do postaci",
+    "backToCampaigns": "Powrót do kampanii",
+    "backToWorlds": "Powrót do światów",
+    "backToItems": "Powrót do przedmiotów",
+    "backToLocations": "Powrót do lokacji"
   },
   "dashboard": {
     "title": "Panel główny",
@@ -171,28 +137,48 @@
       "selectEntities": "Wybierz encje"
     },
     "validation": {
-      "nameRequired": "Nazwa jest wymagana",
-      "titleRequired": "Tytuł jest wymagany",
-      "descriptionRequired": "Opis jest wymagany",
-      "typeRequired": "Typ jest wymagany",
+      "required": "To pole jest wymagane",
+      "minLength": "Minimalna długość to {{min}} znaków",
+      "maxLength": "Maksymalna długość to {{max}} znaków",
+      "invalidFormat": "Nieprawidłowy format",
+      "invalidEmail": "Nieprawidłowy adres email",
+      "invalidUrl": "Nieprawidłowy URL",
       "categoryRequired": "Kategoria jest wymagana",
-      "invalidEmail": "Wprowadź prawidłowy adres email",
-      "passwordTooShort": "Hasło musi mieć co najmniej 8 znaków",
-      "passwordsDoNotMatch": "Hasła nie są identyczne",
+      "descriptionRequired": "Opis jest wymagany",
       "fileTooLarge": "Plik jest za duży (maks. {{maxSize}})",
-      "invalidFileType": "Nieprawidłowy typ pliku (dozwolone: {{allowedTypes}})"
+      "invalidFileType": "Nieprawidłowy typ pliku (dozwolone: {{allowedTypes}})",
+      "nameRequired": "Nazwa jest wymagana",
+      "passwordTooShort": "Hasło musi mieć co najmniej 8 znaków",
+      "passwordsDoNotMatch": "Hasła się nie zgadzają",
+      "titleRequired": "Tytuł jest wymagany",
+      "typeRequired": "Typ jest wymagany"
+    },
+    "buttons": {
+      "save": "Zapisz",
+      "cancel": "Anuluj",
+      "submit": "Wyślij",
+      "reset": "Resetuj",
+      "clear": "Wyczyść",
+      "add": "Dodaj",
+      "remove": "Usuń",
+      "edit": "Edytuj",
+      "delete": "Usuń",
+      "confirm": "Potwierdź",
+      "back": "Wstecz",
+      "next": "Dalej",
+      "finish": "Zakończ"
     },
     "tabs": {
+      "advanced": "Zaawansowane",
       "basic": "Podstawowe informacje",
       "details": "Szczegóły",
-      "relationships": "Relacje",
-      "advanced": "Zaawansowane",
-      "secrets": "Sekrety MG",
-      "notes": "Notatki",
-      "properties": "Właściwości",
-      "metadata": "Metadane",
       "history": "Historia",
-      "permissions": "Uprawnienia"
+      "metadata": "Metadane",
+      "notes": "Notatki",
+      "permissions": "Uprawnienia",
+      "properties": "Właściwości",
+      "relationships": "Relacje",
+      "secrets": "Sekrety MG"
     }
   },
   "lists": {
@@ -259,26 +245,21 @@
   },
   "modals": {
     "titles": {
-      "create": "Utwórz {{entityType}}",
-      "edit": "Edytuj {{entityType}}",
-      "view": "Zobacz {{entityType}}",
-      "delete": "Usuń {{entityType}}",
       "confirm": "Potwierdź akcję",
-      "settings": "Ustawienia",
-      "help": "Pomoc",
-      "about": "O aplikacji"
+      "delete": "Usuń element",
+      "deleteCharacter": "Usuń postać",
+      "edit": "Edytuj element",
+      "create": "Utwórz nowy element",
+      "settings": "Ustawienia"
     },
     "buttons": {
-      "save": "Zapisz",
-      "saveAndClose": "Zapisz i zamknij",
-      "saveAndNew": "Zapisz i nowy",
-      "cancel": "Anuluj",
-      "close": "Zamknij",
-      "delete": "Usuń",
       "confirm": "Potwierdź",
-      "yes": "Tak",
-      "no": "Nie",
-      "ok": "OK"
+      "cancel": "Anuluj",
+      "save": "Zapisz",
+      "delete": "Usuń",
+      "edit": "Edytuj",
+      "create": "Utwórz",
+      "close": "Zamknij"
     }
   },
   "notifications": {
@@ -439,59 +420,6 @@
     "nonPlayerCharacter": "Bohater niezależny",
     "level": "Poziom"
   },
-  "forms": {
-    "labels": {
-      "name": "Nazwa",
-      "title": "Tytuł",
-      "description": "Opis",
-      "type": "Typ",
-      "category": "Kategoria",
-      "tags": "Tagi",
-      "image": "Obraz",
-      "notes": "Notatki",
-      "secretNotes": "Tajne notatki (tylko MG)",
-      "publicNotes": "Publiczne notatki",
-      "relationships": "Relacje",
-      "properties": "Właściwości",
-      "metadata": "Metadane"
-    },
-    "placeholders": {
-      "enterName": "Wprowadź nazwę",
-      "enterTitle": "Wprowadź tytuł",
-      "enterDescription": "Wprowadź opis",
-      "selectType": "Wybierz typ",
-      "selectCategory": "Wybierz kategorię",
-      "addTags": "Dodaj tagi",
-      "uploadImage": "Prześlij obraz",
-      "addNotes": "Dodaj notatki",
-      "searchEntities": "Szukaj encji",
-      "selectEntity": "Wybierz encję",
-      "selectEntities": "Wybierz encje"
-    },
-    "validation": {
-      "required": "To pole jest wymagane",
-      "minLength": "Minimalna długość to {{min}} znaków",
-      "maxLength": "Maksymalna długość to {{max}} znaków",
-      "invalidFormat": "Nieprawidłowy format",
-      "invalidEmail": "Nieprawidłowy adres email",
-      "invalidUrl": "Nieprawidłowy URL"
-    },
-    "buttons": {
-      "save": "Zapisz",
-      "cancel": "Anuluj",
-      "submit": "Wyślij",
-      "reset": "Resetuj",
-      "clear": "Wyczyść",
-      "add": "Dodaj",
-      "remove": "Usuń",
-      "edit": "Edytuj",
-      "delete": "Usuń",
-      "confirm": "Potwierdź",
-      "back": "Wstecz",
-      "next": "Dalej",
-      "finish": "Zakończ"
-    }
-  },
   "tables": {
     "headers": {
       "name": "Nazwa",
@@ -528,27 +456,14 @@
       "noResults": "Brak wyników"
     }
   },
-  "modals": {
-    "confirmDelete": {
-      "title": "Potwierdź usunięcie",
-      "message": "Czy na pewno chcesz usunąć ten element? Ta akcja nie może zostać cofnięta.",
-      "confirm": "Usuń",
-      "cancel": "Anuluj"
-    },
-    "confirmSave": {
-      "title": "Zapisz zmiany",
-      "message": "Czy chcesz zapisać wprowadzone zmiany?",
-      "confirm": "Zapisz",
-      "cancel": "Anuluj"
-    }
-  },
   "emptyStates": {
-    "noCharacters": "Nie znaleziono postaci. Utwórz swoją pierwszą postać, aby rozpocząć!",
-    "noLocations": "Nie znaleziono lokacji. Utwórz swoją pierwszą lokację, aby rozpocząć!",
-    "noItems": "Nie znaleziono przedmiotów. Utwórz swój pierwszy przedmiot, aby rozpocząć!",
-    "noResults": "Nie znaleziono wyników dla podanych kryteriów.",
-    "createFirst": "Utwórz pierwszy {{entityType}}",
-    "getStarted": "Rozpocznij pracę"
+    "noItems": "Brak przedmiotów w ekwipunku",
+    "noRelationships": "Nie znaleziono relacji",
+    "noNotes": "Brak dostępnych notatek",
+    "noStats": "Brak dostępnych statystyk",
+    "noCharacters": "Nie znaleziono postaci",
+    "noCampaigns": "Nie znaleziono kampanii",
+    "noWorlds": "Nie znaleziono światów"
   },
   "entityManagement": {
     "entityManager": "Menedżer Encji",
@@ -579,25 +494,6 @@
     "manageRpgWorldEntities": "Zarządzaj encjami światów RPG, w tym tworzeniem, edycją i przeglądaniem szczegółów.",
     "manageNoteEntities": "Zarządzaj encjami notatek, w tym tworzeniem, edycją i przeglądaniem szczegółów."
   },
-  "modals": {
-    "titles": {
-      "confirm": "Potwierdź akcję",
-      "delete": "Usuń element",
-      "deleteCharacter": "Usuń postać",
-      "edit": "Edytuj element",
-      "create": "Utwórz nowy element",
-      "settings": "Ustawienia"
-    },
-    "buttons": {
-      "confirm": "Potwierdź",
-      "cancel": "Anuluj",
-      "save": "Zapisz",
-      "delete": "Usuń",
-      "edit": "Edytuj",
-      "create": "Utwórz",
-      "close": "Zamknij"
-    }
-  },
   "buttons": {
     "edit": "Edytuj",
     "delete": "Usuń",
@@ -624,21 +520,5 @@
     "accessDenied": "Dostęp zabroniony",
     "loadingError": "Błąd ładowania",
     "savingError": "Błąd zapisywania"
-  },
-  "navigation": {
-    "backToCharacters": "Powrót do postaci",
-    "backToCampaigns": "Powrót do kampanii",
-    "backToWorlds": "Powrót do światów",
-    "backToItems": "Powrót do przedmiotów",
-    "backToLocations": "Powrót do lokacji"
-  },
-  "emptyStates": {
-    "noItems": "Brak przedmiotów w ekwipunku",
-    "noRelationships": "Nie znaleziono relacji",
-    "noNotes": "Brak dostępnych notatek",
-    "noStats": "Brak dostępnych statystyk",
-    "noCharacters": "Nie znaleziono postaci",
-    "noCampaigns": "Nie znaleziono kampanii",
-    "noWorlds": "Nie znaleziono światów"
   }
 }
