@@ -13,25 +13,25 @@ const SettingsPage: React.FC = () => {
 
   return (
     <Container size="lg" py="xl">
-      <Title order={1} mb="md">{t('ui:settings.title')}</Title>
+      <Title order={1} mb="md">{t('settings.title')}</Title>
       <Text color="dimmed" mb="xl">
-        {t('ui:settings.description')}
+        {t('settings.description')}
       </Text>
 
       <Paper withBorder p="md">
         <Tabs value={activeTab} onChange={setActiveTab}>
           <Tabs.List>
             <Tabs.Tab value="language" leftSection={<IconLanguage size={16} />}>
-              {t('ui:settings.categories.language')}
+              {t('settings.categories.language')}
             </Tabs.Tab>
             <Tabs.Tab value="appearance" leftSection={<IconPalette size={16} />}>
-              {t('ui:settings.categories.appearance')}
+              {t('settings.categories.appearance')}
             </Tabs.Tab>
             <Tabs.Tab value="account" leftSection={<IconUser size={16} />}>
-              {t('ui:settings.categories.account')}
+              {t('settings.categories.account')}
             </Tabs.Tab>
             <Tabs.Tab value="notifications" leftSection={<IconBell size={16} />}>
-              {t('ui:settings.categories.notifications')}
+              {t('settings.categories.notifications')}
             </Tabs.Tab>
             <Tabs.Tab value="ai" leftSection={<IconBrain size={16} />}>
               AI Settings

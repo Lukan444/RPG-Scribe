@@ -106,7 +106,7 @@ export const FormTextField: React.FC<FormTextFieldProps> = ({
         )}
       </Group>
     ),
-    placeholder: field.placeholder || t('ui:forms.placeholders.enterName').replace('name', field.label.toLowerCase()),
+    placeholder: field.placeholder || t('forms.placeholders.enterName').replace('name', field.label.toLowerCase()),
     value: value || '',
     onChange: (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
       handleChange(event.currentTarget.value),
@@ -152,7 +152,7 @@ export const FormTextField: React.FC<FormTextFieldProps> = ({
               variant="subtle"
               onClick={() => setShowPassword(!showPassword)}
               disabled={disabled}
-              aria-label={showPassword ? t('common:actions.hide') : t('common:actions.show')}
+              aria-label={showPassword ? t('actions.hide', { ns: 'common' }) : t('actions.show', { ns: 'common' })}
             >
               {showPassword ? <IconEyeOff size={16} /> : <IconEye size={16} />}
             </ActionIcon>

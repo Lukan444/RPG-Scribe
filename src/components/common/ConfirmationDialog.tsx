@@ -45,10 +45,10 @@ export function ConfirmationDialog({
   const { t } = useTranslation(['ui', 'common']);
 
   // Use translation keys for default values
-  const defaultTitle = title || t('ui:modals.titles.confirm');
+  const defaultTitle = title || t('modals.titles.confirm');
   const defaultMessage = message || t('common:messages.confirmAction', 'Are you sure you want to proceed with this action?');
-  const defaultConfirmLabel = confirmLabel || t('ui:modals.buttons.confirm');
-  const defaultCancelLabel = cancelLabel || t('ui:modals.buttons.cancel');
+  const defaultConfirmLabel = confirmLabel || t('modals.buttons.confirm');
+  const defaultCancelLabel = cancelLabel || t('modals.buttons.cancel');
   // Get icon and color based on type
   const getIconAndColor = () => {
     switch (type) {

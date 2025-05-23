@@ -191,6 +191,44 @@
     "notFound": "Item not found",
     "expired": "This item has expired",
     "future": "Date must be in the future",
-    "past": "Date must be in the past"
+    "past": "Date must be in the past",
+    "passwordTooShort": "Password must be at least 6 characters"
+  },
+  "auth": {
+    "profile": "Profile",
+    "signOut": "Sign Out",
+    "signIn": "Sign In",
+    "login": "Login",
+    "logout": "Logout",
+    "register": "Register",
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "forgotPassword": "Forgot Password",
+    "resetPassword": "Reset Password",
+    "rememberMe": "Remember Me",
+    "loginWith": "Login with",
+    "orLoginWithEmail": "Or login with email",
+    "authenticationError": "Authentication Error",
+    "loginSuccessful": "Login Successful",
+    "loginSuccessMessage": "You have successfully logged in. Redirecting...",
+    "emailPlaceholder": "your@email.com",
+    "passwordPlaceholder": "Your password",
+    "noAccountRegister": "Don't have an account? Register",
+    "troubleLoggingIn": "Having trouble logging in? Make sure pop-ups are enabled for this site."
+  },
+  "buttons": {
+    "view": "View",
+    "edit": "Edit",
+    "delete": "Delete",
+    "save": "Save",
+    "cancel": "Cancel",
+    "create": "Create",
+    "update": "Update",
+    "close": "Close",
+    "confirm": "Confirm",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous"
   }
 }

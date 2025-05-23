@@ -42,14 +42,14 @@ export function EntityManagerPage() {
 
   return (
     <Container size="xl" py="xl">
-      <Title order={1} mb="md">{t('ui:entityManagement.entityManager')}</Title>
+      <Title order={1} mb="md">{t('entityManagement.entityManager')}</Title>
       <Text c="dimmed" mb="xl">
-        {t('ui:entityManagement.entityManagerDescription')}
+        {t('entityManagement.entityManagerDescription')}
       </Text>
 
       <Tabs value={activeTab} onChange={setActiveTab} mb="xl">
         <Tabs.List>
-          <Tabs.Tab value="all">{t('ui:entityManagement.allEntities')}</Tabs.Tab>
+          <Tabs.Tab value="all">{t('entityManagement.allEntities')}</Tabs.Tab>
           {Object.keys(ENTITY_CATEGORIES).map(category => (
             <Tabs.Tab
               key={category}
@@ -72,9 +72,9 @@ export function EntityManagerPage() {
         <Tabs.Panel value="all" pt="xs">
           <Stack gap="xl">
             <div>
-              <Title order={2}>{t('ui:entityManagement.allEntityTypes')}</Title>
+              <Title order={2}>{t('entityManagement.allEntityTypes')}</Title>
               <Text size="sm" c="dimmed">
-                {t('ui:entityManagement.allEntityTypesDescription')}
+                {t('entityManagement.allEntityTypesDescription')}
               </Text>
             </div>
             <Divider />

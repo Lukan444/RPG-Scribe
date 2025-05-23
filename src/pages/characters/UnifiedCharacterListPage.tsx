@@ -50,13 +50,13 @@ export function UnifiedCharacterListPage() {
       return (
         <Group gap="xs">
           <Badge color={getTypeColor()} size="sm">
-            {character.type === 'PC' ? t('ui:entityTypes.pc') :
-             character.type === 'NPC' ? t('ui:entityTypes.npc') :
+            {character.type === 'PC' ? t('entityTypes.pc') :
+             character.type === 'NPC' ? t('entityTypes.npc') :
              character.type || 'Unknown'}
           </Badge>
           {character.level && (
             <Badge color="yellow" size="sm">
-              {t('ui:entityTypes.level')} {character.level}
+              {t('entityTypes.level')} {character.level}
             </Badge>
           )}
         </Group>
@@ -67,17 +67,17 @@ export function UnifiedCharacterListPage() {
   // Render the page title based on whether we're in a world context
   const renderTitle = () => {
     if (worldId) {
-      return t('ui:pages.characters.worldCharacters');
+      return t('pages.characters.worldCharacters');
     }
-    return t('ui:pages.characters.allCharacters');
+    return t('pages.characters.allCharacters');
   };
 
   // Render the page subtitle based on whether we're in a world context
   const renderSubtitle = () => {
     if (worldId) {
-      return t('ui:pages.characters.worldSubtitle');
+      return t('pages.characters.worldSubtitle');
     }
-    return t('ui:pages.characters.subtitle');
+    return t('pages.characters.subtitle');
   };
 
   return (
@@ -88,7 +88,7 @@ export function UnifiedCharacterListPage() {
       title={renderTitle()}
       subtitle={renderSubtitle()}
       showBackButton={!!worldId}
-      backButtonLabel={t('ui:pages.worlds.backToWorld')}
+      backButtonLabel={t('pages.worlds.backToWorld')}
     />
   );
 }

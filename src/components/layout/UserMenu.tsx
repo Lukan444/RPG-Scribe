@@ -78,7 +78,7 @@ function UserMenu() {
           }
           onClick={() => navigate('/profile')}
         >
-          {t('common:auth.profile')}
+          {t('profile', { ns: 'common' })}
         </Menu.Item>
         <Menu.Item
           leftSection={
@@ -86,7 +86,7 @@ function UserMenu() {
           }
           onClick={() => navigate('/settings')}
         >
-          {t('ui:navigation.settings')}
+          {t('navigation.settings')}
         </Menu.Item>
         <Menu.Item
           leftSection={
@@ -103,7 +103,7 @@ function UserMenu() {
           }
           onClick={handleLogout}
         >
-          {t('common:auth.signOut')}
+          {t('signOut', { ns: 'common' })}
         </Menu.Item>
       </Menu.Dropdown>
     </Menu>

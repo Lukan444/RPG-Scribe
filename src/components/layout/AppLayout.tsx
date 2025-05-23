@@ -83,7 +83,7 @@ export function AppLayout() {
         <SimpleNavbar collapsed={navbarCollapsed} />
 
         <Tooltip
-          label={navbarCollapsed ? t('ui:navigation.expandMenu') : t('ui:navigation.collapseMenu')}
+          label={navbarCollapsed ? t('navigation.expandMenu') : t('navigation.collapseMenu')}
           position="right"
           withArrow
         >

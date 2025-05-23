@@ -105,7 +105,7 @@ export function EntityCountTooltip({
     <Group gap="xs" wrap="nowrap">
       <IconClock size={14} />
       <Text size="xs" c={dimmedTextColor} span>
-        {t('ui:tooltips.noUpdateInformation')}
+        {t('tooltips.noUpdateInformation')}
       </Text>
     </Group>
   );
@@ -139,7 +139,7 @@ export function EntityCountTooltip({
         {/* Entity Type Breakdown */}
         {typeBreakdown && typeBreakdown.length > 0 && (
           <>
-            <Text size="sm" fw={500} c={textColor}>{t('ui:tooltips.breakdown')}</Text>
+            <Text size="sm" fw={500} c={textColor}>{t('tooltips.breakdown')}</Text>
             {typeBreakdown.map((item, index) => (
               <Group key={index} justify="space-between" gap="xs">
                 <Text size="xs" c={textColor}>{item.label}:</Text>
@@ -157,10 +157,10 @@ export function EntityCountTooltip({
         {recentEntities && recentEntities.length > 0 && (
           <>
             <Divider my={5} color={isDarkColor(color) ? 'gray.5' : 'gray.3'} />
-            <Text size="sm" fw={500} c={textColor}>{t('ui:tooltips.recentlyAdded')}</Text>
+            <Text size="sm" fw={500} c={textColor}>{t('tooltips.recentlyAdded')}</Text>
             {recentEntities.slice(0, 3).map((entity, index) => {
               // Format creation date
-              let createdText = t('ui:tooltips.createdUnknownDate');
+              let createdText = t('tooltips.createdUnknownDate');
               try {
                 if (entity && entity.createdAt && !isNaN(entity.createdAt.getTime())) {
                   createdText = formatDistanceToNow(entity.createdAt, { addSuffix: true });
@@ -186,7 +186,7 @@ export function EntityCountTooltip({
                           entity.type.toLowerCase() === 'pc' ? 'blue' :
                           entity.type.toLowerCase() === 'npc' ? 'teal' : 'gray'
                         }>
-                          {entity.type === 'OTHER' ? t('ui:tooltips.other') : entity.type}
+                          {entity.type === 'OTHER' ? t('tooltips.other') : entity.type}
                         </Badge>
                       )}
                     </Group>

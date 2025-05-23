@@ -20,13 +20,31 @@ interface LanguageProviderProps {
 
 export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) => {
   const { i18n } = useTranslation();
-  const [interfaceLanguage, setInterfaceLanguage] = useState(i18n.language || 'en');
+  const [interfaceLanguage, setInterfaceLanguage] = useState(() => {
+    // Initialize from localStorage or i18n current language
+    const savedLanguage = localStorage.getItem('rpg-scribe-language');
+    return savedLanguage || i18n.language || 'en';
+  });
   const [transcriptionLanguage, setTranscriptionLanguage] = useState(
     localStorage.getItem('rpg-scribe-transcription-language') || interfaceLanguage
   );
   const [aiLanguage, setAiLanguage] = useState(
     localStorage.getItem('rpg-scribe-ai-language') || interfaceLanguage
   );
+
+  // Initialize language on mount
+  useEffect(() => {
+    const savedLanguage = localStorage.getItem('rpg-scribe-language');
+    if (savedLanguage && savedLanguage !== i18n.language) {
+      console.log(`[LanguageProvider] Initializing language to: ${savedLanguage}`);
+      i18n.changeLanguage(savedLanguage);
+    } else if (!savedLanguage) {
+      // If no saved language, save the current i18n language
+      console.log(`[LanguageProvider] No saved language, using: ${i18n.language}`);
+      localStorage.setItem('rpg-scribe-language', i18n.language);
+      setInterfaceLanguage(i18n.language);
+    }
+  }, [i18n]);
 
   // Update interface language when i18n language changes
   useEffect(() => {

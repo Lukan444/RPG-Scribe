@@ -101,14 +101,14 @@ export function EntityCard({
           color={color}
           onClick={navigateToEntityList}
         >
-          {t('ui:entityManagement.viewAll')}
+          {t('entityManagement.viewAll')}
         </Button>
         <Button
           variant="filled"
           color={color}
           onClick={navigateToEntityCreate}
         >
-          {t('ui:entityManagement.createNew')}
+          {t('entityManagement.createNew')}
         </Button>
       </Group>
     </Card>

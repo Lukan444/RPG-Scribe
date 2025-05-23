@@ -5,7 +5,6 @@ import './utils/resizeObserverPolyfill';
 // Import error handler as backup
 import './utils/resizeObserverErrorHandler';
 import { setupResizeObserverErrorHandler } from './utils/resizeObserverErrorHandler';
-import { initializeLanguage } from './i18n/config';
 import { AuthProvider } from './contexts/AuthContext';
 import { ActivityLogProvider } from './contexts/ActivityLogContext';
 import { LanguageProvider } from './contexts/language/LanguageContext';
@@ -17,6 +16,8 @@ import AppLayout from './components/layout/AppLayout';
 import { Loader, Center } from '@mantine/core';
 import PlaceholderPage from './components/common/PlaceholderPage';
 import ErrorBoundary from './components/common/ErrorBoundary';
+import I18nProvider from './components/i18n/I18nProvider';
+import './utils/translationTest'; // Import translation test for development
 import {
   IconBook,
   IconUsers,
@@ -155,11 +156,6 @@ const LoadingFallback = () => (
 
 
 function App() {
-  // Initialize i18n language
-  useEffect(() => {
-    initializeLanguage();
-  }, []);
-
   // Preload critical components
   useEffect(() => {
     preloadDashboard();
@@ -188,10 +184,11 @@ function App() {
   }, []);
 
   return (
-    <AuthProvider>
-      <ActivityLogProvider>
-        <LanguageProvider>
-          <BrowserRouter>
+    <I18nProvider>
+      <AuthProvider>
+        <ActivityLogProvider>
+          <LanguageProvider>
+            <BrowserRouter>
             <Routes>
             {/* Protected routes */}
             <Route
@@ -997,6 +994,7 @@ function App() {
         </LanguageProvider>
       </ActivityLogProvider>
     </AuthProvider>
+    </I18nProvider>
   );
 }
 

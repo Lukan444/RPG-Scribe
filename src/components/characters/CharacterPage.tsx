@@ -140,7 +140,7 @@ const CharacterPage: React.FC = () => {
   // Delete character confirmation
   const openDeleteModal = () => {
     modals.openConfirmModal({
-      title: t('ui:modals.titles.deleteCharacter'),
+      title: t('modals.titles.deleteCharacter'),
       centered: true,
       children: (
         <Text size="sm">
@@ -148,8 +148,8 @@ const CharacterPage: React.FC = () => {
         </Text>
       ),
       labels: {
-        confirm: t('ui:modals.buttons.delete'),
-        cancel: t('ui:modals.buttons.cancel')
+        confirm: t('modals.buttons.delete'),
+        cancel: t('modals.buttons.cancel')
       },
       confirmProps: { color: 'red' },
       onConfirm: deleteCharacter,
@@ -195,10 +195,10 @@ const CharacterPage: React.FC = () => {
   if (!character || !campaign) {
     return (
       <Container size="xl" py="xl">
-        <Title order={1} mb="xl">{t('ui:errors.characterNotFound')}</Title>
+        <Title order={1} mb="xl">{t('errors.characterNotFound')}</Title>
         <Text>{t('common:messages.characterNotFoundDescription', 'The character you are looking for does not exist or you do not have permission to view it.')}</Text>
         <Button component={Link} to={`/campaigns/${campaignId}/characters`} mt="xl">
-          {t('ui:navigation.backToCharacters')}
+          {t('navigation.backToCharacters')}
         </Button>
       </Container>
     );
@@ -221,7 +221,7 @@ const CharacterPage: React.FC = () => {
               to={`/campaigns/${campaignId}/characters/${characterId}/edit`}
               leftSection={<IconEdit size={16} />}
             >
-              {t('ui:buttons.edit')}
+              {t('buttons.edit')}
             </Button>
 
             <Menu position="bottom-end" shadow="md">
@@ -233,7 +233,7 @@ const CharacterPage: React.FC = () => {
 
               <Menu.Dropdown>
                 <Menu.Item color="red" leftSection={<IconTrash size={16} />} onClick={openDeleteModal}>
-                  {t('ui:buttons.delete')}
+                  {t('buttons.delete')}
                 </Menu.Item>
               </Menu.Dropdown>
             </Menu>
@@ -295,10 +295,10 @@ const CharacterPage: React.FC = () => {
 
       <Tabs value={activeTab} onChange={setActiveTab}>
         <Tabs.List>
-          <Tabs.Tab value="overview" leftSection={<IconUsers size={16} />}>{t('ui:tabs.overview')}</Tabs.Tab>
-          <Tabs.Tab value="inventory" leftSection={<IconBackpack size={16} />}>{t('ui:tabs.inventory')}</Tabs.Tab>
-          <Tabs.Tab value="relationships" leftSection={<IconRelationManyToMany size={16} />}>{t('ui:tabs.relationships')}</Tabs.Tab>
-          <Tabs.Tab value="notes" leftSection={<IconNotes size={16} />}>{t('ui:tabs.notes')}</Tabs.Tab>
+          <Tabs.Tab value="overview" leftSection={<IconUsers size={16} />}>{t('tabs.overview')}</Tabs.Tab>
+          <Tabs.Tab value="inventory" leftSection={<IconBackpack size={16} />}>{t('tabs.inventory')}</Tabs.Tab>
+          <Tabs.Tab value="relationships" leftSection={<IconRelationManyToMany size={16} />}>{t('tabs.relationships')}</Tabs.Tab>
+          <Tabs.Tab value="notes" leftSection={<IconNotes size={16} />}>{t('tabs.notes')}</Tabs.Tab>
         </Tabs.List>
 
         <Tabs.Panel value="overview" pt="xl">

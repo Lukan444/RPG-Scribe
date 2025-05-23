@@ -114,7 +114,7 @@ export function CharacterListPage() {
         setCharacters(charactersData);
       } catch (err) {
         console.error('Error loading characters:', err);
-        setError(t('ui:pages.characters.errorLoadingCharacters'));
+        setError(t('pages.characters.errorLoadingCharacters'));
       } finally {
         setLoading(false);
       }
@@ -217,7 +217,7 @@ export function CharacterListPage() {
   const columns = [
     {
       key: 'name',
-      title: t('ui:tables.headers.name'),
+      title: t('tables.headers.name'),
       sortable: true,
       render: (character: Character) => (
         <Group gap="sm">
@@ -233,22 +233,22 @@ export function CharacterListPage() {
     },
     {
       key: 'race',
-      title: t('ui:tables.headers.race'),
+      title: t('tables.headers.race'),
       sortable: true
     },
     {
       key: 'class',
-      title: t('ui:tables.headers.class'),
+      title: t('tables.headers.class'),
       sortable: true
     },
     {
       key: 'level',
-      title: t('ui:tables.headers.level'),
+      title: t('tables.headers.level'),
       sortable: true
     },
     {
       key: 'type',
-      title: t('ui:tables.headers.type'),
+      title: t('tables.headers.type'),
       sortable: true,
       render: (character: Character) => (
         <Badge
@@ -260,11 +260,11 @@ export function CharacterListPage() {
     },
     {
       key: 'updatedAt',
-      title: t('ui:tables.headers.lastUpdated'),
+      title: t('tables.headers.lastUpdated'),
       sortable: true,
       render: (character: Character) => (
         <Text size="sm">
-          {character.updatedAt ? new Date(character.updatedAt).toLocaleDateString() : t('ui:tooltips.invalidDate')}
+          {character.updatedAt ? new Date(character.updatedAt).toLocaleDateString() : t('tooltips.invalidDate')}
         </Text>
       )
     }
@@ -334,11 +334,11 @@ export function CharacterListPage() {
                 leftSection={<IconArrowLeft size={16} />}
                 onClick={() => navigate(fromPath)}
               >
-                {t('ui:pages.characters.backToCharacters')}
+                {t('pages.characters.backToCharacters')}
               </Button>
             )}
             <Title order={1}>
-              {worldFilter ? t('ui:pages.characters.worldCharacters') : t('ui:pages.characters.title')}
+              {worldFilter ? t('pages.characters.worldCharacters') : t('pages.characters.title')}
               {worldFilter && <Badge ml="xs" color="blue">Filtered by World</Badge>}
             </Title>
           </Group>
@@ -390,16 +390,16 @@ export function CharacterListPage() {
         <Tabs value={activeTab} onChange={setActiveTab}>
           <Tabs.List>
             <Tabs.Tab value="table" leftSection={<IconList size={16} />}>
-              {t('ui:viewModes.table')}
+              {t('viewModes.table')}
             </Tabs.Tab>
             <Tabs.Tab value="grid" leftSection={<IconLayoutGrid size={16} />}>
-              {t('ui:viewModes.grid')}
+              {t('viewModes.grid')}
             </Tabs.Tab>
             <Tabs.Tab value="article" leftSection={<IconArticle size={16} />}>
-              {t('ui:viewModes.article')}
+              {t('viewModes.article')}
             </Tabs.Tab>
             <Tabs.Tab value="organize" leftSection={<IconGripVertical size={16} />}>
-              {t('ui:viewModes.organize')}
+              {t('viewModes.organize')}
             </Tabs.Tab>
           </Tabs.List>
 
@@ -471,7 +471,7 @@ export function CharacterListPage() {
               <IconUser size={24} />
             </ThemeIcon>
             <div>
-              <Text c="dimmed" size="xs">{t('ui:tooltips.playerCharacters')}</Text>
+              <Text c="dimmed" size="xs">{t('tooltips.playerCharacters')}</Text>
               {/* Add tooltip to PC count */}
               <EntityCountTooltip
                 entityType={EntityType.CHARACTER}
@@ -531,7 +531,7 @@ export function CharacterListPage() {
               <IconUser size={24} />
             </ThemeIcon>
             <div>
-              <Text c="dimmed" size="xs">{t('ui:tooltips.nonPlayerCharacters')}</Text>
+              <Text c="dimmed" size="xs">{t('tooltips.nonPlayerCharacters')}</Text>
               {/* Add tooltip to NPC count */}
               <EntityCountTooltip
                 entityType={EntityType.CHARACTER}
@@ -600,12 +600,12 @@ export function CharacterListPage() {
                   {
                     type: 'PC',
                     count: characters.filter((c: any) => c.characterType === 'PC' || c.isPlayerCharacter).length,
-                    label: t('ui:tooltips.playerCharacters')
+                    label: t('tooltips.playerCharacters')
                   },
                   {
                     type: 'NPC',
                     count: characters.filter((c: any) => c.characterType === 'NPC' || !c.isPlayerCharacter).length,
-                    label: t('ui:tooltips.nonPlayerCharacters')
+                    label: t('tooltips.nonPlayerCharacters')
                   }
                 ]}
                 lastUpdated={characters.length > 0

@@ -7,7 +7,8 @@
     "loading": "Ładowanie RPG Scribe...",
     "error": "Błąd aplikacji",
     "offline": "Jesteś obecnie offline",
-    "online": "Połączenie przywrócone"
+    "online": "Połączenie przywrócone",
+    "welcome": "Witaj w RPG Scribe"
   },
   "navigation": {
     "navigationTitle": "Nawigacja",
@@ -90,6 +91,12 @@
       "notes": "Notatki",
       "campaigns": "Kampanie",
       "worlds": "Światy RPG"
+    },
+    "tabs": {
+      "all": "Wszystkie",
+      "characters": "Postacie",
+      "world": "Świat",
+      "narrative": "Narracja"
     },
     "loading": {
       "characters": "Ładowanie postaci...",
@@ -299,7 +306,14 @@
       "delete": "Usuń",
       "edit": "Edytuj",
       "create": "Utwórz",
-      "close": "Zamknij"
+      "close": "Zamknij",
+      "saveAndClose": "Zapisz i zamknij",
+      "saveAndNew": "Zapisz i nowy",
+      "yes": "Tak",
+      "no": "Nie",
+      "ok": "OK",
+      "view": "Zobacz",
+      "manage": "Zarządzaj"
     }
   },
   "notifications": {
@@ -354,7 +368,8 @@
       "description": "Wybierz preferowane języki dla różnych funkcji",
       "uiDescription": "Język dla menu, przycisków i elementów interfejsu",
       "transcriptionDescription": "Język dla transkrypcji mowy na tekst",
-      "aiDescription": "Język dla komunikacji z asystentem AI"
+      "aiDescription": "Język dla komunikacji z asystentem AI",
+      "settingsSaved": "Ustawienia języka zostały pomyślnie zapisane."
     },
     "appearance": {
       "title": "Wygląd",
@@ -389,6 +404,59 @@
     "feedback": "Wyślij opinię",
     "reportBug": "Zgłoś błąd",
     "requestFeature": "Poproś o funkcję"
+  },
+  "viewModes": {
+    "table": "Tabela",
+    "grid": "Siatka",
+    "list": "Lista",
+    "cards": "Karty",
+    "article": "Artykuł",
+    "organize": "Organizuj"
+  },
+  "tables": {
+    "headers": {
+      "name": "Nazwa",
+      "type": "Typ",
+      "level": "Poziom",
+      "race": "Rasa",
+      "class": "Klasa",
+      "location": "Lokacja",
+      "status": "Status",
+      "createdAt": "Utworzono",
+      "updatedAt": "Zaktualizowano",
+      "lastUpdated": "Ostatnia aktualizacja",
+      "relationships": "Relacje",
+      "actions": "Akcje"
+    }
+  },
+  "tooltips": {
+    "playerCharacters": "Postacie graczy",
+    "nonPlayerCharacters": "Postacie niezależne",
+    "totalCharacters": "{{count}} postaci łącznie",
+    "moreRecentCharacters": "+{{count}} więcej ostatnich postaci",
+    "invalidDate": "Nieprawidłowa data",
+    "breakdown": "Podział:",
+    "noUpdateInformation": "Brak informacji o aktualizacjach. Dodaj znaczniki czasu do swoich elementów, aby śledzić zmiany.",
+    "recentlyAdded": "Ostatnio dodane:",
+    "createdUnknownDate": "Utworzono Nieznana data utworzenia",
+    "other": "INNE"
+  },
+  "relationships": {
+    "title": "Relacje postaci",
+    "relationshipsFor": "Relacje dla {{entityType}}",
+    "total": "Łącznie:",
+    "byEntityType": "Według typu elementu:",
+    "byRelationshipType": "Według typu relacji:",
+    "characters": "Postacie:",
+    "locations": "Lokacje:",
+    "factions": "Frakcje:",
+    "items": "Przedmioty:",
+    "alliedWith": "Sojusznik z:",
+    "locatedAt": "Znajduje się w:",
+    "owns": "Posiada:",
+    "memberOf": "Członek:",
+    "noRelationshipsFound": "Nie znaleziono relacji",
+    "manageRelationships": "Zarządzaj relacjami"
   },
   "pages": {
     "characters": {
@@ -534,15 +602,7 @@
     "manageRpgWorldEntities": "Zarządzaj elementami światów RPG, w tym tworzeniem, edycją i przeglądaniem szczegółów.",
     "manageNoteEntities": "Zarządzaj elementami notatek, w tym tworzeniem, edycją i przeglądaniem szczegółów."
   },
-  "buttons": {
-    "edit": "Edytuj",
-    "delete": "Usuń",
-    "save": "Zapisz",
-    "cancel": "Anuluj",
-    "create": "Utwórz",
-    "view": "Zobacz",
-    "manage": "Zarządzaj"
-  },
+
   "tabs": {
     "overview": "Przegląd",
     "inventory": "Ekwipunek",

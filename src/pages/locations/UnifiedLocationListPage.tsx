@@ -71,17 +71,17 @@ export function UnifiedLocationListPage() {
   // Render the page title based on whether we're in a world context
   const renderTitle = () => {
     if (worldId) {
-      return t('ui:pages.locations.worldLocations');
+      return t('pages.locations.worldLocations');
     }
-    return t('ui:pages.locations.allLocations');
+    return t('pages.locations.allLocations');
   };
 
   // Render the page subtitle based on whether we're in a world context
   const renderSubtitle = () => {
     if (worldId) {
-      return t('ui:pages.locations.worldSubtitle');
+      return t('pages.locations.worldSubtitle');
     }
-    return t('ui:pages.locations.subtitle');
+    return t('pages.locations.subtitle');
   };
 
   return (
@@ -92,7 +92,7 @@ export function UnifiedLocationListPage() {
       title={renderTitle()}
       subtitle={renderSubtitle()}
       showBackButton={!!worldId}
-      backButtonLabel={t('ui:pages.worlds.backToWorld')}
+      backButtonLabel={t('pages.worlds.backToWorld')}
     />
   );
 }

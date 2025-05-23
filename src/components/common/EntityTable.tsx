@@ -271,7 +271,7 @@ export function EntityTable<T extends { [key: string]: any }>({
 
                 // Handle special cases
                 if (entityTypeStr.includes('rpgworld') || entityTypeStr.includes('rpg_world')) {
-                  return t('entities:types.worlds');
+                  return t('types.worlds', { ns: 'entities' });
                 }
 
                 // Try to get translation for plural form
@@ -294,7 +294,7 @@ export function EntityTable<T extends { [key: string]: any }>({
 
           <Group>
             <TextInput
-              placeholder={t('ui:tables.filters.search')}
+              placeholder={t('tables.filters.search')}
               leftSection={<IconSearch size={16} />}
               value={searchQuery}
               onChange={(e) => {
@@ -327,7 +327,7 @@ export function EntityTable<T extends { [key: string]: any }>({
                   return (
                     <Select
                       key={index}
-                      placeholder={t('ui:tables.filters.filterBy')}
+                      placeholder={t('tables.filters.filterBy')}
                       data={filterOptions as any}
                       value={filters['simple'] || null}
                       onChange={(value) => handleFilterChange('simple', value || '')}
@@ -392,14 +392,14 @@ export function EntityTable<T extends { [key: string]: any }>({
                         </Group>
                       </Table.Th>
                     )}
-                    <Table.Th style={{ width: 80 }}>{t('ui:tables.headers.actions')}</Table.Th>
+                    <Table.Th style={{ width: 80 }}>{t('tables.headers.actions')}</Table.Th>
                   </Table.Tr>
                 </Table.Thead>
                 <Table.Tbody>
                   {paginatedData.length === 0 ? (
                     <Table.Tr>
                       <Table.Td colSpan={columns.length + (showRelationshipCounts ? 2 : 1)} ta="center">
-                        <Text c="dimmed" py="lg">{t('ui:tables.pagination.noResults')}</Text>
+                        <Text c="dimmed" py="lg">{t('tables.pagination.noResults')}</Text>
                       </Table.Td>
                     </Table.Tr>
                   ) : (
@@ -452,7 +452,7 @@ export function EntityTable<T extends { [key: string]: any }>({
                                     }
                                   }}
                                 >
-                                  {t('common:buttons.view')}
+                                  {t('buttons.view', { ns: 'common' })}
                                 </Menu.Item>
                               )}
                               {onEdit && (
@@ -471,7 +471,7 @@ export function EntityTable<T extends { [key: string]: any }>({
                                     }
                                   }}
                                 >
-                                  {t('common:buttons.edit')}
+                                  {t('buttons.edit', { ns: 'common' })}
                                 </Menu.Item>
                               )}
                               {onDelete && (
@@ -491,7 +491,7 @@ export function EntityTable<T extends { [key: string]: any }>({
                                     }
                                   }}
                                 >
-                                  {t('common:buttons.delete')}
+                                  {t('buttons.delete', { ns: 'common' })}
                                 </Menu.Item>
                               )}
                             </Menu.Dropdown>

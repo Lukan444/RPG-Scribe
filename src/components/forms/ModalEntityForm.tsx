@@ -147,7 +147,7 @@ export const ModalEntityForm = <T extends BaseEntity = BaseEntity>({
       config.tabs.forEach(tab => {
         tab.fields.forEach(field => {
           if (field.required && (!values[field.name] || values[field.name] === '')) {
-            errors[field.name] = t('common:validation.required');
+            errors[field.name] = t('validation.required', { ns: 'common' });
           }
 
           // Apply custom validation if present
@@ -203,8 +203,8 @@ export const ModalEntityForm = <T extends BaseEntity = BaseEntity>({
   const handleSubmit = async (action: FormAction) => {
     if (!form.isValid()) {
       notifications.show({
-        title: t('common:status.error'),
-        message: t('common:messages.saveError'),
+        title: t('status.error', { ns: 'common' }),
+        message: t('messages.saveError', { ns: 'common' }),
         color: 'red',
         icon: <IconAlertCircle size={16} />
       });
@@ -223,7 +223,7 @@ export const ModalEntityForm = <T extends BaseEntity = BaseEntity>({
       };
 
       notifications.show({
-        title: t('common:status.success'),
+        title: t('status.success', { ns: 'common' }),
         message: t(`entities:messages.${mode === FormMode.CREATE ? 'created' : 'updated'}`, {
           entityType: t(`entities:types.${entityType}`)
         }),
@@ -252,7 +252,7 @@ export const ModalEntityForm = <T extends BaseEntity = BaseEntity>({
       const errorMessage = error instanceof Error ? error.message : 'An error occurred';
 
       notifications.show({
-        title: t('common:status.error'),
+        title: t('status.error', { ns: 'common' }),
         message: errorMessage,
         color: 'red',
         icon: <IconAlertCircle size={16} />
@@ -288,7 +288,7 @@ export const ModalEntityForm = <T extends BaseEntity = BaseEntity>({
         <Group justify="space-between" w="100%">
           <Title order={3}>{modalTitle}</Title>
           {isDirty && (
-            <Tooltip label={t('ui:notifications.warning.unsavedChanges')}>
+            <Tooltip label={t('notifications.warning.unsavedChanges')}>
               <IconDeviceFloppy size={16} color="orange" />
             </Tooltip>
           )}
@@ -320,7 +320,7 @@ export const ModalEntityForm = <T extends BaseEntity = BaseEntity>({
               onClick={handleClose}
               disabled={loading}
             >
-              {t('ui:modals.buttons.cancel')}
+              {t('modals.buttons.cancel')}
             </Button>
 
             {config.allowDraft && (
@@ -330,7 +330,7 @@ export const ModalEntityForm = <T extends BaseEntity = BaseEntity>({
                 onClick={() => handleSubmit(FormAction.SAVE_DRAFT)}
                 disabled={loading}
               >
-                {t('common:actions.save')} {t('common:status.draft')}
+                {t('actions.save', { ns: 'common' })} {t('status.draft', { ns: 'common' })}
               </Button>
             )}
 
@@ -339,7 +339,7 @@ export const ModalEntityForm = <T extends BaseEntity = BaseEntity>({
               onClick={() => handleSubmit(FormAction.SAVE)}
               disabled={loading}
             >
-              {t('ui:modals.buttons.save')}
+              {t('modals.buttons.save')}
             </Button>
 
             <Button
@@ -347,7 +347,7 @@ export const ModalEntityForm = <T extends BaseEntity = BaseEntity>({
               leftSection={<IconCheck size={16} />}
               disabled={loading}
             >
-              {t('ui:modals.buttons.saveAndClose')}
+              {t('modals.buttons.saveAndClose')}
             </Button>
 
             {config.allowSaveAndNew && mode === FormMode.CREATE && (
@@ -357,7 +357,7 @@ export const ModalEntityForm = <T extends BaseEntity = BaseEntity>({
                 onClick={() => handleSubmit(FormAction.SAVE_AND_NEW)}
                 disabled={loading}
               >
-                {t('ui:modals.buttons.saveAndNew')}
+                {t('modals.buttons.saveAndNew')}
               </Button>
             )}
           </Group>

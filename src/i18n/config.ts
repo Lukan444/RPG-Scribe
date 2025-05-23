@@ -18,58 +18,73 @@ export const namespaces = ['common', 'entities', 'ui'] as const;
 export type Namespace = typeof namespaces[number];
 
 // Initialize i18next
-i18n
-  .use(Backend)
-  .use(LanguageDetector)
-  .use(initReactI18next)
-  .init({
-    // Language settings
-    lng: 'en', // Default language
-    fallbackLng: 'en',
-    supportedLngs: supportedLanguages.map(lang => lang.code),
+const initI18n = async () => {
+  return i18n
+    .use(Backend)
+    .use(LanguageDetector)
+    .use(initReactI18next)
+    .init({
+      // Language settings
+      lng: localStorage.getItem('rpg-scribe-language') || 'en', // Use saved language or default
+      fallbackLng: 'en',
+      supportedLngs: supportedLanguages.map(lang => lang.code),
 
-    // Namespace settings
-    defaultNS: 'common',
-    ns: namespaces,
+      // Namespace settings
+      defaultNS: 'ui', // Changed to ui as primary namespace
+      ns: namespaces,
 
-    // Detection options
-    detection: {
-      order: ['localStorage', 'navigator', 'htmlTag'],
-      caches: ['localStorage'],
-      lookupLocalStorage: 'rpg-scribe-language'
-    },
+      // Detection options
+      detection: {
+        order: ['localStorage', 'navigator', 'htmlTag'],
+        caches: ['localStorage'],
+        lookupLocalStorage: 'rpg-scribe-language'
+      },
 
-    // Interpolation options
-    interpolation: {
-      escapeValue: false // React already escapes values
-    },
+      // Interpolation options
+      interpolation: {
+        escapeValue: false // React already escapes values
+      },
 
-    // React options
-    react: {
-      useSuspense: false // Disable suspense for better error handling
-    },
+      // React options
+      react: {
+        useSuspense: false // Disable suspense for better error handling
+      },
 
-    // Development options
-    debug: process.env.NODE_ENV === 'development',
+      // Development options
+      debug: process.env.NODE_ENV === 'development',
 
-    // Backend options (for loading translations from server)
-    backend: {
-      loadPath: '/locales/{{lng}}/{{ns}}.json',
-      addPath: '/locales/{{lng}}/{{ns}}.json'
-    },
+      // Backend options (for loading translations from server)
+      backend: {
+        loadPath: '/locales/{{lng}}/{{ns}}.json',
+        addPath: '/locales/{{lng}}/{{ns}}.json'
+      },
 
-    // Pluralization
-    pluralSeparator: '_',
-    contextSeparator: '_',
+      // Pluralization
+      pluralSeparator: '_',
+      contextSeparator: '_',
 
-    // Missing key handling
-    saveMissing: process.env.NODE_ENV === 'development',
-    missingKeyHandler: (lng, ns, key) => {
-      if (process.env.NODE_ENV === 'development') {
-        console.warn(`Missing translation key: ${ns}:${key} for language: ${lng}`);
-      }
-    }
-  });
+      // Missing key handling
+      saveMissing: process.env.NODE_ENV === 'development',
+      missingKeyHandler: (lng, ns, key) => {
+        if (process.env.NODE_ENV === 'development') {
+          console.warn(`Missing translation key: ${ns}:${key} for language: ${lng}`);
+        }
+      },
+
+      // Ensure all namespaces are loaded
+      preload: supportedLanguages.map(lang => lang.code),
+
+      // Wait for all resources to load
+      initImmediate: false
+    });
+};
+
+// Initialize i18n
+initI18n().then(() => {
+  console.log('[i18n] Initialization complete');
+}).catch((error) => {
+  console.error('[i18n] Initialization failed:', error);
+});
 
 // Export configured i18n instance
 export default i18n;

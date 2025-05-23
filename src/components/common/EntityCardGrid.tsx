@@ -250,7 +250,7 @@ export function EntityCardGrid<T extends { [key: string]: any }>({
 
                 // Handle special cases
                 if (entityTypeStr.includes('rpgworld') || entityTypeStr.includes('rpg_world')) {
-                  return t('entities:types.worlds');
+                  return t('types.worlds', { ns: 'entities' });
                 }
 
                 // Try to get translation for plural form
@@ -273,7 +273,7 @@ export function EntityCardGrid<T extends { [key: string]: any }>({
 
           <Group>
             <TextInput
-              placeholder={t('ui:tables.filters.search')}
+              placeholder={t('tables.filters.search')}
               leftSection={<IconSearch size={16} />}
               value={searchQuery}
               onChange={(e) => {
@@ -306,7 +306,7 @@ export function EntityCardGrid<T extends { [key: string]: any }>({
                   return (
                     <Select
                       key={index}
-                      placeholder={t('ui:tables.filters.filterBy')}
+                      placeholder={t('tables.filters.filterBy')}
                       data={filterOptions as any}
                       value={filters['simple'] || null}
                       onChange={(value) => handleFilterChange('simple', value || '')}

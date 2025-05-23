@@ -7,7 +7,8 @@
     "loading": "Loading RPG Scribe...",
     "error": "Application Error",
     "offline": "You are currently offline",
-    "online": "Connection restored"
+    "online": "Connection restored",
+    "welcome": "Welcome to RPG Scribe"
   },
   "navigation": {
     "navigationTitle": "Navigation",
@@ -49,7 +50,12 @@
     "visualizeCharacterRelationships": "Visualize character relationships",
     "accessTheAiAssistant": "Access the AI assistant",
     "toolsForRunningLiveGameSessions": "Tools for running live game sessions",
-    "manageMediaFilesForCampaigns": "Manage media files for campaigns"
+    "manageMediaFilesForCampaigns": "Manage media files for campaigns",
+    "backToCharacters": "Back to Characters",
+    "backToCampaigns": "Back to Campaigns",
+    "backToWorlds": "Back to Worlds",
+    "backToItems": "Back to Items",
+    "backToLocations": "Back to Locations"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -67,7 +73,25 @@
     "noCampaigns": "No campaigns created yet",
     "createFirstWorld": "Create your first RPG world",
     "createFirstCampaign": "Create your first campaign",
-    "welcomeMessage": "Welcome to RPG Scribe! Start by creating your first RPG world or campaign."
+    "welcomeMessage": "Welcome to RPG Scribe! Start by creating your first RPG world or campaign.",
+    "entities": {
+      "characters": "Characters",
+      "locations": "Locations",
+      "items": "Items",
+      "events": "Events",
+      "sessions": "Sessions",
+      "factions": "Factions",
+      "storyArcs": "Story Arcs",
+      "campaigns": "Campaigns",
+      "worlds": "RPG Worlds",
+      "notes": "Notes"
+    },
+    "tabs": {
+      "all": "All",
+      "characters": "Characters",
+      "world": "World",
+      "narrative": "Narrative"
+    }
   },
   "forms": {
     "labels": {
@@ -194,7 +218,9 @@
       "confirm": "Confirm Action",
       "settings": "Settings",
       "help": "Help",
-      "about": "About"
+      "about": "About",
+      "deleteCharacter": "Delete Character",
+      "deleteItem": "Delete Item"
     },
     "buttons": {
       "save": "Save",
@@ -206,7 +232,11 @@
       "confirm": "Confirm",
       "yes": "Yes",
       "no": "No",
-      "ok": "OK"
+      "ok": "OK",
+      "edit": "Edit",
+      "create": "Create",
+      "view": "View",
+      "manage": "Manage"
     }
   },
   "notifications": {
@@ -255,10 +285,13 @@
       "uiLanguage": "Interface Language",
       "transcriptionLanguage": "Transcription Language",
       "aiLanguage": "AI Communication Language",
+      "transcription": "Transcription Language",
+      "ai": "AI Language",
       "description": "Choose your preferred languages for different features",
       "uiDescription": "Language for menus, buttons, and interface elements",
       "transcriptionDescription": "Language for speech-to-text transcription",
-      "aiDescription": "Language for AI assistant communication"
+      "aiDescription": "Language for AI assistant communication",
+      "settingsSaved": "Language settings have been saved successfully."
     },
     "appearance": {
       "title": "Appearance",
@@ -323,34 +356,8 @@
     "manageRpgWorldEntities": "Manage RPG world entities including creation, editing, and viewing details.",
     "manageNoteEntities": "Manage note entities including creation, editing, and viewing details."
   },
-  "modals": {
-    "titles": {
-      "confirm": "Confirm Action",
-      "delete": "Delete Item",
-      "deleteCharacter": "Delete Character",
-      "edit": "Edit Item",
-      "create": "Create New Item",
-      "settings": "Settings"
-    },
-    "buttons": {
-      "confirm": "Confirm",
-      "cancel": "Cancel",
-      "save": "Save",
-      "delete": "Delete",
-      "edit": "Edit",
-      "create": "Create",
-      "close": "Close"
-    }
-  },
-  "buttons": {
-    "edit": "Edit",
-    "delete": "Delete",
-    "save": "Save",
-    "cancel": "Cancel",
-    "create": "Create",
-    "view": "View",
-    "manage": "Manage"
-  },
+
+
   "tabs": {
     "overview": "Overview",
     "inventory": "Inventory",
@@ -369,13 +376,7 @@
     "loadingError": "Loading Error",
     "savingError": "Saving Error"
   },
-  "navigation": {
-    "backToCharacters": "Back to Characters",
-    "backToCampaigns": "Back to Campaigns",
-    "backToWorlds": "Back to Worlds",
-    "backToItems": "Back to Items",
-    "backToLocations": "Back to Locations"
-  },
+
   "emptyStates": {
     "noItems": "No items in inventory",
     "noRelationships": "No relationships found",
@@ -384,5 +385,137 @@
     "noCharacters": "No characters found",
     "noCampaigns": "No campaigns found",
     "noWorlds": "No worlds found"
+  },
+  "viewModes": {
+    "table": "Table",
+    "grid": "Grid",
+    "list": "List",
+    "cards": "Cards",
+    "article": "Article",
+    "organize": "Organize"
+  },
+  "tables": {
+    "headers": {
+      "name": "Name",
+      "type": "Type",
+      "level": "Level",
+      "race": "Race",
+      "class": "Class",
+      "location": "Location",
+      "status": "Status",
+      "createdAt": "Created",
+      "updatedAt": "Updated",
+      "lastUpdated": "Last Updated",
+      "relationships": "Relationships",
+      "actions": "Actions"
+    }
+  },
+  "tooltips": {
+    "playerCharacters": "Player Characters",
+    "nonPlayerCharacters": "Non-Player Characters",
+    "totalCharacters": "{{count}} characters total",
+    "moreRecentCharacters": "+{{count}} more recent characters",
+    "invalidDate": "Invalid Date",
+    "breakdown": "Breakdown:",
+    "noUpdateInformation": "No update information available. Add timestamps to your entities to track changes.",
+    "recentlyAdded": "Recently added:",
+    "createdUnknownDate": "Created Unknown creation date",
+    "other": "OTHER"
+  },
+  "relationships": {
+    "title": "Character Relationships",
+    "relationshipsFor": "Relationships for {{entityType}}",
+    "total": "Total:",
+    "byEntityType": "By entity type:",
+    "byRelationshipType": "By relationship type:",
+    "characters": "Characters:",
+    "locations": "Locations:",
+    "factions": "Factions:",
+    "items": "Items:",
+    "alliedWith": "Allied with:",
+    "locatedAt": "Located at:",
+    "owns": "Owns:",
+    "memberOf": "Member of:",
+    "noRelationshipsFound": "No relationships found",
+    "manageRelationships": "Manage Relationships"
+  },
+  "pages": {
+    "characters": {
+      "title": "Characters",
+      "allCharacters": "All Characters",
+      "worldCharacters": "World Characters",
+      "subtitle": "Manage your RPG characters and NPCs",
+      "worldSubtitle": "Characters in this world",
+      "backToCharacters": "Back to Characters",
+      "errorLoadingCharacters": "Error loading characters"
+    },
+    "locations": {
+      "title": "Locations",
+      "allLocations": "All Locations",
+      "worldLocations": "World Locations",
+      "subtitle": "Manage your RPG locations and places",
+      "worldSubtitle": "Locations in this world"
+    },
+    "items": {
+      "title": "Items",
+      "allItems": "All Items",
+      "worldItems": "World Items",
+      "subtitle": "Manage your RPG items and equipment",
+      "worldSubtitle": "Items in this world"
+    },
+    "events": {
+      "title": "Events",
+      "allEvents": "All Events",
+      "worldEvents": "World Events",
+      "subtitle": "Manage your RPG events and timeline",
+      "worldSubtitle": "Events in this world"
+    },
+    "sessions": {
+      "title": "Sessions",
+      "allSessions": "All Sessions",
+      "worldSessions": "World Sessions",
+      "subtitle": "Manage your RPG sessions and gameplay",
+      "worldSubtitle": "Sessions in this world"
+    },
+    "factions": {
+      "title": "Factions",
+      "allFactions": "All Factions",
+      "worldFactions": "World Factions",
+      "subtitle": "Manage your RPG factions and organizations",
+      "worldSubtitle": "Factions in this world"
+    },
+    "storyArcs": {
+      "title": "Story Arcs",
+      "allStoryArcs": "All Story Arcs",
+      "worldStoryArcs": "World Story Arcs",
+      "subtitle": "Manage your RPG story arcs and narratives",
+      "worldSubtitle": "Story arcs in this world"
+    },
+    "notes": {
+      "title": "Notes",
+      "allNotes": "All Notes",
+      "worldNotes": "World Notes",
+      "subtitle": "Manage your RPG notes and documentation",
+      "worldSubtitle": "Notes in this world"
+    },
+    "campaigns": {
+      "title": "Campaigns",
+      "allCampaigns": "All Campaigns",
+      "subtitle": "Manage your RPG campaigns",
+      "createCampaign": "Create Campaign",
+      "editCampaign": "Edit Campaign"
+    },
+    "worlds": {
+      "title": "RPG Worlds",
+      "allWorlds": "All Worlds",
+      "subtitle": "Manage your RPG worlds and settings",
+      "backToWorld": "Back to World",
+      "createWorld": "Create World",
+      "editWorld": "Edit World"
+    },
+    "dashboard": {
+      "title": "Dashboard",
+      "subtitle": "Overview of your RPG campaigns and worlds"
+    }
   }
 }

@@ -556,13 +556,13 @@ export function RelationshipCountBadge({
         ) : relationshipCount > 0 && breakdown ? (
           <Stack gap="xs">
             <Group justify="space-between">
-              <Text size="sm" fw={700}>{t('ui:relationships.total')}</Text>
+              <Text size="sm" fw={700}>{t('relationships.total')}</Text>
               <Text size="sm" fw={700}>{relationshipCount}</Text>
             </Group>
 
             <Divider />
 
-            <Text size="xs" fw={500} c="dimmed">{t('ui:relationships.byEntityType')}</Text>
+            <Text size="xs" fw={500} c="dimmed">{t('relationships.byEntityType')}</Text>
             {(() => {
               // Ensure the breakdown data is consistent with the total
               const entries = Object.entries(breakdown.byType);
@@ -671,7 +671,7 @@ export function RelationshipCountBadge({
                   return (
                     <>
                       <Divider />
-                      <Text size="xs" fw={500} c="dimmed">{t('ui:relationships.byRelationshipType')}</Text>
+                      <Text size="xs" fw={500} c="dimmed">{t('relationships.byRelationshipType')}</Text>
                       {Object.entries(typeCounts).map(([type, typeCount]) => (
                         <Group key={type} justify="space-between" wrap="nowrap" style={{ width: '100%' }}>
                           <Text size="xs" style={{ maxWidth: '70%', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
@@ -688,7 +688,7 @@ export function RelationshipCountBadge({
                 return (
                   <>
                     <Divider />
-                    <Text size="xs" fw={500} c="dimmed">{t('ui:relationships.byRelationshipType')}</Text>
+                    <Text size="xs" fw={500} c="dimmed">{t('relationships.byRelationshipType')}</Text>
                     {relationshipTypeEntries.map(([type, typeCount]) => (
                       <Group key={type} justify="space-between" wrap="nowrap" style={{ width: '100%' }}>
                         <Text size="xs" style={{ maxWidth: '70%', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
@@ -705,7 +705,7 @@ export function RelationshipCountBadge({
               return (
                 <>
                   <Divider />
-                  <Text size="xs" fw={500} c="dimmed">{t('ui:relationships.byRelationshipType')}</Text>
+                  <Text size="xs" fw={500} c="dimmed">{t('relationships.byRelationshipType')}</Text>
                   {['ALLIED_WITH', 'LOCATED_AT', 'OWNS', 'MEMBER_OF'].map((type) => {
                     const typeCount = Math.floor(relationshipCount / 4);
                     return (

@@ -70,10 +70,22 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
         onChange={handleLanguageChange}
         data={languageOptions}
         leftSection={<IconLanguage size={16} />}
-        placeholder={t('ui:settings.language.uiLanguage')}
+        placeholder={t('settings.language.uiLanguage')}
         size="sm"
         style={{ minWidth: 150 }}
-        comboboxProps={{ withinPortal: true }}
+        comboboxProps={{
+          withinPortal: true,
+          transitionProps: { duration: 200 },
+          dropdownPadding: 8,
+          offset: 5,
+          position: 'bottom-start',
+          middlewares: {
+            flip: true,
+            shift: true
+          }
+        }}
+        searchable={false}
+        clearable={false}
       />
     );
   }
@@ -84,7 +96,7 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
       <Group gap="xs">
         <IconLanguage size={20} />
         <Text fw={500} size="sm">
-          {label || t('ui:settings.language.uiLanguage')}
+          {label || t('settings.language.uiLanguage')}
         </Text>
       </Group>
 
@@ -98,9 +110,16 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
         value={currentLanguage}
         onChange={handleLanguageChange}
         data={languageOptions}
-        placeholder={t('ui:settings.language.uiLanguage')}
-        description={t('ui:settings.language.uiDescription')}
-        comboboxProps={{ withinPortal: true }}
+        placeholder={t('settings.language.uiLanguage')}
+        description={t('settings.language.uiDescription')}
+        comboboxProps={{
+          withinPortal: true,
+          transitionProps: { duration: 200 },
+          dropdownPadding: 8,
+          offset: 5
+        }}
+        searchable={false}
+        clearable={false}
       />
     </Stack>
   );

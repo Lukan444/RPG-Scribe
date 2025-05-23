@@ -214,14 +214,14 @@ export function SimpleNavbar({ collapsed = false }: SimpleNavbarProps) {
   const mainNavItems: NavItem[] = [
     {
       id: 'dashboard',
-      label: t('ui:navigation.dashboard'),
+      label: t('navigation.dashboard'),
       icon: <IconDashboard size={ICON_SIZE} />,
       path: '/dashboard',
       description: 'View your RPG campaign overview and statistics',
     },
     {
       id: 'entity-manager',
-      label: t('ui:navigation.entityManager'),
+      label: t('navigation.entityManager'),
       icon: <IconDatabase size={ICON_SIZE} />,
       path: '/entity-manager',
       description: 'Centralized management for all entity types',
@@ -229,14 +229,14 @@ export function SimpleNavbar({ collapsed = false }: SimpleNavbarProps) {
     },
     {
       id: 'game-content',
-      label: t('ui:navigation.gameContent'),
+      label: t('navigation.gameContent'),
       icon: <IconDatabase size={ICON_SIZE} />,
       description: 'Manage all your RPG game content',
       children: [
         // Characters & NPCs Group
         {
           id: 'characters-group',
-          label: t('ui:navigation.charactersAndNpcs'),
+          label: t('navigation.charactersAndNpcs'),
           icon: (() => {
             const IconComponent = ENTITY_ICONS[EntityType.CHARACTER];
             return <IconComponent size={ICON_SIZE} />;
@@ -246,7 +246,7 @@ export function SimpleNavbar({ collapsed = false }: SimpleNavbarProps) {
           children: [
             {
               id: 'characters',
-              label: t('ui:navigation.characters'),
+              label: t('navigation.characters'),
               icon: (() => {
                 const IconComponent = ENTITY_ICONS[EntityType.CHARACTER];
                 return <IconComponent size={ICON_SIZE} />;
@@ -257,7 +257,7 @@ export function SimpleNavbar({ collapsed = false }: SimpleNavbarProps) {
             },
             {
               id: 'factions',
-              label: t('ui:navigation.factions'),
+              label: t('navigation.factions'),
               icon: (() => {
                 const IconComponent = ENTITY_ICONS[EntityType.FACTION];
                 return <IconComponent size={ICON_SIZE} />;
@@ -271,7 +271,7 @@ export function SimpleNavbar({ collapsed = false }: SimpleNavbarProps) {
         // World Elements Group
         {
           id: 'world-elements-group',
-          label: t('ui:navigation.worldElements'),
+          label: t('navigation.worldElements'),
           icon: (() => {
             const IconComponent = ENTITY_ICONS[EntityType.LOCATION];
             return <IconComponent size={ICON_SIZE} />;
@@ -281,7 +281,7 @@ export function SimpleNavbar({ collapsed = false }: SimpleNavbarProps) {
           children: [
             {
               id: 'locations',
-              label: t('ui:navigation.locations'),
+              label: t('navigation.locations'),
               icon: (() => {
                 const IconComponent = ENTITY_ICONS[EntityType.LOCATION];
                 return <IconComponent size={ICON_SIZE} />;
@@ -292,7 +292,7 @@ export function SimpleNavbar({ collapsed = false }: SimpleNavbarProps) {
             },
             {
               id: 'items',
-              label: t('ui:navigation.items'),
+              label: t('navigation.items'),
               icon: (() => {
                 const IconComponent = ENTITY_ICONS[EntityType.ITEM];
                 return <IconComponent size={ICON_SIZE} />;
@@ -306,7 +306,7 @@ export function SimpleNavbar({ collapsed = false }: SimpleNavbarProps) {
         // Narrative Group
         {
           id: 'narrative-group',
-          label: t('ui:navigation.narrative'),
+          label: t('navigation.narrative'),
           icon: (() => {
             const IconComponent = ENTITY_ICONS[EntityType.STORY_ARC];
             return <IconComponent size={ICON_SIZE} />;
@@ -316,7 +316,7 @@ export function SimpleNavbar({ collapsed = false }: SimpleNavbarProps) {
           children: [
             {
               id: 'events',
-              label: t('ui:navigation.events'),
+              label: t('navigation.events'),
               icon: (() => {
                 const IconComponent = ENTITY_ICONS[EntityType.EVENT];
                 return <IconComponent size={ICON_SIZE} />;
@@ -327,7 +327,7 @@ export function SimpleNavbar({ collapsed = false }: SimpleNavbarProps) {
             },
             {
               id: 'sessions',
-              label: t('ui:navigation.sessions'),
+              label: t('navigation.sessions'),
               icon: (() => {
                 const IconComponent = ENTITY_ICONS[EntityType.SESSION];
                 return <IconComponent size={ICON_SIZE} />;
@@ -338,7 +338,7 @@ export function SimpleNavbar({ collapsed = false }: SimpleNavbarProps) {
             },
             {
               id: 'story-arcs',
-              label: t('ui:navigation.storyArcs'),
+              label: t('navigation.storyArcs'),
               icon: (() => {
                 const IconComponent = ENTITY_ICONS[EntityType.STORY_ARC];
                 return <IconComponent size={ICON_SIZE} />;
@@ -349,7 +349,7 @@ export function SimpleNavbar({ collapsed = false }: SimpleNavbarProps) {
             },
             {
               id: 'notes',
-              label: t('ui:navigation.notes'),
+              label: t('navigation.notes'),
               icon: (() => {
                 const IconComponent = ENTITY_ICONS[EntityType.NOTE];
                 return <IconComponent size={ICON_SIZE} />;
@@ -364,69 +364,69 @@ export function SimpleNavbar({ collapsed = false }: SimpleNavbarProps) {
     },
     {
       id: 'visualization',
-      label: t('ui:navigation.visualization'),
+      label: t('navigation.visualization'),
       icon: <IconNetwork size={ICON_SIZE} />,
       description: 'Visualize your campaign data',
       children: [
         {
           id: 'mindmap',
-          label: t('ui:navigation.mindMap'),
+          label: t('navigation.mindMap'),
           icon: <IconNetwork size={ICON_SIZE} />,
           path: '/visualizations/mindmap',
-          description: t('ui:navigation.createInteractiveMindMaps'),
+          description: t('navigation.createInteractiveMindMaps'),
         },
         {
           id: 'timeline',
-          label: t('ui:navigation.timeline'),
+          label: t('navigation.timeline'),
           icon: (() => {
             const IconComponent = ENTITY_ICONS[EntityType.STORY_ARC];
             return <IconComponent size={ICON_SIZE} />;
           })(),
           path: '/visualizations/timeline',
-          description: t('ui:navigation.viewCampaignEventsChronologically'),
+          description: t('navigation.viewCampaignEventsChronologically'),
           color: getEntityColor(EntityType.STORY_ARC),
         },
         {
           id: 'relationshipweb',
-          label: t('ui:navigation.relationshipWeb'),
+          label: t('navigation.relationshipWeb'),
           icon: <IconNetwork size={ICON_SIZE} />,
           path: '/visualizations/relationshipweb',
-          description: t('ui:navigation.visualizeCharacterRelationships'),
+          description: t('navigation.visualizeCharacterRelationships'),
         },
       ],
     },
     {
       id: 'tools',
-      label: t('ui:navigation.tools'),
+      label: t('navigation.tools'),
       icon: <IconDeviceGamepad2 size={ICON_SIZE} />,
       description: 'Access RPG tools and utilities',
       children: [
         {
           id: 'ai-brain',
-          label: t('ui:navigation.aiBrain'),
+          label: t('navigation.aiBrain'),
           icon: <IconBrain size={ICON_SIZE} />,
           path: '/ai-brain',
-          description: t('ui:navigation.accessTheAiAssistant'),
+          description: t('navigation.accessTheAiAssistant'),
         },
         {
           id: 'live-play',
-          label: t('ui:navigation.livePlay'),
+          label: t('navigation.livePlay'),
           icon: <IconDeviceGamepad2 size={ICON_SIZE} />,
           path: '/live-play',
-          description: t('ui:navigation.toolsForRunningLiveGameSessions'),
+          description: t('navigation.toolsForRunningLiveGameSessions'),
         },
         {
           id: 'media',
-          label: t('ui:navigation.mediaLibrary'),
+          label: t('navigation.mediaLibrary'),
           icon: <IconPhoto size={ICON_SIZE} />,
           path: '/media',
-          description: t('ui:navigation.manageMediaFilesForCampaigns'),
+          description: t('navigation.manageMediaFilesForCampaigns'),
         },
       ],
     },
     {
       id: 'settings',
-      label: t('ui:navigation.settings'),
+      label: t('navigation.settings'),
       icon: <IconSettings size={ICON_SIZE} />,
       path: '/settings',
       description: 'Configure application settings',
@@ -437,7 +437,7 @@ export function SimpleNavbar({ collapsed = false }: SimpleNavbarProps) {
   const adminNavItems: NavItem[] = [
     {
       id: 'admin',
-      label: t('ui:navigation.admin'),
+      label: t('navigation.admin'),
       icon: <IconShieldLock size={ICON_SIZE} />,
       color: 'red',
       path: '/admin',
@@ -449,7 +449,7 @@ export function SimpleNavbar({ collapsed = false }: SimpleNavbarProps) {
     <Stack gap={collapsed ? 'md' : 'xs'}>
       {!collapsed && (
         <Text size="sm" fw={500} c="dimmed" mb="xs">
-          {t('ui:navigation.navigationTitle').toUpperCase()}
+          {t('navigation.navigationTitle').toUpperCase()}
         </Text>
       )}
 
@@ -472,7 +472,7 @@ export function SimpleNavbar({ collapsed = false }: SimpleNavbarProps) {
       {isAdmin && (
         <>
           {!collapsed ? (
-            <Divider my="sm" label={t('ui:navigation.admin')} labelPosition="center" />
+            <Divider my="sm" label={t('navigation.admin')} labelPosition="center" />
           ) : (
             <Divider my="sm" />
           )}

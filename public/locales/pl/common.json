@@ -191,6 +191,44 @@
     "notFound": "Element nie został znaleziony",
     "expired": "Ten element wygasł",
     "future": "Data musi być w przyszłości",
-    "past": "Data musi być w przeszłości"
+    "past": "Data musi być w przeszłości",
+    "passwordTooShort": "Hasło musi mieć co najmniej 6 znaków"
+  },
+  "auth": {
+    "profile": "Profil",
+    "signOut": "Wyloguj się",
+    "signIn": "Zaloguj się",
+    "login": "Logowanie",
+    "logout": "Wylogowanie",
+    "register": "Rejestracja",
+    "email": "Email",
+    "password": "Hasło",
+    "confirmPassword": "Potwierdź hasło",
+    "forgotPassword": "Zapomniałeś hasła",
+    "resetPassword": "Resetuj hasło",
+    "rememberMe": "Zapamiętaj mnie",
+    "loginWith": "Zaloguj się przez",
+    "orLoginWithEmail": "Lub zaloguj się przez email",
+    "authenticationError": "Błąd uwierzytelniania",
+    "loginSuccessful": "Logowanie pomyślne",
+    "loginSuccessMessage": "Zostałeś pomyślnie zalogowany. Przekierowywanie...",
+    "emailPlaceholder": "twoj@email.com",
+    "passwordPlaceholder": "Twoje hasło",
+    "noAccountRegister": "Nie masz konta? Zarejestruj się",
+    "troubleLoggingIn": "Problemy z logowaniem? Upewnij się, że pop-upy są włączone dla tej strony."
+  },
+  "buttons": {
+    "view": "Zobacz",
+    "edit": "Edytuj",
+    "delete": "Usuń",
+    "save": "Zapisz",
+    "cancel": "Anuluj",
+    "create": "Utwórz",
+    "update": "Aktualizuj",
+    "close": "Zamknij",
+    "confirm": "Potwierdź",
+    "back": "Wstecz",
+    "next": "Dalej",
+    "previous": "Poprzedni"
   }
 }

@@ -56,7 +56,7 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
     <Box>
       {!compact && (
         <Text size="sm" fw={500} mb={5}>
-          {t('ui:settings.language.uiLanguage')}
+          {t('settings.language.uiLanguage')}
         </Text>
       )}
       <Select
@@ -65,7 +65,7 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
         onChange={handleLanguageChange}
         size={compact ? 'xs' : 'sm'}
         clearable={false}
-        aria-label={t('ui:settings.language.uiLanguage')}
+        aria-label={t('settings.language.uiLanguage')}
       />
     </Box>
   );

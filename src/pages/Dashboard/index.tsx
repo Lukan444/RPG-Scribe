@@ -29,6 +29,7 @@ import { EntityType } from '../../models/EntityType';
 import RelationshipCountBadge from '../../components/relationships/badges/RelationshipCountBadge';
 import EntityCountTooltip from '../../components/common/EntityCountTooltip';
 import { useRPGWorld } from '../../contexts/RPGWorldContext';
+
 import { auth } from '../../firebase/config';
 import { CharacterService } from '../../services/character.service';
 import { FactionService } from '../../services/faction.service';
@@ -535,10 +536,10 @@ function Dashboard() {
       {/* Stat Cards Grid - Only keeping the entity selector tabs and entity count tiles */}
       <Tabs defaultValue="all">
         <Tabs.List>
-          <Tabs.Tab value="all">{t('ui:dashboard.tabs.all')}</Tabs.Tab>
-          <Tabs.Tab value="characters">{t('ui:dashboard.tabs.characters')}</Tabs.Tab>
-          <Tabs.Tab value="world">{t('ui:dashboard.tabs.world')}</Tabs.Tab>
-          <Tabs.Tab value="narrative">{t('ui:dashboard.tabs.narrative')}</Tabs.Tab>
+          <Tabs.Tab value="all">{t('dashboard.tabs.all')}</Tabs.Tab>
+          <Tabs.Tab value="characters">{t('dashboard.tabs.characters')}</Tabs.Tab>
+          <Tabs.Tab value="world">{t('dashboard.tabs.world')}</Tabs.Tab>
+          <Tabs.Tab value="narrative">{t('dashboard.tabs.narrative')}</Tabs.Tab>
         </Tabs.List>
 
         <Tabs.Panel value="all" pt="md">
@@ -551,7 +552,7 @@ function Dashboard() {
               <SimpleGrid cols={{ base: 1, sm: 2, md: 3, lg: 5 }} spacing="md">
                 {/* Characters & NPCs Group */}
                 <StatCard
-                  title={t('ui:dashboard.entities.characters')}
+                  title={t('dashboard.entities.characters')}
                   value={totalStats.characters.count.toString()}
                   icon={<IconUsers style={{ width: '1.5rem', height: '1.5rem' }} />}
                   color="blue"
@@ -569,7 +570,7 @@ function Dashboard() {
                   })}
                 />
                 <StatCard
-                  title={t('ui:dashboard.entities.factions')}
+                  title={t('dashboard.entities.factions')}
                   value={totalStats.factions.count.toString()}
                   icon={<IconUsersGroup style={{ width: '1.5rem', height: '1.5rem' }} />}
                   color="blue"
@@ -588,7 +589,7 @@ function Dashboard() {
 
                 {/* World Elements Group */}
                 <StatCard
-                  title={t('ui:dashboard.entities.locations')}
+                  title={t('dashboard.entities.locations')}
                   value={totalStats.locations.count.toString()}
                   icon={<IconMapPin style={{ width: '1.5rem', height: '1.5rem' }} />}
                   color="green"
@@ -605,7 +606,7 @@ function Dashboard() {
                   })}
                 />
                 <StatCard
-                  title={t('ui:dashboard.entities.items')}
+                  title={t('dashboard.entities.items')}
                   value={totalStats.items.count.toString()}
                   icon={<IconSword style={{ width: '1.5rem', height: '1.5rem' }} />}
                   color="green"
@@ -622,7 +623,7 @@ function Dashboard() {
                   })}
                 />
                 <StatCard
-                  title={t('ui:dashboard.entities.events')}
+                  title={t('dashboard.entities.events')}
                   value={totalStats.events.count.toString()}
                   icon={<IconCalendarEvent style={{ width: '1.5rem', height: '1.5rem' }} />}
                   color="violet"
@@ -643,7 +644,7 @@ function Dashboard() {
               <SimpleGrid cols={{ base: 1, sm: 2, md: 3, lg: 5 }} spacing="md" mt="md">
                 {/* Narrative Group */}
                 <StatCard
-                  title={t('ui:dashboard.entities.sessions')}
+                  title={t('dashboard.entities.sessions')}
                   value={totalStats.sessions.count.toString()}
                   icon={<IconNotebook style={{ width: '1.5rem', height: '1.5rem' }} />}
                   color="violet"
@@ -660,7 +661,7 @@ function Dashboard() {
                   })}
                 />
                 <StatCard
-                  title={t('ui:dashboard.entities.storyArcs')}
+                  title={t('dashboard.entities.storyArcs')}
                   value={totalStats.storyArcs.count.toString()}
                   icon={<IconTimeline style={{ width: '1.5rem', height: '1.5rem' }} />}
                   color="violet"
@@ -677,7 +678,7 @@ function Dashboard() {
                   })}
                 />
                 <StatCard
-                  title={t('ui:dashboard.entities.notes')}
+                  title={t('dashboard.entities.notes')}
                   value={totalStats.notes.count.toString()}
                   icon={<IconBookmark style={{ width: '1.5rem', height: '1.5rem' }} />}
                   color="violet"
@@ -696,7 +697,7 @@ function Dashboard() {
 
                 {/* Campaign & World Group */}
                 <StatCard
-                  title={t('ui:dashboard.entities.campaigns')}
+                  title={t('dashboard.entities.campaigns')}
                   value={totalStats.campaigns.count.toString()}
                   icon={<IconMap style={{ width: '1.5rem', height: '1.5rem' }} />}
                   color="orange"
@@ -713,7 +714,7 @@ function Dashboard() {
                   })}
                 />
                 <StatCard
-                  title={t('ui:dashboard.entities.worlds')}
+                  title={t('dashboard.entities.worlds')}
                   value={totalStats.worlds.count.toString()}
                   icon={<IconWorld style={{ width: '1.5rem', height: '1.5rem' }} />}
                   color="cyan"
@@ -742,7 +743,7 @@ function Dashboard() {
           ) : (
             <SimpleGrid cols={{ base: 1, sm: 2, md: 2, lg: 2 }} spacing="md">
               <StatCard
-                title={t('ui:dashboard.entities.characters')}
+                title={t('dashboard.entities.characters')}
                 value={totalStats.characters.count.toString()}
                 icon={<IconUsers style={{ width: '1.5rem', height: '1.5rem' }} />}
                 color="blue"
@@ -760,7 +761,7 @@ function Dashboard() {
                 })}
               />
               <StatCard
-                title={t('ui:dashboard.entities.factions')}
+                title={t('dashboard.entities.factions')}
                 value={totalStats.factions.count.toString()}
                 icon={<IconUsersGroup style={{ width: '1.5rem', height: '1.5rem' }} />}
                 color="blue"
@@ -788,7 +789,7 @@ function Dashboard() {
           ) : (
             <SimpleGrid cols={{ base: 1, sm: 2, md: 2, lg: 2 }} spacing="md">
               <StatCard
-                title={t('ui:dashboard.entities.locations')}
+                title={t('dashboard.entities.locations')}
                 value={totalStats.locations.count.toString()}
                 icon={<IconMapPin style={{ width: '1.5rem', height: '1.5rem' }} />}
                 color="green"
@@ -805,7 +806,7 @@ function Dashboard() {
                 })}
               />
               <StatCard
-                title={t('ui:dashboard.entities.items')}
+                title={t('dashboard.entities.items')}
                 value={totalStats.items.count.toString()}
                 icon={<IconSword style={{ width: '1.5rem', height: '1.5rem' }} />}
                 color="green"
@@ -834,7 +835,7 @@ function Dashboard() {
             <>
               <SimpleGrid cols={{ base: 1, sm: 2, md: 2, lg: 2 }} spacing="md">
                 <StatCard
-                  title={t('ui:dashboard.entities.events')}
+                  title={t('dashboard.entities.events')}
                   value={totalStats.events.count.toString()}
                   icon={<IconCalendarEvent style={{ width: '1.5rem', height: '1.5rem' }} />}
                   color="violet"
@@ -851,7 +852,7 @@ function Dashboard() {
                   })}
                 />
                 <StatCard
-                  title={t('ui:dashboard.entities.sessions')}
+                  title={t('dashboard.entities.sessions')}
                   value={totalStats.sessions.count.toString()}
                   icon={<IconNotebook style={{ width: '1.5rem', height: '1.5rem' }} />}
                   color="violet"
@@ -870,7 +871,7 @@ function Dashboard() {
               </SimpleGrid>
               <SimpleGrid cols={{ base: 1, sm: 2, md: 2, lg: 2 }} spacing="md" mt="md">
                 <StatCard
-                  title={t('ui:dashboard.entities.storyArcs')}
+                  title={t('dashboard.entities.storyArcs')}
                   value={totalStats.storyArcs.count.toString()}
                   icon={<IconTimeline style={{ width: '1.5rem', height: '1.5rem' }} />}
                   color="violet"
@@ -887,7 +888,7 @@ function Dashboard() {
                   })}
                 />
                 <StatCard
-                  title={t('ui:dashboard.entities.notes')}
+                  title={t('dashboard.entities.notes')}
                   value={totalStats.notes.count.toString()}
                   icon={<IconBookmark style={{ width: '1.5rem', height: '1.5rem' }} />}
                   color="violet"
