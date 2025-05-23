@@ -10,6 +10,7 @@
     "online": "Connection restored"
   },
   "navigation": {
+    "navigationTitle": "Navigation",
     "dashboard": "Dashboard",
     "worlds": "RPG Worlds",
     "campaigns": "Campaigns",
@@ -30,7 +31,25 @@
     "settings": "Settings",
     "profile": "Profile",
     "help": "Help",
-    "about": "About"
+    "about": "About",
+    "gameContent": "Game Content",
+    "charactersAndNpcs": "Characters & NPCs",
+    "worldElements": "World Elements",
+    "narrative": "Narrative",
+    "visualization": "Visualization",
+    "tools": "Tools",
+    "aiBrain": "AI Brain",
+    "livePlay": "Live Play",
+    "mediaLibrary": "Media Library",
+    "admin": "Admin",
+    "expandMenu": "Expand Menu",
+    "collapseMenu": "Collapse Menu",
+    "createInteractiveMindMaps": "Create interactive mind maps",
+    "viewCampaignEventsChronologically": "View campaign events chronologically",
+    "visualizeCharacterRelationships": "Visualize character relationships",
+    "accessTheAiAssistant": "Access the AI assistant",
+    "toolsForRunningLiveGameSessions": "Tools for running live game sessions",
+    "manageMediaFilesForCampaigns": "Manage media files for campaigns"
   },
   "dashboard": {
     "title": "Dashboard",

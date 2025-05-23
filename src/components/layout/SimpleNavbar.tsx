@@ -257,7 +257,7 @@ export function SimpleNavbar({ collapsed = false }: SimpleNavbarProps) {
             },
             {
               id: 'factions',
-              label: 'Factions',
+              label: t('ui:navigation.factions'),
               icon: (() => {
                 const IconComponent = ENTITY_ICONS[EntityType.FACTION];
                 return <IconComponent size={ICON_SIZE} />;
@@ -449,7 +449,7 @@ export function SimpleNavbar({ collapsed = false }: SimpleNavbarProps) {
     <Stack gap={collapsed ? 'md' : 'xs'}>
       {!collapsed && (
         <Text size="sm" fw={500} c="dimmed" mb="xs">
-          NAVIGATION
+          {t('ui:navigation.navigationTitle').toUpperCase()}
         </Text>
       )}
 
@@ -472,7 +472,7 @@ export function SimpleNavbar({ collapsed = false }: SimpleNavbarProps) {
       {isAdmin && (
         <>
           {!collapsed ? (
-            <Divider my="sm" label="Admin" labelPosition="center" />
+            <Divider my="sm" label={t('ui:navigation.admin')} labelPosition="center" />
           ) : (
             <Divider my="sm" />
           )}
