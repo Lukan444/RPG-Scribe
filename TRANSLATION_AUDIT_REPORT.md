@@ -1,185 +1,104 @@
-# RPG Scribe - Comprehensive Translation Audit Report
+# Translation Audit Report
 
-## Executive Summary
+## 1. Overview
 
-I have performed a comprehensive audit of the RPG Scribe application to identify untranslated content and implement missing Polish translations. This report documents the current state, implemented fixes, and remaining work needed to achieve 100% Polish translation coverage.
+This report details the findings of an audit of the multi-language implementation in the application. The audit included a review of the internationalization (i18n) setup, translation file sources, supported languages, translation coverage, and language switching mechanisms.
 
-## ✅ **COMPLETED IMPLEMENTATIONS**
+The application uses `i18next` and `react-i18next` for its internationalization needs. Translations are loaded via `i18next-http-backend` from JSON files organized by language and namespace.
 
-### 1. Core Infrastructure Fixed
-- **✅ Language persistence system** - Fixed language switching and persistence across sessions
-- **✅ Translation file structure** - Enhanced Polish translation files with missing keys
-- **✅ Component translation hooks** - Updated core layout components to use translations
-- **✅ Navigation system** - Implemented translations for main navigation elements
+## 2. Current State of i18n Implementation
 
-### 2. Layout Components Updated
-- **✅ AppLayout.tsx** - Added translation support, fixed hardcoded tooltips
-- **✅ UserMenu.tsx** - Updated to use correct translation namespaces
-- **✅ SimpleNavbar.tsx** - Partially implemented navigation translations
-- **✅ LanguageSettings.tsx** - Fixed to use working LanguageSelector component
-- **✅ SettingsPage.tsx** - Updated translation hooks and namespaces
+### 2.1. Configuration:
+-   **i18n Library:** `i18next` with `react-i18next`.
+-   **Translation Loading:** `i18next-http-backend` loads translations from `/public/locales/{lng}/{ns}.json`.
+-   **Namespaces:** `common`, `entities`, `ui`.
+-   **Language Detection:** Browser language detection is enabled, with fallback to English. Preferences are stored in `localStorage`.
 
-### 3. Translation Files Enhanced
+### 2.2. Translation File Management:
+-   **Consolidation:** Translation files were consolidated into the `/public/locales/` directory. Previously, some English and Polish translations were also stored in `src/i18n/locales/`, leading to inconsistencies. This has been rectified.
+-   **File Naming:** Namespace files are now consistently named (e.g., `ui.json`). Previously, there was an inconsistency with `settings.json` vs `ui.json` for some languages.
 
-#### Polish UI Translations Added (src/i18n/locales/pl/ui.json):
-```json
-{
-  "dashboard": {
-    "tabs": { "all": "Wszystkie", "characters": "Postacie", "world": "Świat", "narrative": "Narracja" },
-    "loading": { "characters": "Ładowanie postaci...", "locations": "Ładowanie lokacji..." },
-    "errors": { "loadingCharacters": "Błąd ładowania postaci", "retry": "Spróbuj ponownie" }
-  },
-  "pages": {
-    "characters": { "title": "Postacie", "allCharacters": "Wszystkie postacie" },
-    "locations": { "title": "Lokacje", "allLocations": "Wszystkie lokacje" }
-  },
-  "viewModes": { "grid": "Siatka", "table": "Tabela", "article": "Artykuł" },
-  "entityTypes": { "pc": "BG", "npc": "BN", "level": "Poziom" }
-}
-```
+### 2.3. Language Context and Persistence:
+-   A `LanguageContext` manages three types of language preferences:
+    -   `interfaceLanguage`: For the main UI. Persisted in `localStorage` (key: `rpg-scribe-language`).
+    -   `transcriptionLanguage`: For speech-to-text features. Persisted in `localStorage` (key: `rpg-scribe-transcription-language`).
+    -   `aiLanguage`: For AI-related communication. Persisted in `localStorage` (key: `rpg-scribe-ai-language`).
+-   The `LanguageSelector.tsx` component correctly handles interface language changes.
+-   The `LanguageSettings.tsx` component, intended for managing all three language types, has significant issues (see Section 4.2).
 
-#### Polish Common Translations Added (src/i18n/locales/pl/common.json):
-```json
-{
-  "auth": { "signIn": "Zaloguj się", "signOut": "Wyloguj się", "profile": "Profil" },
-  "buttons": { "viewAll": "Zobacz wszystkie", "edit": "Edytuj", "delete": "Usuń" },
-  "descriptions": { "noDescriptionAvailable": "Brak dostępnego opisu." }
-}
-```
+## 3. Supported Languages and Status
 
-## 🔍 **COMPREHENSIVE AUDIT FINDINGS**
+The application is configured to support the following languages:
 
-### Critical Untranslated Content Identified:
+-   **English (en):**
+    -   `common.json`: Comprehensive.
+    -   `entities.json`: Comprehensive.
+    -   `ui.json`: Comprehensive.
+    -   **Status: Complete.**
 
-#### 1. Dashboard Page (HIGH PRIORITY)
-**File:** `src/pages/Dashboard/index.tsx`
-**Untranslated Elements:**
-- StatCard titles: "Characters", "Locations", "Items", "Events", "Sessions", "Notes", "Campaigns", "RPG Worlds"
-- Tab labels: "All", "Characters", "World Elements", "Narrative"
-- Type breakdown labels: "Player Characters", "Non-Player Characters"
-- Loading states and error messages
+-   **Polish (pl):**
+    -   Files (`common.json`, `entities.json`, `ui.json`) were copied from the more complete versions previously in `src/i18n/locales/`.
+    -   **Status: Assumed to be relatively complete (pending human review for quality and 100% coverage against current English keys).**
 
-#### 2. Character Pages (HIGH PRIORITY)
-**Files:** `src/pages/characters/*`, `src/components/characters/*`
-**Untranslated Elements:**
-- Page titles: "World Characters", "All Characters", "Create New Character"
-- Subtitles: "Characters in this RPG world", "Characters across all RPG worlds"
-- Button labels: "Back to Character", "Edit", "Delete"
-- Form field labels and placeholders
-- Character type indicators: "PC", "NPC"
+-   **Spanish (es):**
+    -   `common.json`: Highly incomplete. Missing many general application messages, status indicators, time/unit translations, and validation messages.
+    -   `entities.json`: Highly incomplete. Only covers basic fields for Character, Location, and Item. Missing many generic entity terms, other entity types, actions, and messages.
+    -   `ui.json`: Highly incomplete. Appears to primarily cover the settings page UI, missing the vast majority of general UI elements.
+    -   **Status: Partial (Critically Incomplete).**
 
-#### 3. Location Pages (HIGH PRIORITY)
-**Files:** `src/pages/locations/*`, `src/components/locations/*`
-**Untranslated Elements:**
-- Page titles: "World Locations", "All Locations", "Create New Location"
-- Subtitles: "Locations in this RPG world"
-- Button labels: "Back to Location", "Update Location"
-- Form validation messages
+-   **French (fr):**
+    -   `common.json`: Highly incomplete. Similar gaps to Spanish.
+    -   `entities.json`: Highly incomplete. Similar gaps to Spanish.
+    -   `ui.json`: Highly incomplete. Appears to primarily cover the settings page UI, similar to Spanish.
+    -   **Status: Partial (Critically Incomplete).**
 
-#### 4. Common UI Components (MEDIUM PRIORITY)
-**Files:** Various component files
-**Untranslated Elements:**
-- View mode toggles: "Grid", "Table", "Article"
-- Action buttons: "View All", "Create New", "Update", "Create"
-- Loading messages: "Loading...", "Loading characters..."
-- Error messages: "Error Loading", "Failed to load", "Retry"
-- Empty state messages: "No items found", "Create your first..."
+## 4. Identified Issues
 
-#### 5. Entity Management (MEDIUM PRIORITY)
-**Files:** Entity list and detail components
-**Untranslated Elements:**
-- Table column headers
-- Filter and sort options
-- Bulk action labels
-- Relationship indicators
-- Status badges
+### 4.1. Incomplete Translations for Spanish and French
+-   As detailed above, the `es` and `fr` languages lack a significant number of translations across all namespaces. This will result in a mixed-language experience for users selecting these languages.
 
-## 📋 **DETAILED IMPLEMENTATION PLAN**
+### 4.2. Dysfunctional Language Settings for Transcription and AI Languages
+-   The `LanguageSettings.tsx` component:
+    -   Uses mock, hardcoded lists of languages for Transcription and AI features, not necessarily reflecting actually supported or configured languages.
+    -   Does not load the currently saved preferences for `transcriptionLanguage` and `aiLanguage` from `LanguageContext` or `localStorage`.
+    -   Does not save changes to `transcriptionLanguage` and `aiLanguage` to `LanguageContext` or `localStorage`. The "Save" functionality is a stub.
 
-### Phase 1: Critical Dashboard Updates (IMMEDIATE)
-1. **Update Dashboard StatCard titles** to use translation keys
-2. **Implement tab label translations** for dashboard tabs
-3. **Add loading and error message translations**
-4. **Update type breakdown labels** for character statistics
+### 4.3. Potential for Missing Keys in Polish
+-   While Polish files were consolidated from what appeared to be more complete versions, a formal key-by-key comparison against the current English files was not performed by this audit. Missing keys might exist.
 
-### Phase 2: Page-Level Translations (SHORT-TERM)
-1. **Characters pages** - Update all page titles, subtitles, and button labels
-2. **Locations pages** - Implement complete translation coverage
-3. **Items pages** - Add missing translation keys
-4. **Sessions pages** - Update form labels and messages
+## 5. Recommendations for Improvement
 
-### Phase 3: Component-Level Translations (MEDIUM-TERM)
-1. **Form components** - Translate all field labels and validation messages
-2. **Modal dialogs** - Update dialog titles and button text
-3. **Table components** - Translate column headers and actions
-4. **Empty states** - Implement translated empty state messages
+### 5.1. Complete Missing Translations (High Priority)
+-   **Action:** Prioritize the complete translation of all English keys into Spanish and French for all namespaces (`common.json`, `entities.json`, `ui.json`).
+-   **Suggestion:** Engage professional translators or community members fluent in these languages to ensure high-quality and accurate translations.
 
-### Phase 4: Advanced Features (LONG-TERM)
-1. **Error handling** - Comprehensive error message translations
-2. **Notifications** - Toast and alert message translations
-3. **Tooltips** - All interactive element tooltips
-4. **Date/time formatting** - Polish locale formatting
+### 5.2. Fix Language Settings Functionality (High Priority)
+-   **Action:** Refactor `LanguageSettings.tsx`:
+    1.  Replace mock language lists for Transcription and AI with appropriate sources (e.g., `supportedLanguages` from i18n config, dedicated configs, or backend data).
+    2.  Integrate fully with `LanguageContext`:
+        -   Use the `useLanguage()` hook to read `transcriptionLanguage`, `aiLanguage`, and their respective setters.
+        -   Initialize component state with these context values.
+        -   Ensure the "Save" button (or on-change handlers) use the context setters to persist changes, which will also update `localStorage`.
+    3.  Verify and correct the import path for the `LanguageSelector` component if necessary.
 
-## 🎯 **TRANSLATION KEY PATTERNS**
+### 5.3. Implement Translation Management & Validation (Medium Priority)
+-   **Action:** Develop or integrate tools/scripts to:
+    -   Automatically compare translation keys between English (primary) and other supported languages to identify missing or orphaned keys.
+    -   Validate JSON file syntax.
+-   **Suggestion:** For long-term maintenance and scalability, consider adopting a dedicated translation management platform (e.g., Lokalise, Weblate, Crowdin).
 
-### Established Namespace Structure:
-- **ui:** - Interface elements, navigation, page titles
-- **common:** - Shared buttons, actions, validation messages
-- **entities:** - Entity-specific terminology and fields
+### 5.4. Verify Polish Translation Completeness (Medium Priority)
+-   **Action:** Perform a key-by-key comparison of Polish translation files against the English master files to identify and address any missing translations.
 
-### Recommended Key Naming Convention:
-```
-ui:pages.{pageName}.{element}
-ui:components.{componentName}.{element}
-common:buttons.{action}
-common:messages.{type}
-entities:{entityType}.{field}
-```
+### 5.5. Test All Languages and Configurations (Medium Priority)
+-   **Action:** Thoroughly test the language switching functionality for all supported languages (`en`, `pl`, `es`, `fr`).
+-   **Action:** Verify that all translation namespaces load correctly and that there are no console errors related to missing files or misconfigurations.
 
-## 🚀 **IMMEDIATE NEXT STEPS**
+### 5.6. Review `LanguageSelector.tsx` `useEffect` (Low Priority)
+-   **Action:** Briefly review the `useEffect` hook in `LanguageSelector.tsx` responsible for setting the initial language state to ensure it behaves as expected under all conditions and aligns with React best practices for handling external state changes.
 
-### 1. Complete Dashboard Translation (1-2 hours)
-- Update all StatCard title props to use `t('ui:navigation.{entityType}')`
-- Replace hardcoded tab labels with `t('ui:dashboard.tabs.{tabName}')`
-- Implement loading and error message translations
+## 6. Conclusion
 
-### 2. Update Character Pages (2-3 hours)
-- Add comprehensive character page translations to ui.json
-- Update CharacterListPage and CharacterDetailPage components
-- Implement form field translations
+The application has a solid foundation for multi-language support using `i18next`. Key structural improvements have been made during this audit, such as consolidating translation file sources and standardizing configurations.
 
-### 3. Systematic Component Updates (3-4 hours)
-- Create translation mapping for all common UI elements
-- Update shared components to use translation hooks
-- Test translation switching across all updated components
-
-## 📊 **CURRENT TRANSLATION COVERAGE**
-
-| Component Category | Coverage | Status |
-|-------------------|----------|---------|
-| **Navigation & Layout** | 85% | ✅ Mostly Complete |
-| **Settings Pages** | 95% | ✅ Complete |
-| **Dashboard** | 20% | 🔄 In Progress |
-| **Character Pages** | 15% | ❌ Needs Work |
-| **Location Pages** | 15% | ❌ Needs Work |
-| **Form Components** | 10% | ❌ Needs Work |
-| **Error Messages** | 25% | ❌ Needs Work |
-| **Modal Dialogs** | 5% | ❌ Needs Work |
-
-## 🎯 **SUCCESS METRICS**
-
-### Target: 100% Polish Translation Coverage
-- **Current Status:** ~35% complete
-- **Immediate Goal:** 60% complete (Dashboard + Character pages)
-- **Short-term Goal:** 85% complete (All major pages)
-- **Final Goal:** 100% complete (All UI elements)
-
-## 🔧 **TECHNICAL RECOMMENDATIONS**
-
-1. **Implement translation validation** - Add automated checks for missing translation keys
-2. **Create translation helper utilities** - Standardize translation key generation
-3. **Add fallback mechanisms** - Graceful degradation when translations are missing
-4. **Implement context-aware translations** - Handle pluralization and gender in Polish
-5. **Add translation testing** - Automated tests to verify translation coverage
-
-This audit provides a comprehensive roadmap for achieving complete Polish translation coverage in the RPG Scribe application.
+The most critical areas for immediate attention are the completion of Spanish and French translations and the rectification of the `LanguageSettings.tsx` component to ensure all language preferences are manageable and persistent. Implementing robust translation management practices will further enhance the quality and maintainability of the internationalization features.

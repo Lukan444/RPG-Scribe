@@ -3,19 +3,12 @@ import { initReactI18next } from 'react-i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
 import Backend from 'i18next-http-backend';
 
-// Import translation files
-import enCommon from './locales/en/common.json';
-import enEntities from './locales/en/entities.json';
-import enUI from './locales/en/ui.json';
-
-import plCommon from './locales/pl/common.json';
-import plEntities from './locales/pl/entities.json';
-import plUI from './locales/pl/ui.json';
-
 // Define supported languages
 export const supportedLanguages = [
   { code: 'en', name: 'English', nativeName: 'English' },
-  { code: 'pl', name: 'Polish', nativeName: 'Polski' }
+  { code: 'pl', name: 'Polish', nativeName: 'Polski' },
+  { code: 'es', name: 'Spanish', nativeName: 'Español' },
+  { code: 'fr', name: 'French', nativeName: 'Français' }
 ] as const;
 
 export type SupportedLanguage = typeof supportedLanguages[number]['code'];
@@ -23,20 +16,6 @@ export type SupportedLanguage = typeof supportedLanguages[number]['code'];
 // Define namespaces
 export const namespaces = ['common', 'entities', 'ui'] as const;
 export type Namespace = typeof namespaces[number];
-
-// Translation resources
-const resources = {
-  en: {
-    common: enCommon,
-    entities: enEntities,
-    ui: enUI
-  },
-  pl: {
-    common: plCommon,
-    entities: plEntities,
-    ui: plUI
-  }
-};
 
 // Initialize i18next
 i18n
@@ -52,9 +31,6 @@ i18n
     // Namespace settings
     defaultNS: 'common',
     ns: namespaces,
-
-    // Resources
-    resources,
 
     // Detection options
     detection: {
