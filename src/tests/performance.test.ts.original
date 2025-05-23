@@ -1,0 +1,257 @@
+import { 
+  collection, 
+  getDocs, 
+  query, 
+  where, 
+  orderBy, 
+  limit, 
+  doc, 
+  getDoc,
+  writeBatch,
+  serverTimestamp
+} from 'firebase/firestore';
+import { db } from '../firebase/config';
+import { CachingService } from '../services/caching.service';
+import { QueryOptimizationService } from '../services/queryOptimization.service';
+import { BatchOperationsService } from '../services/batchOperations.service';
+
+/**
+ * Performance test suite
+ */
+describe('Performance Tests', () => {
+  // Set up test data
+  const testCampaignId = 'performance-test-campaign';
+  const testUserId = 'performance-test-user';
+  const cachingService = new CachingService();
+  const queryOptimizationService = new QueryOptimizationService();
+  const batchOperationsService = new BatchOperationsService();
+  
+  // Clean up test data after tests
+  afterAll(async () => {
+    // Delete test data
+    const batch = writeBatch(db);
+    
+    // Delete test campaign
+    batch.delete(doc(db, `campaigns/${testCampaignId}`));
+    
+    // Delete test characters
+    const charactersSnapshot = await getDocs(collection(db, `campaigns/${testCampaignId}/characters`));
+    charactersSnapshot.forEach(doc => {
+      batch.delete(doc.ref);
+    });
+    
+    // Delete test locations
+    const locationsSnapshot = await getDocs(collection(db, `campaigns/${testCampaignId}/locations`));
+    locationsSnapshot.forEach(doc => {
+      batch.delete(doc.ref);
+    });
+    
+    // Delete test relationships
+    const relationshipsSnapshot = await getDocs(collection(db, `campaigns/${testCampaignId}/relationships`));
+    relationshipsSnapshot.forEach(doc => {
+      batch.delete(doc.ref);
+    });
+    
+    await batch.commit();
+  });
+  
+  // Test query performance
+  describe('Query Performance', () => {
+    it('measures performance of simple queries', async () => {
+      // Create test data
+      const batch = writeBatch(db);
+      
+      // Create test campaign
+      batch.set(doc(db, `campaigns/${testCampaignId}`), {
+        name: 'Performance Test Campaign',
+        description: 'Campaign for performance testing',
+        createdBy: testUserId,
+        isPublic: false,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      });
+      
+      // Create test characters
+      for (let i = 0; i < 10; i++) {
+        batch.set(doc(db, `campaigns/${testCampaignId}/characters`, `character-${i}`), {
+          name: `Character ${i}`,
+          type: i % 2 === 0 ? 'PC' : 'NPC',
+          createdBy: testUserId,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        });
+      }
+      
+      await batch.commit();
+      
+      // Measure query performance
+      const startTime = performance.now();
+      
+      const charactersQuery = query(
+        collection(db, `campaigns/${testCampaignId}/characters`),
+        where('type', '==', 'PC'),
+        orderBy('name', 'asc')
+      );
+      
+      const querySnapshot = await getDocs(charactersQuery);
+      
+      const endTime = performance.now();
+      const queryTime = endTime - startTime;
+      
+      console.log(`Simple query time: ${queryTime}ms`);
+      console.log(`Query returned ${querySnapshot.size} documents`);
+      
+      expect(querySnapshot.size).toBe(5);
+      expect(queryTime).toBeLessThan(1000); // Query should take less than 1 second
+    });
+    
+    it('compares performance with and without caching', async () => {
+      // Create test data
+      const batch = writeBatch(db);
+      
+      // Create test locations
+      for (let i = 0; i < 10; i++) {
+        batch.set(doc(db, `campaigns/${testCampaignId}/locations`, `location-${i}`), {
+          name: `Location ${i}`,
+          type: i % 3 === 0 ? 'city' : i % 3 === 1 ? 'dungeon' : 'wilderness',
+          createdBy: testUserId,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        });
+      }
+      
+      await batch.commit();
+      
+      // Measure query performance without caching
+      const startTimeWithoutCache = performance.now();
+      
+      const locationsQuery = query(
+        collection(db, `campaigns/${testCampaignId}/locations`),
+        where('type', '==', 'city'),
+        orderBy('name', 'asc')
+      );
+      
+      const querySnapshot = await getDocs(locationsQuery);
+      
+      const endTimeWithoutCache = performance.now();
+      const queryTimeWithoutCache = endTimeWithoutCache - startTimeWithoutCache;
+      
+      console.log(`Query time without cache: ${queryTimeWithoutCache}ms`);
+      console.log(`Query returned ${querySnapshot.size} documents`);
+      
+      // Measure query performance with caching
+      const cacheKey = `campaigns/${testCampaignId}/locations/type=city`;
+      
+      const startTimeWithCache = performance.now();
+      
+      const cachedData = await cachingService.getOrSet(
+        cacheKey,
+        async () => {
+          const locationsQuery = query(
+            collection(db, `campaigns/${testCampaignId}/locations`),
+            where('type', '==', 'city'),
+            orderBy('name', 'asc')
+          );
+          
+          const querySnapshot = await getDocs(locationsQuery);
+          
+          const data: any[] = [];
+          querySnapshot.forEach(doc => {
+            data.push({
+              id: doc.id,
+              ...doc.data()
+            });
+          });
+          
+          return data;
+        }
+      );
+      
+      const endTimeWithCache = performance.now();
+      const queryTimeWithCache = endTimeWithCache - startTimeWithCache;
+      
+      console.log(`Query time with cache: ${queryTimeWithCache}ms`);
+      console.log(`Cached data has ${cachedData.length} documents`);
+      
+      // Second query with cache should be much faster
+      const startTimeWithCacheAgain = performance.now();
+      
+      const cachedDataAgain = await cachingService.getOrSet(
+        cacheKey,
+        async () => {
+          const locationsQuery = query(
+            collection(db, `campaigns/${testCampaignId}/locations`),
+            where('type', '==', 'city'),
+            orderBy('name', 'asc')
+          );
+          
+          const querySnapshot = await getDocs(locationsQuery);
+          
+          const data: any[] = [];
+          querySnapshot.forEach(doc => {
+            data.push({
+              id: doc.id,
+              ...doc.data()
+            });
+          });
+          
+          return data;
+        }
+      );
+      
+      const endTimeWithCacheAgain = performance.now();
+      const queryTimeWithCacheAgain = endTimeWithCacheAgain - startTimeWithCacheAgain;
+      
+      console.log(`Query time with cache (second time): ${queryTimeWithCacheAgain}ms`);
+      
+      expect(cachedData.length).toBe(querySnapshot.size);
+      expect(cachedDataAgain.length).toBe(querySnapshot.size);
+      expect(queryTimeWithCacheAgain).toBeLessThan(queryTimeWithoutCache);
+    });
+  });
+  
+  // Test batch operations performance
+  describe('Batch Operations Performance', () => {
+    it('measures performance of batch operations', async () => {
+      // Measure batch write performance
+      const startTime = performance.now();
+      
+      const operations = [];
+      
+      // Create test relationships
+      for (let i = 0; i < 10; i++) {
+        for (let j = 0; j < 10; j++) {
+          if (i !== j) {
+            operations.push({
+              type: 'create' as const,
+              collectionPath: `campaigns/${testCampaignId}/relationships`,
+              data: {
+                type: 'character-character',
+                subtype: 'friend',
+                sourceId: `character-${i}`,
+                sourceType: 'character',
+                targetId: `character-${j}`,
+                targetType: 'character',
+                properties: {
+                  strength: Math.floor(Math.random() * 10) + 1
+                },
+                createdBy: testUserId
+              }
+            });
+          }
+        }
+      }
+      
+      const success = await batchOperationsService.executeBatch(operations);
+      
+      const endTime = performance.now();
+      const batchTime = endTime - startTime;
+      
+      console.log(`Batch operation time: ${batchTime}ms`);
+      console.log(`Batch operation ${success ? 'succeeded' : 'failed'}`);
+      
+      expect(success).toBe(true);
+      expect(batchTime).toBeLessThan(5000); // Batch should take less than 5 seconds
+    });
+  });
+});

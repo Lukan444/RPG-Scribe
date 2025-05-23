@@ -1,0 +1,95 @@
+.header {
+  padding-bottom: var(--mantine-spacing-md);
+  margin-bottom: calc(var(--mantine-spacing-md) * 1.5);
+  border-bottom: 1px solid var(--mantine-color-dark-4);
+}
+
+.footer {
+  padding-top: var(--mantine-spacing-md);
+  margin-top: var(--mantine-spacing-md);
+  border-top: 1px solid var(--mantine-color-dark-4);
+}
+
+.link {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  font-size: var(--mantine-font-size-sm);
+  color: var(--mantine-color-white);
+  padding: var(--mantine-spacing-xs) var(--mantine-spacing-sm);
+  border-radius: var(--mantine-radius-sm);
+  font-weight: 500;
+  transition: background-color 200ms ease, color 200ms ease;
+}
+
+.link:hover {
+  background-color: var(--mantine-color-dark-5);
+  color: var(--mantine-color-white);
+}
+
+.link[data-active],
+.link[data-active]:hover {
+  background-color: var(--mantine-color-teal-filled);
+  color: var(--mantine-color-white);
+}
+
+.control {
+  font-weight: 500;
+  display: block;
+  width: 100%;
+  padding: var(--mantine-spacing-xs) var(--mantine-spacing-md);
+  color: var(--mantine-color-white);
+  font-size: var(--mantine-font-size-sm);
+  border-radius: var(--mantine-radius-sm);
+  transition: background-color 200ms ease, color 200ms ease, transform 200ms ease;
+}
+
+.control:hover {
+  background-color: var(--mantine-color-dark-5);
+  color: var(--mantine-color-white);
+}
+
+.control[data-active],
+.control[data-active]:hover {
+  background-color: var(--mantine-color-dark-5);
+  color: var(--mantine-color-white);
+}
+
+.chevron {
+  transition: transform 200ms ease;
+}
+
+.links {
+  margin-bottom: var(--mantine-spacing-md);
+}
+
+.version {
+  background-color: var(--mantine-color-dark-6);
+  color: var(--mantine-color-white);
+}
+
+/* Mobile styles */
+@media (max-width: 768px) {
+  .header {
+    padding-bottom: var(--mantine-spacing-sm);
+    margin-bottom: var(--mantine-spacing-sm);
+  }
+
+  .control {
+    padding: var(--mantine-spacing-xs) var(--mantine-spacing-sm);
+  }
+
+  .link {
+    padding: var(--mantine-spacing-xs) var(--mantine-spacing-xs);
+  }
+}
+
+/* Animation for collapsible sections */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.links > div > div {
+  animation: fadeIn 200ms ease;
+}

@@ -1,0 +1,53 @@
+{
+  "app": {
+    "name": "RPG Scribe",
+    "tagline": "Your digital companion for tabletop RPGs"
+  },
+  "navigation": {
+    "dashboard": "Dashboard",
+    "worlds": "RPG Worlds",
+    "characters": "Characters",
+    "locations": "Locations",
+    "items": "Items",
+    "events": "Events",
+    "notes": "Notes",
+    "settings": "Settings"
+  },
+  "actions": {
+    "create": "Create",
+    "edit": "Edit",
+    "delete": "Delete",
+    "save": "Save",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "search": "Search",
+    "filter": "Filter",
+    "sort": "Sort",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous"
+  },
+  "auth": {
+    "signIn": "Sign In",
+    "signOut": "Sign Out",
+    "signUp": "Sign Up",
+    "email": "Email",
+    "password": "Password",
+    "forgotPassword": "Forgot Password?",
+    "googleSignIn": "Sign in with Google",
+    "createAccount": "Create an Account"
+  },
+  "errors": {
+    "generic": "An error occurred",
+    "notFound": "Not found",
+    "unauthorized": "Unauthorized access",
+    "validation": "Please check your input",
+    "networkError": "Network error, please try again"
+  },
+  "language": {
+    "select": "Select Language",
+    "en": "English",
+    "es": "Spanish",
+    "fr": "French"
+  }
+}

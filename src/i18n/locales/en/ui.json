@@ -1,0 +1,369 @@
+{
+  "app": {
+    "name": "RPG Scribe",
+    "tagline": "Your Ultimate RPG Campaign Manager",
+    "description": "Organize, manage, and enhance your tabletop RPG campaigns with powerful tools for world-building, character management, and storytelling.",
+    "version": "Version {{version}}",
+    "loading": "Loading RPG Scribe...",
+    "error": "Application Error",
+    "offline": "You are currently offline",
+    "online": "Connection restored"
+  },
+  "navigation": {
+    "dashboard": "Dashboard",
+    "worlds": "RPG Worlds",
+    "campaigns": "Campaigns",
+    "characters": "Characters",
+    "locations": "Locations",
+    "items": "Items",
+    "events": "Events",
+    "factions": "Factions",
+    "storyArcs": "Story Arcs",
+    "notes": "Notes",
+    "sessions": "Sessions",
+    "visualizations": "Visualizations",
+    "mindMap": "Mind Map",
+    "timeline": "Timeline",
+    "relationshipWeb": "Relationship Web",
+    "entityManager": "Entity Manager",
+    "aiTools": "AI Tools",
+    "settings": "Settings",
+    "profile": "Profile",
+    "help": "Help",
+    "about": "About"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "subtitle": "Welcome to RPG Scribe",
+    "recentActivity": "Recent Activity",
+    "quickActions": "Quick Actions",
+    "statistics": "Statistics",
+    "worldOverview": "World Overview",
+    "campaignProgress": "Campaign Progress",
+    "upcomingSessions": "Upcoming Sessions",
+    "recentNotes": "Recent Notes",
+    "entityCounts": "Entity Counts",
+    "noActivity": "No recent activity",
+    "noWorlds": "No worlds created yet",
+    "noCampaigns": "No campaigns created yet",
+    "createFirstWorld": "Create your first RPG world",
+    "createFirstCampaign": "Create your first campaign",
+    "welcomeMessage": "Welcome to RPG Scribe! Start by creating your first RPG world or campaign."
+  },
+  "forms": {
+    "labels": {
+      "name": "Name",
+      "title": "Title",
+      "description": "Description",
+      "type": "Type",
+      "category": "Category",
+      "tags": "Tags",
+      "image": "Image",
+      "notes": "Notes",
+      "secretNotes": "Secret Notes (GM Only)",
+      "publicNotes": "Public Notes",
+      "relationships": "Relationships",
+      "properties": "Properties",
+      "metadata": "Metadata"
+    },
+    "placeholders": {
+      "enterName": "Enter name",
+      "enterTitle": "Enter title",
+      "enterDescription": "Enter description",
+      "selectType": "Select type",
+      "selectCategory": "Select category",
+      "addTags": "Add tags",
+      "uploadImage": "Upload image",
+      "addNotes": "Add notes",
+      "searchEntities": "Search entities",
+      "selectEntity": "Select entity",
+      "selectEntities": "Select entities"
+    },
+    "validation": {
+      "nameRequired": "Name is required",
+      "titleRequired": "Title is required",
+      "descriptionRequired": "Description is required",
+      "typeRequired": "Type is required",
+      "categoryRequired": "Category is required",
+      "invalidEmail": "Please enter a valid email address",
+      "passwordTooShort": "Password must be at least 8 characters",
+      "passwordsDoNotMatch": "Passwords do not match",
+      "fileTooLarge": "File is too large (max {{maxSize}})",
+      "invalidFileType": "Invalid file type (allowed: {{allowedTypes}})"
+    },
+    "tabs": {
+      "basic": "Basic Info",
+      "details": "Details",
+      "relationships": "Relationships",
+      "advanced": "Advanced",
+      "secrets": "GM Secrets",
+      "notes": "Notes",
+      "properties": "Properties",
+      "metadata": "Metadata",
+      "history": "History",
+      "permissions": "Permissions"
+    }
+  },
+  "lists": {
+    "viewModes": {
+      "table": "Table View",
+      "grid": "Grid View",
+      "list": "List View",
+      "cards": "Card View"
+    },
+    "sorting": {
+      "sortBy": "Sort by",
+      "ascending": "Ascending",
+      "descending": "Descending",
+      "name": "Name",
+      "dateCreated": "Date Created",
+      "dateUpdated": "Date Updated",
+      "type": "Type",
+      "category": "Category"
+    },
+    "filtering": {
+      "filterBy": "Filter by",
+      "all": "All",
+      "type": "Type",
+      "category": "Category",
+      "tags": "Tags",
+      "status": "Status",
+      "clearFilters": "Clear Filters",
+      "showFilters": "Show Filters",
+      "hideFilters": "Hide Filters"
+    },
+    "search": {
+      "searchPlaceholder": "Search...",
+      "searchResults": "Search Results",
+      "noResults": "No results found",
+      "searchIn": "Search in {{entityType}}",
+      "advancedSearch": "Advanced Search",
+      "clearSearch": "Clear Search"
+    },
+    "pagination": {
+      "page": "Page",
+      "of": "of",
+      "itemsPerPage": "Items per page",
+      "showing": "Showing {{start}} to {{end}} of {{total}} items",
+      "first": "First",
+      "previous": "Previous",
+      "next": "Next",
+      "last": "Last"
+    },
+    "selection": {
+      "selectAll": "Select All",
+      "selectNone": "Select None",
+      "selected": "{{count}} selected",
+      "bulkActions": "Bulk Actions",
+      "deleteSelected": "Delete Selected",
+      "exportSelected": "Export Selected",
+      "archiveSelected": "Archive Selected"
+    },
+    "empty": {
+      "noItems": "No items found",
+      "noItemsDescription": "There are no {{entityType}} to display.",
+      "createFirst": "Create your first {{entityType}}",
+      "getStarted": "Get started by creating a new {{entityType}}."
+    }
+  },
+  "modals": {
+    "titles": {
+      "create": "Create {{entityType}}",
+      "edit": "Edit {{entityType}}",
+      "view": "View {{entityType}}",
+      "delete": "Delete {{entityType}}",
+      "confirm": "Confirm Action",
+      "settings": "Settings",
+      "help": "Help",
+      "about": "About"
+    },
+    "buttons": {
+      "save": "Save",
+      "saveAndClose": "Save & Close",
+      "saveAndNew": "Save & New",
+      "cancel": "Cancel",
+      "close": "Close",
+      "delete": "Delete",
+      "confirm": "Confirm",
+      "yes": "Yes",
+      "no": "No",
+      "ok": "OK"
+    }
+  },
+  "notifications": {
+    "success": {
+      "saved": "Changes saved successfully",
+      "created": "{{entityType}} created successfully",
+      "updated": "{{entityType}} updated successfully",
+      "deleted": "{{entityType}} deleted successfully",
+      "imported": "Data imported successfully",
+      "exported": "Data exported successfully"
+    },
+    "error": {
+      "saveFailed": "Failed to save changes",
+      "loadFailed": "Failed to load data",
+      "deleteFailed": "Failed to delete {{entityType}}",
+      "networkError": "Network error occurred",
+      "permissionDenied": "Permission denied",
+      "sessionExpired": "Session expired"
+    },
+    "warning": {
+      "unsavedChanges": "You have unsaved changes",
+      "confirmDelete": "This action cannot be undone",
+      "sessionExpiring": "Your session will expire soon"
+    },
+    "info": {
+      "autoSaved": "Changes auto-saved",
+      "syncComplete": "Synchronization complete",
+      "updateAvailable": "Update available"
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "categories": {
+      "general": "General",
+      "appearance": "Appearance",
+      "language": "Language",
+      "notifications": "Notifications",
+      "privacy": "Privacy",
+      "advanced": "Advanced",
+      "account": "Account",
+      "billing": "Billing",
+      "integrations": "Integrations"
+    },
+    "language": {
+      "title": "Language Settings",
+      "uiLanguage": "Interface Language",
+      "transcriptionLanguage": "Transcription Language",
+      "aiLanguage": "AI Communication Language",
+      "description": "Choose your preferred languages for different features",
+      "uiDescription": "Language for menus, buttons, and interface elements",
+      "transcriptionDescription": "Language for speech-to-text transcription",
+      "aiDescription": "Language for AI assistant communication"
+    },
+    "appearance": {
+      "title": "Appearance",
+      "theme": "Theme",
+      "colorScheme": "Color Scheme",
+      "fontSize": "Font Size",
+      "density": "Interface Density",
+      "animations": "Animations",
+      "light": "Light",
+      "dark": "Dark",
+      "auto": "Auto",
+      "small": "Small",
+      "medium": "Medium",
+      "large": "Large",
+      "compact": "Compact",
+      "comfortable": "Comfortable",
+      "spacious": "Spacious",
+      "enabled": "Enabled",
+      "disabled": "Disabled"
+    }
+  },
+  "help": {
+    "title": "Help & Support",
+    "gettingStarted": "Getting Started",
+    "userGuide": "User Guide",
+    "tutorials": "Tutorials",
+    "faq": "Frequently Asked Questions",
+    "shortcuts": "Keyboard Shortcuts",
+    "support": "Contact Support",
+    "documentation": "Documentation",
+    "community": "Community",
+    "feedback": "Send Feedback",
+    "reportBug": "Report a Bug",
+    "requestFeature": "Request a Feature"
+  },
+  "entityManagement": {
+    "entityManager": "Entity Manager",
+    "entityManagerDescription": "Centralized management for all entity types in your RPG campaigns and worlds.",
+    "allEntities": "All Entities",
+    "allEntityTypes": "All Entity Types",
+    "allEntityTypesDescription": "View and manage all entity types in your RPG campaigns and worlds.",
+    "character": "Character",
+    "location": "Location",
+    "item": "Item",
+    "event": "Event",
+    "session": "Session",
+    "faction": "Faction",
+    "storyArc": "Story Arc",
+    "campaign": "Campaign",
+    "rpgWorld": "RPG World",
+    "note": "Note",
+    "viewAll": "View All",
+    "createNew": "Create New",
+    "manageCharacterEntities": "Manage character entities including creation, editing, and viewing details.",
+    "manageLocationEntities": "Manage location entities including creation, editing, and viewing details.",
+    "manageItemEntities": "Manage item entities including creation, editing, and viewing details.",
+    "manageEventEntities": "Manage event entities including creation, editing, and viewing details.",
+    "manageSessionEntities": "Manage session entities including creation, editing, and viewing details.",
+    "manageFactionEntities": "Manage faction entities including creation, editing, and viewing details.",
+    "manageStoryArcEntities": "Manage story arc entities including creation, editing, and viewing details.",
+    "manageCampaignEntities": "Manage campaign entities including creation, editing, and viewing details.",
+    "manageRpgWorldEntities": "Manage RPG world entities including creation, editing, and viewing details.",
+    "manageNoteEntities": "Manage note entities including creation, editing, and viewing details."
+  },
+  "modals": {
+    "titles": {
+      "confirm": "Confirm Action",
+      "delete": "Delete Item",
+      "deleteCharacter": "Delete Character",
+      "edit": "Edit Item",
+      "create": "Create New Item",
+      "settings": "Settings"
+    },
+    "buttons": {
+      "confirm": "Confirm",
+      "cancel": "Cancel",
+      "save": "Save",
+      "delete": "Delete",
+      "edit": "Edit",
+      "create": "Create",
+      "close": "Close"
+    }
+  },
+  "buttons": {
+    "edit": "Edit",
+    "delete": "Delete",
+    "save": "Save",
+    "cancel": "Cancel",
+    "create": "Create",
+    "view": "View",
+    "manage": "Manage"
+  },
+  "tabs": {
+    "overview": "Overview",
+    "inventory": "Inventory",
+    "relationships": "Relationships",
+    "notes": "Notes",
+    "stats": "Stats",
+    "background": "Background"
+  },
+  "errors": {
+    "characterNotFound": "Character Not Found",
+    "itemNotFound": "Item Not Found",
+    "locationNotFound": "Location Not Found",
+    "campaignNotFound": "Campaign Not Found",
+    "worldNotFound": "World Not Found",
+    "accessDenied": "Access Denied",
+    "loadingError": "Loading Error",
+    "savingError": "Saving Error"
+  },
+  "navigation": {
+    "backToCharacters": "Back to Characters",
+    "backToCampaigns": "Back to Campaigns",
+    "backToWorlds": "Back to Worlds",
+    "backToItems": "Back to Items",
+    "backToLocations": "Back to Locations"
+  },
+  "emptyStates": {
+    "noItems": "No items in inventory",
+    "noRelationships": "No relationships found",
+    "noNotes": "No notes available",
+    "noStats": "No stats available",
+    "noCharacters": "No characters found",
+    "noCampaigns": "No campaigns found",
+    "noWorlds": "No worlds found"
+  }
+}

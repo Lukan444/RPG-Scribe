@@ -1,0 +1,644 @@
+{
+  "app": {
+    "name": "RPG Scribe",
+    "tagline": "Twój Ostateczny Menedżer Kampanii RPG",
+    "description": "Organizuj, zarządzaj i ulepszaj swoje kampanie RPG za pomocą potężnych narzędzi do budowania świata, zarządzania postaciami i opowiadania historii.",
+    "version": "Wersja {{version}}",
+    "loading": "Ładowanie RPG Scribe...",
+    "error": "Błąd aplikacji",
+    "offline": "Jesteś obecnie offline",
+    "online": "Połączenie przywrócone"
+  },
+  "navigation": {
+    "dashboard": "Panel główny",
+    "worlds": "Światy RPG",
+    "campaigns": "Kampanie",
+    "characters": "Postacie",
+    "locations": "Lokacje",
+    "items": "Przedmioty",
+    "events": "Wydarzenia",
+    "factions": "Frakcje",
+    "storyArcs": "Wątki fabularne",
+    "notes": "Notatki",
+    "sessions": "Sesje",
+    "visualizations": "Wizualizacje",
+    "mindMap": "Mapa myśli",
+    "timeline": "Oś czasu",
+    "relationshipWeb": "Sieć relacji",
+    "entityManager": "Menedżer encji",
+    "aiTools": "Narzędzia AI",
+    "settings": "Ustawienia",
+    "profile": "Profil",
+    "help": "Pomoc",
+    "about": "O aplikacji",
+    "expandMenu": "Rozwiń menu",
+    "collapseMenu": "Zwiń menu",
+    "admin": "Administrator",
+    "gameContent": "Zawartość gry",
+    "charactersAndNpcs": "Postacie i BN",
+    "worldElements": "Elementy świata",
+    "narrative": "Narracja",
+    "visualization": "Wizualizacja",
+    "tools": "Narzędzia",
+    "aiBrain": "Mózg AI",
+    "livePlay": "Gra na żywo",
+    "mediaLibrary": "Biblioteka mediów",
+    "createInteractiveMindMaps": "Twórz interaktywne mapy myśli",
+    "viewCampaignEventsChronologically": "Zobacz wydarzenia kampanii chronologicznie",
+    "visualizeCharacterRelationships": "Wizualizuj relacje postaci",
+    "accessTheAiAssistant": "Dostęp do asystenta AI",
+    "toolsForRunningLiveGameSessions": "Narzędzia do prowadzenia sesji na żywo",
+    "manageMediaFilesForCampaigns": "Zarządzaj plikami mediów dla kampanii"
+  },
+  "dashboard": {
+    "title": "Panel główny",
+    "subtitle": "Witaj w RPG Scribe",
+    "recentActivity": "Ostatnia aktywność",
+    "quickActions": "Szybkie akcje",
+    "statistics": "Statystyki",
+    "worldOverview": "Przegląd świata",
+    "campaignProgress": "Postęp kampanii",
+    "upcomingSessions": "Nadchodzące sesje",
+    "recentNotes": "Ostatnie notatki",
+    "entityCounts": "Liczba encji",
+    "noActivity": "Brak ostatniej aktywności",
+    "noWorlds": "Nie utworzono jeszcze żadnych światów",
+    "noCampaigns": "Nie utworzono jeszcze żadnych kampanii",
+    "createFirstWorld": "Utwórz swój pierwszy świat RPG",
+    "createFirstCampaign": "Utwórz swoją pierwszą kampanię",
+    "welcomeMessage": "Witaj w RPG Scribe! Zacznij od utworzenia swojego pierwszego świata RPG lub kampanii.",
+    "tabs": {
+      "all": "Wszystkie",
+      "characters": "Postacie",
+      "world": "Elementy świata",
+      "narrative": "Narracja"
+    },
+    "entities": {
+      "characters": "Postacie",
+      "factions": "Frakcje",
+      "locations": "Lokacje",
+      "items": "Przedmioty",
+      "events": "Wydarzenia",
+      "sessions": "Sesje",
+      "storyArcs": "Wątki fabularne",
+      "notes": "Notatki",
+      "campaigns": "Kampanie",
+      "worlds": "Światy RPG"
+    },
+    "loading": {
+      "characters": "Ładowanie postaci...",
+      "locations": "Ładowanie lokacji...",
+      "items": "Ładowanie przedmiotów...",
+      "events": "Ładowanie wydarzeń...",
+      "sessions": "Ładowanie sesji...",
+      "notes": "Ładowanie notatek...",
+      "campaigns": "Ładowanie kampanii...",
+      "worlds": "Ładowanie światów...",
+      "factions": "Ładowanie frakcji...",
+      "storyArcs": "Ładowanie wątków fabularnych..."
+    },
+    "errors": {
+      "loadingCharacters": "Błąd ładowania postaci",
+      "loadingLocations": "Błąd ładowania lokacji",
+      "loadingItems": "Błąd ładowania przedmiotów",
+      "loadingEvents": "Błąd ładowania wydarzeń",
+      "loadingSessions": "Błąd ładowania sesji",
+      "loadingNotes": "Błąd ładowania notatek",
+      "loadingCampaigns": "Błąd ładowania kampanii",
+      "loadingWorlds": "Błąd ładowania światów",
+      "loadingFactions": "Błąd ładowania frakcji",
+      "loadingStoryArcs": "Błąd ładowania wątków fabularnych",
+      "retry": "Spróbuj ponownie",
+      "failedToLoad": "Nie udało się załadować danych. Spróbuj ponownie później."
+    }
+  },
+  "tooltips": {
+    "breakdown": "Podział:",
+    "playerCharacters": "Postacie graczy:",
+    "nonPlayerCharacters": "Postacie niezależne:",
+    "noUpdateInformation": "Brak informacji o aktualizacjach. Dodaj znaczniki czasu do swoich encji, aby śledzić zmiany.",
+    "recentlyAdded": "Ostatnio dodane:",
+    "createdUnknownDate": "Utworzono Nieznana data utworzenia",
+    "other": "INNE",
+    "moreRecentCharacters": "+{{count}} więcej ostatnich postaci",
+    "totalCharacters": "{{count}} postaci łącznie",
+    "invalidDate": "Nieprawidłowa data"
+  },
+  "relationships": {
+    "title": "Relacje postaci",
+    "relationshipsFor": "Relacje dla {{entityType}}",
+    "total": "Łącznie:",
+    "byEntityType": "Według typu encji:",
+    "byRelationshipType": "Według typu relacji:",
+    "characters": "Postacie:",
+    "locations": "Lokacje:",
+    "factions": "Frakcje:",
+    "items": "Przedmioty:",
+    "alliedWith": "Sojusznik z:",
+    "locatedAt": "Znajduje się w:",
+    "owns": "Posiada:",
+    "memberOf": "Członek:",
+    "noRelationshipsFound": "Nie znaleziono relacji",
+    "manageRelationships": "Zarządzaj relacjami"
+  },
+  "forms": {
+    "labels": {
+      "name": "Nazwa",
+      "title": "Tytuł",
+      "description": "Opis",
+      "type": "Typ",
+      "category": "Kategoria",
+      "tags": "Tagi",
+      "image": "Obraz",
+      "notes": "Notatki",
+      "secretNotes": "Tajne notatki (tylko MG)",
+      "publicNotes": "Publiczne notatki",
+      "relationships": "Relacje",
+      "properties": "Właściwości",
+      "metadata": "Metadane"
+    },
+    "placeholders": {
+      "enterName": "Wprowadź nazwę",
+      "enterTitle": "Wprowadź tytuł",
+      "enterDescription": "Wprowadź opis",
+      "selectType": "Wybierz typ",
+      "selectCategory": "Wybierz kategorię",
+      "addTags": "Dodaj tagi",
+      "uploadImage": "Prześlij obraz",
+      "addNotes": "Dodaj notatki",
+      "searchEntities": "Szukaj encji",
+      "selectEntity": "Wybierz encję",
+      "selectEntities": "Wybierz encje"
+    },
+    "validation": {
+      "nameRequired": "Nazwa jest wymagana",
+      "titleRequired": "Tytuł jest wymagany",
+      "descriptionRequired": "Opis jest wymagany",
+      "typeRequired": "Typ jest wymagany",
+      "categoryRequired": "Kategoria jest wymagana",
+      "invalidEmail": "Wprowadź prawidłowy adres email",
+      "passwordTooShort": "Hasło musi mieć co najmniej 8 znaków",
+      "passwordsDoNotMatch": "Hasła nie są identyczne",
+      "fileTooLarge": "Plik jest za duży (maks. {{maxSize}})",
+      "invalidFileType": "Nieprawidłowy typ pliku (dozwolone: {{allowedTypes}})"
+    },
+    "tabs": {
+      "basic": "Podstawowe informacje",
+      "details": "Szczegóły",
+      "relationships": "Relacje",
+      "advanced": "Zaawansowane",
+      "secrets": "Sekrety MG",
+      "notes": "Notatki",
+      "properties": "Właściwości",
+      "metadata": "Metadane",
+      "history": "Historia",
+      "permissions": "Uprawnienia"
+    }
+  },
+  "lists": {
+    "viewModes": {
+      "table": "Widok tabeli",
+      "grid": "Widok siatki",
+      "list": "Widok listy",
+      "cards": "Widok kart"
+    },
+    "sorting": {
+      "sortBy": "Sortuj według",
+      "ascending": "Rosnąco",
+      "descending": "Malejąco",
+      "name": "Nazwa",
+      "dateCreated": "Data utworzenia",
+      "dateUpdated": "Data aktualizacji",
+      "type": "Typ",
+      "category": "Kategoria"
+    },
+    "filtering": {
+      "filterBy": "Filtruj według",
+      "all": "Wszystkie",
+      "type": "Typ",
+      "category": "Kategoria",
+      "tags": "Tagi",
+      "status": "Status",
+      "clearFilters": "Wyczyść filtry",
+      "showFilters": "Pokaż filtry",
+      "hideFilters": "Ukryj filtry"
+    },
+    "search": {
+      "searchPlaceholder": "Szukaj...",
+      "searchResults": "Wyniki wyszukiwania",
+      "noResults": "Nie znaleziono wyników",
+      "searchIn": "Szukaj w {{entityType}}",
+      "advancedSearch": "Wyszukiwanie zaawansowane",
+      "clearSearch": "Wyczyść wyszukiwanie"
+    },
+    "pagination": {
+      "page": "Strona",
+      "of": "z",
+      "itemsPerPage": "Elementów na stronę",
+      "showing": "Pokazano {{start}} do {{end}} z {{total}} elementów",
+      "first": "Pierwsza",
+      "previous": "Poprzednia",
+      "next": "Następna",
+      "last": "Ostatnia"
+    },
+    "selection": {
+      "selectAll": "Wybierz wszystko",
+      "selectNone": "Odznacz wszystko",
+      "selected": "Wybrano {{count}}",
+      "bulkActions": "Akcje grupowe",
+      "deleteSelected": "Usuń wybrane",
+      "exportSelected": "Eksportuj wybrane",
+      "archiveSelected": "Archiwizuj wybrane"
+    },
+    "empty": {
+      "noItems": "Nie znaleziono elementów",
+      "noItemsDescription": "Brak {{entityType}} do wyświetlenia.",
+      "createFirst": "Utwórz swoją pierwszą {{entityType}}",
+      "getStarted": "Zacznij od utworzenia nowej {{entityType}}."
+    }
+  },
+  "modals": {
+    "titles": {
+      "create": "Utwórz {{entityType}}",
+      "edit": "Edytuj {{entityType}}",
+      "view": "Zobacz {{entityType}}",
+      "delete": "Usuń {{entityType}}",
+      "confirm": "Potwierdź akcję",
+      "settings": "Ustawienia",
+      "help": "Pomoc",
+      "about": "O aplikacji"
+    },
+    "buttons": {
+      "save": "Zapisz",
+      "saveAndClose": "Zapisz i zamknij",
+      "saveAndNew": "Zapisz i nowy",
+      "cancel": "Anuluj",
+      "close": "Zamknij",
+      "delete": "Usuń",
+      "confirm": "Potwierdź",
+      "yes": "Tak",
+      "no": "Nie",
+      "ok": "OK"
+    }
+  },
+  "notifications": {
+    "success": {
+      "saved": "Zmiany zapisane pomyślnie",
+      "created": "{{entityType}} utworzono pomyślnie",
+      "updated": "{{entityType}} zaktualizowano pomyślnie",
+      "deleted": "{{entityType}} usunięto pomyślnie",
+      "imported": "Dane zaimportowane pomyślnie",
+      "exported": "Dane wyeksportowane pomyślnie"
+    },
+    "error": {
+      "saveFailed": "Nie udało się zapisać zmian",
+      "loadFailed": "Nie udało się załadować danych",
+      "deleteFailed": "Nie udało się usunąć {{entityType}}",
+      "networkError": "Wystąpił błąd sieci",
+      "permissionDenied": "Brak uprawnień",
+      "sessionExpired": "Sesja wygasła"
+    },
+    "warning": {
+      "unsavedChanges": "Masz niezapisane zmiany",
+      "confirmDelete": "Ta akcja nie może zostać cofnięta",
+      "sessionExpiring": "Twoja sesja wkrótce wygaśnie"
+    },
+    "info": {
+      "autoSaved": "Zmiany zapisane automatycznie",
+      "syncComplete": "Synchronizacja zakończona",
+      "updateAvailable": "Dostępna aktualizacja"
+    }
+  },
+  "settings": {
+    "title": "Ustawienia",
+    "description": "Skonfiguruj swoje doświadczenie RPG Scribe",
+    "categories": {
+      "general": "Ogólne",
+      "appearance": "Wygląd",
+      "language": "Język",
+      "notifications": "Powiadomienia",
+      "privacy": "Prywatność",
+      "advanced": "Zaawansowane",
+      "account": "Konto",
+      "billing": "Płatności",
+      "integrations": "Integracje"
+    },
+    "language": {
+      "title": "Ustawienia języka",
+      "uiLanguage": "Język interfejsu",
+      "transcriptionLanguage": "Język transkrypcji",
+      "aiLanguage": "Język komunikacji z AI",
+      "transcription": "Język transkrypcji",
+      "ai": "Język AI",
+      "description": "Wybierz preferowane języki dla różnych funkcji",
+      "uiDescription": "Język dla menu, przycisków i elementów interfejsu",
+      "transcriptionDescription": "Język dla transkrypcji mowy na tekst",
+      "aiDescription": "Język dla komunikacji z asystentem AI"
+    },
+    "appearance": {
+      "title": "Wygląd",
+      "theme": "Motyw",
+      "colorScheme": "Schemat kolorów",
+      "fontSize": "Rozmiar czcionki",
+      "density": "Gęstość interfejsu",
+      "animations": "Animacje",
+      "light": "Jasny",
+      "dark": "Ciemny",
+      "auto": "Automatyczny",
+      "small": "Mały",
+      "medium": "Średni",
+      "large": "Duży",
+      "compact": "Kompaktowy",
+      "comfortable": "Wygodny",
+      "spacious": "Przestronny",
+      "enabled": "Włączone",
+      "disabled": "Wyłączone"
+    }
+  },
+  "help": {
+    "title": "Pomoc i wsparcie",
+    "gettingStarted": "Pierwsze kroki",
+    "userGuide": "Przewodnik użytkownika",
+    "tutorials": "Samouczki",
+    "faq": "Często zadawane pytania",
+    "shortcuts": "Skróty klawiszowe",
+    "support": "Skontaktuj się z pomocą",
+    "documentation": "Dokumentacja",
+    "community": "Społeczność",
+    "feedback": "Wyślij opinię",
+    "reportBug": "Zgłoś błąd",
+    "requestFeature": "Poproś o funkcję"
+  },
+  "pages": {
+    "characters": {
+      "title": "Postacie",
+      "allCharacters": "Wszystkie postacie",
+      "worldCharacters": "Postacie świata",
+      "subtitle": "Postacie we wszystkich światach RPG",
+      "worldSubtitle": "Postacie w tym świecie RPG",
+      "createNew": "Utwórz nową postać",
+      "editCharacter": "Edytuj postać",
+      "backToCharacter": "Powrót do postaci",
+      "backToCharacters": "Powrót do postaci",
+      "noCharactersFound": "Nie znaleziono postaci. Utwórz swoją pierwszą postać, aby rozpocząć!",
+      "createNewCharacter": "Utwórz nową postać",
+      "recentCharacters": "Ostatnie postacie",
+      "loadingCharacters": "Ładowanie postaci...",
+      "errorLoadingCharacters": "Błąd ładowania postaci",
+      "characterDetails": "Szczegóły postaci",
+      "characterProfile": "Profil postaci",
+      "characterStats": "Statystyki postaci",
+      "characterRelationships": "Relacje postaci",
+      "characterHistory": "Historia postaci",
+      "characterNotes": "Notatki o postaci"
+    },
+    "locations": {
+      "title": "Lokacje",
+      "allLocations": "Wszystkie lokacje",
+      "worldLocations": "Lokacje świata",
+      "subtitle": "Lokacje we wszystkich światach RPG",
+      "worldSubtitle": "Lokacje w tym świecie RPG",
+      "createNew": "Utwórz nową lokację",
+      "editLocation": "Edytuj lokację",
+      "backToLocation": "Powrót do lokacji",
+      "backToLocations": "Powrót do lokacji",
+      "noLocationsFound": "Nie znaleziono lokacji. Utwórz swoją pierwszą lokację, aby rozpocząć!",
+      "createNewLocation": "Utwórz nową lokację",
+      "updateLocation": "Aktualizuj lokację",
+      "createLocation": "Utwórz lokację",
+      "locationDetails": "Szczegóły lokacji",
+      "locationDescription": "Opis lokacji",
+      "locationHistory": "Historia lokacji",
+      "locationNotes": "Notatki o lokacji"
+    },
+    "campaigns": {
+      "title": "Kampanie",
+      "recentCampaigns": "Ostatnie kampanie",
+      "noCampaignsFound": "Nie znaleziono kampanii. Utwórz swoją pierwszą kampanię, aby rozpocząć!",
+      "createNewCampaign": "Utwórz nową kampanię",
+      "editCampaign": "Edytuj kampanię",
+      "updateCampaign": "Aktualizuj kampanię"
+    },
+    "worlds": {
+      "title": "Światy",
+      "publicWorlds": "Publiczne światy",
+      "noWorldsFound": "Nie znaleziono publicznych światów. Utwórz swój pierwszy świat, aby rozpocząć!",
+      "backToWorld": "Powrót do świata"
+    }
+  },
+  "viewModes": {
+    "grid": "Siatka",
+    "table": "Tabela",
+    "article": "Artykuł",
+    "organize": "Organizuj"
+  },
+  "entityTypes": {
+    "pc": "BG",
+    "npc": "BN",
+    "playerCharacter": "Bohater gracza",
+    "nonPlayerCharacter": "Bohater niezależny",
+    "level": "Poziom"
+  },
+  "forms": {
+    "labels": {
+      "name": "Nazwa",
+      "title": "Tytuł",
+      "description": "Opis",
+      "type": "Typ",
+      "category": "Kategoria",
+      "tags": "Tagi",
+      "image": "Obraz",
+      "notes": "Notatki",
+      "secretNotes": "Tajne notatki (tylko MG)",
+      "publicNotes": "Publiczne notatki",
+      "relationships": "Relacje",
+      "properties": "Właściwości",
+      "metadata": "Metadane"
+    },
+    "placeholders": {
+      "enterName": "Wprowadź nazwę",
+      "enterTitle": "Wprowadź tytuł",
+      "enterDescription": "Wprowadź opis",
+      "selectType": "Wybierz typ",
+      "selectCategory": "Wybierz kategorię",
+      "addTags": "Dodaj tagi",
+      "uploadImage": "Prześlij obraz",
+      "addNotes": "Dodaj notatki",
+      "searchEntities": "Szukaj encji",
+      "selectEntity": "Wybierz encję",
+      "selectEntities": "Wybierz encje"
+    },
+    "validation": {
+      "required": "To pole jest wymagane",
+      "minLength": "Minimalna długość to {{min}} znaków",
+      "maxLength": "Maksymalna długość to {{max}} znaków",
+      "invalidFormat": "Nieprawidłowy format",
+      "invalidEmail": "Nieprawidłowy adres email",
+      "invalidUrl": "Nieprawidłowy URL"
+    },
+    "buttons": {
+      "save": "Zapisz",
+      "cancel": "Anuluj",
+      "submit": "Wyślij",
+      "reset": "Resetuj",
+      "clear": "Wyczyść",
+      "add": "Dodaj",
+      "remove": "Usuń",
+      "edit": "Edytuj",
+      "delete": "Usuń",
+      "confirm": "Potwierdź",
+      "back": "Wstecz",
+      "next": "Dalej",
+      "finish": "Zakończ"
+    }
+  },
+  "tables": {
+    "headers": {
+      "name": "Nazwa",
+      "type": "Typ",
+      "level": "Poziom",
+      "race": "Rasa",
+      "class": "Klasa",
+      "location": "Lokacja",
+      "status": "Status",
+      "createdAt": "Utworzono",
+      "updatedAt": "Zaktualizowano",
+      "lastUpdated": "Ostatnia aktualizacja",
+      "relationships": "Relacje",
+      "actions": "Akcje"
+    },
+    "filters": {
+      "all": "Wszystkie",
+      "filterBy": "Filtruj według",
+      "sortBy": "Sortuj według",
+      "ascending": "Rosnąco",
+      "descending": "Malejąco",
+      "search": "Szukaj",
+      "clear": "Wyczyść filtry",
+      "apply": "Zastosuj filtry"
+    },
+    "pagination": {
+      "previous": "Poprzednia",
+      "next": "Następna",
+      "page": "Strona",
+      "of": "z",
+      "showing": "Pokazano",
+      "to": "do",
+      "entries": "wpisów",
+      "noResults": "Brak wyników"
+    }
+  },
+  "modals": {
+    "confirmDelete": {
+      "title": "Potwierdź usunięcie",
+      "message": "Czy na pewno chcesz usunąć ten element? Ta akcja nie może zostać cofnięta.",
+      "confirm": "Usuń",
+      "cancel": "Anuluj"
+    },
+    "confirmSave": {
+      "title": "Zapisz zmiany",
+      "message": "Czy chcesz zapisać wprowadzone zmiany?",
+      "confirm": "Zapisz",
+      "cancel": "Anuluj"
+    }
+  },
+  "emptyStates": {
+    "noCharacters": "Nie znaleziono postaci. Utwórz swoją pierwszą postać, aby rozpocząć!",
+    "noLocations": "Nie znaleziono lokacji. Utwórz swoją pierwszą lokację, aby rozpocząć!",
+    "noItems": "Nie znaleziono przedmiotów. Utwórz swój pierwszy przedmiot, aby rozpocząć!",
+    "noResults": "Nie znaleziono wyników dla podanych kryteriów.",
+    "createFirst": "Utwórz pierwszy {{entityType}}",
+    "getStarted": "Rozpocznij pracę"
+  },
+  "entityManagement": {
+    "entityManager": "Menedżer Encji",
+    "entityManagerDescription": "Scentralizowane zarządzanie wszystkimi typami encji w twoich kampaniach i światach RPG.",
+    "allEntities": "Wszystkie Encje",
+    "allEntityTypes": "Wszystkie typy encji",
+    "allEntityTypesDescription": "Przeglądaj i zarządzaj wszystkimi typami encji w swoich kampaniach i światach RPG.",
+    "character": "Postać",
+    "location": "Lokacja",
+    "item": "Przedmiot",
+    "event": "Wydarzenie",
+    "session": "Sesja",
+    "faction": "Frakcja",
+    "storyArc": "Wątek fabularny",
+    "campaign": "Kampania",
+    "rpgWorld": "Świat RPG",
+    "note": "Notatka",
+    "viewAll": "Zobacz wszystkie",
+    "createNew": "Utwórz nowy",
+    "manageCharacterEntities": "Zarządzaj encjami postaci, w tym tworzeniem, edycją i przeglądaniem szczegółów.",
+    "manageLocationEntities": "Zarządzaj encjami lokacji, w tym tworzeniem, edycją i przeglądaniem szczegółów.",
+    "manageItemEntities": "Zarządzaj encjami przedmiotów, w tym tworzeniem, edycją i przeglądaniem szczegółów.",
+    "manageEventEntities": "Zarządzaj encjami wydarzeń, w tym tworzeniem, edycją i przeglądaniem szczegółów.",
+    "manageSessionEntities": "Zarządzaj encjami sesji, w tym tworzeniem, edycją i przeglądaniem szczegółów.",
+    "manageFactionEntities": "Zarządzaj encjami frakcji, w tym tworzeniem, edycją i przeglądaniem szczegółów.",
+    "manageStoryArcEntities": "Zarządzaj encjami wątków fabularnych, w tym tworzeniem, edycją i przeglądaniem szczegółów.",
+    "manageCampaignEntities": "Zarządzaj encjami kampanii, w tym tworzeniem, edycją i przeglądaniem szczegółów.",
+    "manageRpgWorldEntities": "Zarządzaj encjami światów RPG, w tym tworzeniem, edycją i przeglądaniem szczegółów.",
+    "manageNoteEntities": "Zarządzaj encjami notatek, w tym tworzeniem, edycją i przeglądaniem szczegółów."
+  },
+  "modals": {
+    "titles": {
+      "confirm": "Potwierdź akcję",
+      "delete": "Usuń element",
+      "deleteCharacter": "Usuń postać",
+      "edit": "Edytuj element",
+      "create": "Utwórz nowy element",
+      "settings": "Ustawienia"
+    },
+    "buttons": {
+      "confirm": "Potwierdź",
+      "cancel": "Anuluj",
+      "save": "Zapisz",
+      "delete": "Usuń",
+      "edit": "Edytuj",
+      "create": "Utwórz",
+      "close": "Zamknij"
+    }
+  },
+  "buttons": {
+    "edit": "Edytuj",
+    "delete": "Usuń",
+    "save": "Zapisz",
+    "cancel": "Anuluj",
+    "create": "Utwórz",
+    "view": "Zobacz",
+    "manage": "Zarządzaj"
+  },
+  "tabs": {
+    "overview": "Przegląd",
+    "inventory": "Ekwipunek",
+    "relationships": "Relacje",
+    "notes": "Notatki",
+    "stats": "Statystyki",
+    "background": "Tło"
+  },
+  "errors": {
+    "characterNotFound": "Postać nie została znaleziona",
+    "itemNotFound": "Przedmiot nie został znaleziony",
+    "locationNotFound": "Lokacja nie została znaleziona",
+    "campaignNotFound": "Kampania nie została znaleziona",
+    "worldNotFound": "Świat nie został znaleziony",
+    "accessDenied": "Dostęp zabroniony",
+    "loadingError": "Błąd ładowania",
+    "savingError": "Błąd zapisywania"
+  },
+  "navigation": {
+    "backToCharacters": "Powrót do postaci",
+    "backToCampaigns": "Powrót do kampanii",
+    "backToWorlds": "Powrót do światów",
+    "backToItems": "Powrót do przedmiotów",
+    "backToLocations": "Powrót do lokacji"
+  },
+  "emptyStates": {
+    "noItems": "Brak przedmiotów w ekwipunku",
+    "noRelationships": "Nie znaleziono relacji",
+    "noNotes": "Brak dostępnych notatek",
+    "noStats": "Brak dostępnych statystyk",
+    "noCharacters": "Nie znaleziono postaci",
+    "noCampaigns": "Nie znaleziono kampanii",
+    "noWorlds": "Nie znaleziono światów"
+  }
+}

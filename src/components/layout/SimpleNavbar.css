@@ -1,0 +1,31 @@
+.nav-link {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: var(--mantine-spacing-xs) var(--mantine-spacing-sm);
+  border-radius: var(--mantine-radius-sm);
+  font-weight: 500;
+  transition: background-color 100ms ease;
+}
+
+.nav-link:hover {
+  background-color: var(--mantine-color-dark-5);
+}
+
+.nav-link.active {
+  background-color: var(--mantine-color-dark-5);
+}
+
+.chevron {
+  transition: transform 200ms ease;
+  width: 16px !important;
+  height: 16px !important;
+  min-width: 16px !important;
+  min-height: 16px !important;
+  flex-shrink: 0;
+}
+
+.child-nav-link {
+  margin-bottom: 4px;
+  border-left: 1px solid var(--mantine-color-dark-4);
+}

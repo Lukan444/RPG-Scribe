@@ -1,0 +1,14 @@
+{
+  "name": "rpg-scribe-scripts",
+  "version": "1.0.0",
+  "description": "Scripts for RPG Scribe",
+  "main": "index.js",
+  "scripts": {
+    "fix-critical": "node fix-critical-issues.js",
+    "fix-icons": "node icon-migration.js",
+    "fix-stack": "node stack-component-fixer.js"
+  },
+  "dependencies": {
+    "glob": "^8.1.0"
+  }
+}

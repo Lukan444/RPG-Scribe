@@ -1,0 +1,46 @@
+{
+  "title": "Configuración",
+  "sections": {
+    "general": "General",
+    "appearance": "Apariencia",
+    "language": "Idioma",
+    "account": "Cuenta",
+    "notifications": "Notificaciones",
+    "ai": "Configuración de IA",
+    "transcription": "Transcripción",
+    "advanced": "Avanzado"
+  },
+  "language": {
+    "title": "Configuración de Idioma",
+    "interface": "Idioma de la Interfaz",
+    "transcription": "Idioma de Transcripción",
+    "ai": "Idioma de Comunicación con IA",
+    "description": "Elige los idiomas utilizados en toda la aplicación",
+    "interfaceDescription": "Este idioma se utilizará para todo el texto en la interfaz de usuario",
+    "transcriptionDescription": "Este idioma se utilizará para la transcripción de voz a texto",
+    "aiDescription": "Este idioma se utilizará al comunicarse con las funciones de IA"
+  },
+  "appearance": {
+    "theme": "Tema",
+    "themes": {
+      "light": "Claro",
+      "dark": "Oscuro",
+      "system": "Predeterminado del Sistema"
+    },
+    "fontSize": "Tamaño de Fuente",
+    "fontSizes": {
+      "small": "Pequeño",
+      "medium": "Mediano",
+      "large": "Grande"
+    },
+    "compactMode": "Modo Compacto",
+    "animations": "Animaciones"
+  },
+  "account": {
+    "profile": "Perfil",
+    "security": "Seguridad",
+    "subscription": "Suscripción",
+    "deleteAccount": "Eliminar Cuenta",
+    "exportData": "Exportar Datos"
+  }
+}

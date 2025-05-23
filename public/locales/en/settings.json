@@ -1,0 +1,46 @@
+{
+  "title": "Settings",
+  "sections": {
+    "general": "General",
+    "appearance": "Appearance",
+    "language": "Language",
+    "account": "Account",
+    "notifications": "Notifications",
+    "ai": "AI Settings",
+    "transcription": "Transcription",
+    "advanced": "Advanced"
+  },
+  "language": {
+    "title": "Language Settings",
+    "interface": "Interface Language",
+    "transcription": "Transcription Language",
+    "ai": "AI Communication Language",
+    "description": "Choose the languages used throughout the application",
+    "interfaceDescription": "This language will be used for all text in the user interface",
+    "transcriptionDescription": "This language will be used for speech-to-text transcription",
+    "aiDescription": "This language will be used when communicating with AI features"
+  },
+  "appearance": {
+    "theme": "Theme",
+    "themes": {
+      "light": "Light",
+      "dark": "Dark",
+      "system": "System Default"
+    },
+    "fontSize": "Font Size",
+    "fontSizes": {
+      "small": "Small",
+      "medium": "Medium",
+      "large": "Large"
+    },
+    "compactMode": "Compact Mode",
+    "animations": "Animations"
+  },
+  "account": {
+    "profile": "Profile",
+    "security": "Security",
+    "subscription": "Subscription",
+    "deleteAccount": "Delete Account",
+    "exportData": "Export Data"
+  }
+}

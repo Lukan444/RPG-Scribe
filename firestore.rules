@@ -1,0 +1,112 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isAdmin() {
+      return isSignedIn() && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+    
+    function isGameMaster() {
+      return isSignedIn() && 
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'gamemaster' ||
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin');
+    }
+    
+    function isOwner(resource) {
+      return isSignedIn() && resource.data.createdBy == request.auth.uid;
+    }
+    
+    function hasAccess(campaignId) {
+      return isSignedIn() && 
+        (exists(/databases/$(database)/documents/campaignAccess/$(campaignId)/users/$(request.auth.uid)) ||
+         get(/databases/$(database)/documents/campaigns/$(campaignId)).data.createdBy == request.auth.uid ||
+         isAdmin());
+    }
+    
+    // User profiles are readable by anyone but only writable by the user or admin
+    match /users/{userId} {
+      allow read;
+      allow create: if isSignedIn() && request.auth.uid == userId;
+      allow update: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+      allow delete: if isAdmin();
+    }
+    
+    // User preferences are only accessible by the user or admin
+    match /userPreferences/{userId} {
+      allow read: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+      allow write: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+    }
+    
+    // Activity logs are readable by admins and the user who generated them
+    match /activityLogs/{logId} {
+      allow read: if isSignedIn() && (request.auth.uid == resource.data.userId || isAdmin());
+      allow create: if isSignedIn();
+      allow update, delete: if isAdmin();
+    }
+    
+    // RPG Worlds can be public or private
+    match /rpgworlds/{worldId} {
+      allow read: if resource.data.isPublic || 
+                    isSignedIn() && (
+                      resource.data.createdBy == request.auth.uid ||
+                      exists(/databases/$(database)/documents/worldAccess/$(worldId)/users/$(request.auth.uid)) ||
+                      isAdmin()
+                    );
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && (isOwner(resource) || isAdmin());
+      allow delete: if isSignedIn() && (isOwner(resource) || isAdmin());
+    }
+    
+    // World access control
+    match /worldAccess/{worldId}/users/{userId} {
+      allow read: if isSignedIn() && (request.auth.uid == userId || 
+                                     get(/databases/$(database)/documents/rpgworlds/$(worldId)).data.createdBy == request.auth.uid ||
+                                     isAdmin());
+      allow write: if isSignedIn() && (get(/databases/$(database)/documents/rpgworlds/$(worldId)).data.createdBy == request.auth.uid ||
+                                      isAdmin());
+    }
+    
+    // Campaigns can be public or private
+    match /campaigns/{campaignId} {
+      allow read: if resource.data.isPublic || 
+                    isSignedIn() && (
+                      resource.data.createdBy == request.auth.uid ||
+                      exists(/databases/$(database)/documents/campaignAccess/$(campaignId)/users/$(request.auth.uid)) ||
+                      isAdmin()
+                    );
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && (isOwner(resource) || isAdmin());
+      allow delete: if isSignedIn() && (isOwner(resource) || isAdmin());
+      
+      // Campaign sub-collections inherit campaign access
+      match /{subCollection}/{docId} {
+        allow read: if get(/databases/$(database)/documents/campaigns/$(campaignId)).data.isPublic || 
+                      isSignedIn() && (
+                        get(/databases/$(database)/documents/campaigns/$(campaignId)).data.createdBy == request.auth.uid ||
+                        exists(/databases/$(database)/documents/campaignAccess/$(campaignId)/users/$(request.auth.uid)) ||
+                        isAdmin()
+                      );
+        allow create: if isSignedIn() && hasAccess(campaignId);
+        allow update, delete: if isSignedIn() && (
+                                resource.data.createdBy == request.auth.uid ||
+                                get(/databases/$(database)/documents/campaigns/$(campaignId)).data.createdBy == request.auth.uid ||
+                                isAdmin()
+                              );
+      }
+    }
+    
+    // Campaign access control
+    match /campaignAccess/{campaignId}/users/{userId} {
+      allow read: if isSignedIn() && (request.auth.uid == userId || 
+                                     get(/databases/$(database)/documents/campaigns/$(campaignId)).data.createdBy == request.auth.uid ||
+                                     isAdmin());
+      allow write: if isSignedIn() && (get(/databases/$(database)/documents/campaigns/$(campaignId)).data.createdBy == request.auth.uid ||
+                                      isAdmin());
+    }
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "app": {
+    "name": "RPG Scribe",
+    "tagline": "Votre compagnon numérique pour les jeux de rôle sur table"
+  },
+  "navigation": {
+    "dashboard": "Tableau de bord",
+    "worlds": "Mondes RPG",
+    "characters": "Personnages",
+    "locations": "Lieux",
+    "items": "Objets",
+    "events": "Événements",
+    "notes": "Notes",
+    "settings": "Paramètres"
+  },
+  "actions": {
+    "create": "Créer",
+    "edit": "Modifier",
+    "delete": "Supprimer",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "confirm": "Confirmer",
+    "search": "Rechercher",
+    "filter": "Filtrer",
+    "sort": "Trier",
+    "back": "Retour",
+    "next": "Suivant",
+    "previous": "Précédent"
+  },
+  "auth": {
+    "signIn": "Se connecter",
+    "signOut": "Se déconnecter",
+    "signUp": "S'inscrire",
+    "email": "Email",
+    "password": "Mot de passe",
+    "forgotPassword": "Mot de passe oublié ?",
+    "googleSignIn": "Se connecter avec Google",
+    "createAccount": "Créer un compte"
+  },
+  "errors": {
+    "generic": "Une erreur est survenue",
+    "notFound": "Non trouvé",
+    "unauthorized": "Accès non autorisé",
+    "validation": "Veuillez vérifier votre saisie",
+    "networkError": "Erreur réseau, veuillez réessayer"
+  },
+  "language": {
+    "select": "Sélectionner la langue",
+    "en": "Anglais",
+    "es": "Espagnol",
+    "fr": "Français"
+  }
+}

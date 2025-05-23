@@ -1,0 +1,63 @@
+{
+  "character": {
+    "title": "Personaje",
+    "titles": "Personajes",
+    "create": "Crear Personaje",
+    "edit": "Editar Personaje",
+    "delete": "Eliminar Personaje",
+    "fields": {
+      "name": "Nombre",
+      "description": "Descripción",
+      "race": "Raza",
+      "class": "Clase",
+      "level": "Nivel",
+      "background": "Trasfondo",
+      "alignment": "Alineamiento",
+      "traits": "Rasgos",
+      "ideals": "Ideales",
+      "bonds": "Vínculos",
+      "flaws": "Defectos",
+      "notes": "Notas",
+      "image": "Imagen del Personaje"
+    }
+  },
+  "location": {
+    "title": "Ubicación",
+    "titles": "Ubicaciones",
+    "create": "Crear Ubicación",
+    "edit": "Editar Ubicación",
+    "delete": "Eliminar Ubicación",
+    "fields": {
+      "name": "Nombre",
+      "description": "Descripción",
+      "type": "Tipo",
+      "climate": "Clima",
+      "population": "Población",
+      "government": "Gobierno",
+      "economy": "Economía",
+      "culture": "Cultura",
+      "history": "Historia",
+      "notes": "Notas",
+      "image": "Imagen de la Ubicación"
+    }
+  },
+  "item": {
+    "title": "Objeto",
+    "titles": "Objetos",
+    "create": "Crear Objeto",
+    "edit": "Editar Objeto",
+    "delete": "Eliminar Objeto",
+    "fields": {
+      "name": "Nombre",
+      "description": "Descripción",
+      "type": "Tipo",
+      "rarity": "Rareza",
+      "value": "Valor",
+      "weight": "Peso",
+      "properties": "Propiedades",
+      "history": "Historia",
+      "notes": "Notas",
+      "image": "Imagen del Objeto"
+    }
+  }
+}

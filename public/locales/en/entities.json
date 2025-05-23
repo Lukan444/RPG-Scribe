@@ -1,0 +1,63 @@
+{
+  "character": {
+    "title": "Character",
+    "titles": "Characters",
+    "create": "Create Character",
+    "edit": "Edit Character",
+    "delete": "Delete Character",
+    "fields": {
+      "name": "Name",
+      "description": "Description",
+      "race": "Race",
+      "class": "Class",
+      "level": "Level",
+      "background": "Background",
+      "alignment": "Alignment",
+      "traits": "Traits",
+      "ideals": "Ideals",
+      "bonds": "Bonds",
+      "flaws": "Flaws",
+      "notes": "Notes",
+      "image": "Character Image"
+    }
+  },
+  "location": {
+    "title": "Location",
+    "titles": "Locations",
+    "create": "Create Location",
+    "edit": "Edit Location",
+    "delete": "Delete Location",
+    "fields": {
+      "name": "Name",
+      "description": "Description",
+      "type": "Type",
+      "climate": "Climate",
+      "population": "Population",
+      "government": "Government",
+      "economy": "Economy",
+      "culture": "Culture",
+      "history": "History",
+      "notes": "Notes",
+      "image": "Location Image"
+    }
+  },
+  "item": {
+    "title": "Item",
+    "titles": "Items",
+    "create": "Create Item",
+    "edit": "Edit Item",
+    "delete": "Delete Item",
+    "fields": {
+      "name": "Name",
+      "description": "Description",
+      "type": "Type",
+      "rarity": "Rarity",
+      "value": "Value",
+      "weight": "Weight",
+      "properties": "Properties",
+      "history": "History",
+      "notes": "Notes",
+      "image": "Item Image"
+    }
+  }
+}
