@@ -3,6 +3,7 @@ import { Tabs, Container, Title, Text, Paper, Box } from '@mantine/core';
 import { IconLanguage, IconPalette, IconUser, IconBell, IconBrain } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import { LanguageSettings } from '../../components/language';
+import { AISettings } from '../../components/settings/AISettings';
 
 /**
  * Settings page component
@@ -56,7 +57,7 @@ const SettingsPage: React.FC = () => {
             </Tabs.Panel>
 
             <Tabs.Panel value="ai">
-              <Text>AI settings will be implemented soon.</Text>
+              <AISettings />
             </Tabs.Panel>
           </Box>
         </Tabs>

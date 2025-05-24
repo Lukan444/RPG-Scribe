@@ -6,6 +6,7 @@ import {
   serverTimestamp
 } from 'firebase/firestore';
 import { db } from '../firebase/config';
+import { AISettings } from '../types/ai';
 
 /**
  * User preferences interface
@@ -22,6 +23,7 @@ export interface UserPreferences {
     layout: string;
     widgets: string[];
   };
+  ai?: AISettings;
   createdAt?: any; // Timestamp
   updatedAt?: any; // Timestamp
   [key: string]: any; // Allow additional properties
