@@ -517,5 +517,84 @@
       "title": "Dashboard",
       "subtitle": "Overview of your RPG campaigns and worlds"
     }
+  },
+  "timeline": {
+    "title": "Timeline",
+    "overview": "Timeline Overview",
+    "visualization": "Timeline Visualization",
+    "editor": "Timeline Editor",
+    "settings": "Timeline Settings",
+    "createEntry": "Create Timeline Entry",
+    "editEntry": "Edit Timeline Entry",
+    "deleteEntry": "Delete Timeline Entry",
+    "addEntry": "Add Entry",
+    "saveEntry": "Save Entry",
+    "cancelEdit": "Cancel",
+    "confirmDelete": "Are you sure you want to delete this timeline entry?",
+    "noEntries": "No timeline entries found",
+    "loadingEntries": "Loading timeline...",
+    "errorLoading": "Failed to load timeline data",
+    "displayMode": {
+      "inGame": "In-Game",
+      "realWorld": "Real World",
+      "dual": "Dual View"
+    },
+    "entryTypes": {
+      "session_start": "Session Start",
+      "session_end": "Session End",
+      "combat": "Combat",
+      "travel": "Travel",
+      "discovery": "Discovery",
+      "character_event": "Character Event",
+      "story_event": "Story Event",
+      "event": "Event",
+      "milestone": "Milestone"
+    },
+    "timeUnits": {
+      "minutes": "Minutes",
+      "hours": "Hours",
+      "days": "Days",
+      "weeks": "Weeks",
+      "months": "Months",
+      "years": "Years"
+    },
+    "fields": {
+      "title": "Title",
+      "description": "Description",
+      "entryType": "Entry Type",
+      "importance": "Importance",
+      "realWorldTime": "Real World Time",
+      "inGameTime": "In-Game Time",
+      "duration": "Duration",
+      "timeUnit": "Time Unit",
+      "associatedEntity": "Associated Entity",
+      "tags": "Tags",
+      "sequence": "Sequence"
+    },
+    "actions": {
+      "refresh": "Refresh Timeline",
+      "showConflicts": "Show Conflicts",
+      "enableEditing": "Enable Editing",
+      "exportTimeline": "Export Timeline",
+      "resetDefaults": "Reset to Defaults",
+      "populateSample": "Populate Sample Data",
+      "clearSample": "Clear Sample Data"
+    },
+    "setup": {
+      "title": "Timeline Setup Guide",
+      "description": "Get started with RPG Scribe's dual timeline system",
+      "authRequired": "Authentication Required",
+      "loginPrompt": "Please log in to access timeline features",
+      "sampleDataStatus": "Sample Data Status",
+      "quickSetup": "Quick Setup Options",
+      "features": "Timeline Features",
+      "sampleCampaign": "Sample Campaign"
+    },
+    "validation": {
+      "titleRequired": "Title is required",
+      "invalidDate": "Invalid date format",
+      "conflictDetected": "Timeline conflict detected",
+      "validationPassed": "Timeline validation passed"
+    }
   }
 }

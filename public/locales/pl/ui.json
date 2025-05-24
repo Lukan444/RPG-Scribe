@@ -620,5 +620,84 @@
     "accessDenied": "Dostęp zabroniony",
     "loadingError": "Błąd ładowania",
     "savingError": "Błąd zapisywania"
+  },
+  "timeline": {
+    "title": "Oś czasu",
+    "overview": "Przegląd osi czasu",
+    "visualization": "Wizualizacja osi czasu",
+    "editor": "Edytor osi czasu",
+    "settings": "Ustawienia osi czasu",
+    "createEntry": "Utwórz wpis na osi czasu",
+    "editEntry": "Edytuj wpis na osi czasu",
+    "deleteEntry": "Usuń wpis z osi czasu",
+    "addEntry": "Dodaj wpis",
+    "saveEntry": "Zapisz wpis",
+    "cancelEdit": "Anuluj",
+    "confirmDelete": "Czy na pewno chcesz usunąć ten wpis z osi czasu?",
+    "noEntries": "Nie znaleziono wpisów na osi czasu",
+    "loadingEntries": "Ładowanie osi czasu...",
+    "errorLoading": "Nie udało się załadować danych osi czasu",
+    "displayMode": {
+      "inGame": "W grze",
+      "realWorld": "Świat rzeczywisty",
+      "dual": "Widok podwójny"
+    },
+    "entryTypes": {
+      "session_start": "Początek sesji",
+      "session_end": "Koniec sesji",
+      "combat": "Walka",
+      "travel": "Podróż",
+      "discovery": "Odkrycie",
+      "character_event": "Wydarzenie postaci",
+      "story_event": "Wydarzenie fabularne",
+      "event": "Wydarzenie",
+      "milestone": "Kamień milowy"
+    },
+    "timeUnits": {
+      "minutes": "Minuty",
+      "hours": "Godziny",
+      "days": "Dni",
+      "weeks": "Tygodnie",
+      "months": "Miesiące",
+      "years": "Lata"
+    },
+    "fields": {
+      "title": "Tytuł",
+      "description": "Opis",
+      "entryType": "Typ wpisu",
+      "importance": "Ważność",
+      "realWorldTime": "Czas rzeczywisty",
+      "inGameTime": "Czas w grze",
+      "duration": "Czas trwania",
+      "timeUnit": "Jednostka czasu",
+      "associatedEntity": "Powiązany element",
+      "tags": "Tagi",
+      "sequence": "Sekwencja"
+    },
+    "actions": {
+      "refresh": "Odśwież oś czasu",
+      "showConflicts": "Pokaż konflikty",
+      "enableEditing": "Włącz edycję",
+      "exportTimeline": "Eksportuj oś czasu",
+      "resetDefaults": "Przywróć domyślne",
+      "populateSample": "Wypełnij przykładowymi danymi",
+      "clearSample": "Wyczyść przykładowe dane"
+    },
+    "setup": {
+      "title": "Przewodnik konfiguracji osi czasu",
+      "description": "Rozpocznij pracę z systemem podwójnej osi czasu RPG Scribe",
+      "authRequired": "Wymagana autoryzacja",
+      "loginPrompt": "Zaloguj się, aby uzyskać dostęp do funkcji osi czasu",
+      "sampleDataStatus": "Status przykładowych danych",
+      "quickSetup": "Opcje szybkiej konfiguracji",
+      "features": "Funkcje osi czasu",
+      "sampleCampaign": "Przykładowa kampania"
+    },
+    "validation": {
+      "titleRequired": "Tytuł jest wymagany",
+      "invalidDate": "Nieprawidłowy format daty",
+      "conflictDetected": "Wykryto konflikt na osi czasu",
+      "validationPassed": "Walidacja osi czasu przeszła pomyślnie"
+    }
   }
 }

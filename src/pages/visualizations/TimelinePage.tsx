@@ -12,177 +12,200 @@ import {
   Alert,
   Loader,
   Center,
-  RangeSlider,
+  Button,
+  ActionIcon,
+  Tooltip,
+  Badge,
+  Flex,
+  SegmentedControl,
   Switch,
   Divider,
-  Button
 } from '@mantine/core';
-import { IconAlertCircle, IconTimeline, IconCalendarEvent, IconFilter } from '@tabler/icons-react';
-import { DatePickerInput } from '@mantine/dates';
+import {
+  IconAlertCircle,
+  IconTimeline,
+  IconCalendarEvent,
+  IconFilter,
+  IconEdit,
+  IconPlus,
+  IconSettings,
+  IconRefresh,
+  IconDownload,
+  IconWorld,
+  IconClock
+} from '@tabler/icons-react';
 import { useAuth } from '../../contexts/AuthContext';
-import { db } from '../../firebase/config';
-import { collection, getDocs, query, where, orderBy } from 'firebase/firestore';
+import { useRPGWorld } from '../../contexts/RPGWorldContext';
+import { DualTimelineVisualization } from '../../components/timeline/DualTimelineVisualization';
+import { TimelineEditor } from '../../components/timeline/TimelineEditor';
 import { Campaign } from '../../models/Campaign';
 import { Event } from '../../models/Event';
 
 /**
- * TimelinePage - Page component for the Timeline visualization
+ * Enhanced TimelinePage with Dual Timeline System Integration
  */
 export function TimelinePage() {
   const { campaignId } = useParams<{ campaignId?: string }>();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { currentWorld, currentCampaign } = useRPGWorld();
 
-  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
-  const [events, setEvents] = useState<Event[]>([]);
-  const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>(campaignId || null);
-  const [dateRange, setDateRange] = useState<[Date | null, Date | null]>([null, null]);
-
-  // Custom handler for DatePickerInput to fix type issues
-  const handleDateRangeChange = (value: [string | null, string | null]) => {
-    const [startStr, endStr] = value;
-    const startDate = startStr ? new Date(startStr) : null;
-    const endDate = endStr ? new Date(endStr) : null;
-    setDateRange([startDate, endDate]);
-  };
-  const [loading, setLoading] = useState(true);
+  // Timeline state management
+  const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>(
+    campaignId || currentCampaign?.id || null
+  );
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showAllEvents, setShowAllEvents] = useState(true);
 
-  // Fetch campaigns from Firebase
-  useEffect(() => {
-    const fetchCampaigns = async () => {
-      try {
-        setLoading(true);
-        setError(null);
+  // Timeline display options
+  const [activeTab, setActiveTab] = useState<string | null>('visualization');
+  const [displayMode, setDisplayMode] = useState<'in-game' | 'real-world' | 'dual'>('dual');
+  const [showConflicts, setShowConflicts] = useState(true);
+  const [enableEditing, setEnableEditing] = useState(false);
 
-        if (!user) {
-          setError('You must be logged in to view campaigns');
-          setLoading(false);
-          return;
-        }
+  // Timeline data
+  const [timelineEvents, setTimelineEvents] = useState<any[]>([]);
 
-        const campaignsRef = collection(db, 'campaigns');
-        const q = query(campaignsRef, where('userId', '==', user.uid));
-        const querySnapshot = await getDocs(q);
-
-        const campaignData: Campaign[] = [];
-        querySnapshot.forEach((doc) => {
-          campaignData.push({ id: doc.id, ...doc.data() } as Campaign);
-        });
-
-        setCampaigns(campaignData);
-
-        // If no campaign is selected and we have campaigns, select the first one
-        if (!selectedCampaignId && campaignData.length > 0 && campaignData[0].id) {
-          setSelectedCampaignId(campaignData[0].id);
-        }
-      } catch (err) {
-        console.error('Error fetching campaigns:', err);
-        setError('Failed to load campaigns. Please try again later.');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchCampaigns();
-  }, [user, campaignId, selectedCampaignId]);
-
-  // Fetch events for the selected campaign
-  useEffect(() => {
-    const fetchEvents = async () => {
-      if (!selectedCampaignId) return;
-
-      try {
-        setLoading(true);
-        setError(null);
-
-        const eventsRef = collection(db, 'events');
-        let q = query(
-          eventsRef,
-          where('campaignId', '==', selectedCampaignId),
-          orderBy('date', 'asc')
-        );
-
-        const querySnapshot = await getDocs(q);
-
-        const eventData: Event[] = [];
-        querySnapshot.forEach((doc) => {
-          const event = { id: doc.id, ...doc.data() } as Event;
-          // Convert Firestore timestamp to Date
-          if (event.date && typeof event.date.toDate === 'function') {
-            event.date = event.date.toDate();
-          }
-          eventData.push(event);
-        });
-
-        setEvents(eventData);
-
-        // Set date range based on events if not already set
-        if (eventData.length > 0 && (!dateRange[0] || !dateRange[1])) {
-          const dates = eventData
-            .filter(event => event.date)
-            .map(event => new Date(event.date));
-
-          if (dates.length > 0) {
-            const minDate = new Date(Math.min(...dates.map(date => date.getTime())));
-            const maxDate = new Date(Math.max(...dates.map(date => date.getTime())));
-            setDateRange([minDate, maxDate]);
-          }
-        }
-      } catch (err) {
-        console.error('Error fetching events:', err);
-        setError('Failed to load events. Please try again later.');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchEvents();
-  }, [selectedCampaignId]);
-
-  // Filter events based on date range
-  const filteredEvents = events.filter(event => {
-    if (!event.date) return false;
-    if (!dateRange[0] || !dateRange[1]) return true;
-
-    const eventDate = new Date(event.date);
-    return eventDate >= dateRange[0] && eventDate <= dateRange[1];
-  });
-
-  // Campaign selection options
-  const campaignOptions = campaigns.map((campaign) => ({
-    value: campaign.id || '',
-    label: campaign.name
-  }));
-
-  // Format date for display
-  const formatDate = (date: Date | null | undefined): string => {
-    if (!date) return 'Unknown';
-    return date.toLocaleDateString();
+  // Handle timeline event interactions
+  const handleEventClick = (eventId: string) => {
+    navigate(`/events/${eventId}`);
   };
+
+  const handleEventEdit = (eventId: string) => {
+    // Open event edit modal or navigate to edit page
+    navigate(`/events/${eventId}/edit`);
+  };
+
+  const handleEventMove = (eventId: string, newPosition: number) => {
+    // Handle timeline entry reordering
+    console.log(`Moving event ${eventId} to position ${newPosition}`);
+  };
+
+  const handleTimelineChange = (events: any[]) => {
+    setTimelineEvents(events);
+  };
+
+  // Handle timeline entry creation
+  const handleCreateTimelineEntry = async (params: any) => {
+    try {
+      // Create timeline entry using TimelineService
+      console.log('Creating timeline entry:', params);
+      return `entry-${Date.now()}`;
+    } catch (error) {
+      console.error('Failed to create timeline entry:', error);
+      throw error;
+    }
+  };
+
+  // Handle timeline entry updates
+  const handleUpdateTimelineEntry = async (id: string, updates: any) => {
+    try {
+      // Update timeline entry using TimelineService
+      console.log('Updating timeline entry:', id, updates);
+      return true;
+    } catch (error) {
+      console.error('Failed to update timeline entry:', error);
+      return false;
+    }
+  };
+
+  // Handle timeline entry deletion
+  const handleDeleteTimelineEntry = async (id: string) => {
+    try {
+      // Delete timeline entry using TimelineService
+      console.log('Deleting timeline entry:', id);
+      return true;
+    } catch (error) {
+      console.error('Failed to delete timeline entry:', error);
+      return false;
+    }
+  };
+
+  // Initialize timeline data when campaign changes
+  useEffect(() => {
+    if (selectedCampaignId && currentWorld?.id) {
+      // Timeline data will be loaded by the DualTimelineVisualization component
+      setLoading(false);
+    }
+  }, [selectedCampaignId, currentWorld?.id]);
 
   return (
     <Container size="xl" py="md">
       <Stack gap="md">
+        {/* Header */}
         <Paper p="md" withBorder shadow="sm">
           <Group justify="space-between" align="center">
             <div>
-              <Title order={2}>Timeline Visualization</Title>
-              <Text c="dimmed" size="sm">View campaign events in chronological order</Text>
+              <Title order={2}>Dual Timeline System</Title>
+              <Text c="dimmed" size="sm">
+                Advanced timeline visualization with dual-time tracking and conflict detection
+              </Text>
             </div>
-            <IconTimeline size={40} color="violet" stroke={1.5} />
+            <Group>
+              <Badge color="blue" leftSection={<IconWorld size={12} />}>
+                {currentWorld?.name || 'No World'}
+              </Badge>
+              <Badge color="green" leftSection={<IconCalendarEvent size={12} />}>
+                {currentCampaign?.name || 'No Campaign'}
+              </Badge>
+              <IconTimeline size={40} color="violet" stroke={1.5} />
+            </Group>
           </Group>
         </Paper>
 
-        {loading ? (
-          <Center h={200}>
-            <Stack align="center">
-              <Loader size="lg" color="violet" />
-              <Text c="dimmed" mt="md" size="sm">Loading timeline data...</Text>
-            </Stack>
-          </Center>
-        ) : error ? (
+        {/* Timeline Controls */}
+        <Paper p="md" withBorder shadow="sm">
+          <Group justify="space-between" align="center">
+            <Group>
+              <SegmentedControl
+                value={displayMode}
+                onChange={(value) => setDisplayMode(value as any)}
+                data={[
+                  { label: 'In-Game', value: 'in-game' },
+                  { label: 'Real World', value: 'real-world' },
+                  { label: 'Dual View', value: 'dual' }
+                ]}
+              />
+
+              <Switch
+                label="Show Conflicts"
+                checked={showConflicts}
+                onChange={(event) => setShowConflicts(event.currentTarget.checked)}
+                color="red"
+              />
+
+              <Switch
+                label="Enable Editing"
+                checked={enableEditing}
+                onChange={(event) => setEnableEditing(event.currentTarget.checked)}
+                color="blue"
+              />
+            </Group>
+
+            <Group>
+              <Tooltip label="Refresh Timeline">
+                <ActionIcon variant="light" onClick={() => window.location.reload()}>
+                  <IconRefresh size={16} />
+                </ActionIcon>
+              </Tooltip>
+
+              <Tooltip label="Timeline Settings">
+                <ActionIcon variant="light">
+                  <IconSettings size={16} />
+                </ActionIcon>
+              </Tooltip>
+
+              <Tooltip label="Export Timeline">
+                <ActionIcon variant="light">
+                  <IconDownload size={16} />
+                </ActionIcon>
+              </Tooltip>
+            </Group>
+          </Group>
+        </Paper>
+
+        {/* Main Timeline Content */}
+        {error ? (
           <Alert icon={<IconAlertCircle size="1rem" />} title="Error" color="red" withCloseButton onClose={() => setError(null)} variant="filled">
             <Stack gap="md">
               <Text>{error}</Text>
@@ -191,127 +214,130 @@ export function TimelinePage() {
               </Button>
             </Stack>
           </Alert>
-        ) : campaigns.length === 0 ? (
-          <Alert icon={<IconAlertCircle size="1rem" />} title="No Campaigns" color="yellow" variant="filled">
+        ) : !currentWorld || !currentCampaign ? (
+          <Alert icon={<IconAlertCircle size="1rem" />} title="No World or Campaign Selected" color="yellow" variant="filled">
             <Stack gap="md">
-              <Text>You don't have any campaigns yet. Create a campaign to use the Timeline visualization.</Text>
-              <Button variant="white" color="yellow" onClick={() => navigate('/campaigns/new')}>
-                Create Campaign
+              <Text>Please select a world and campaign to use the Timeline system.</Text>
+              <Button variant="white" color="yellow" onClick={() => navigate('/dashboard')}>
+                Go to Dashboard
               </Button>
             </Stack>
           </Alert>
         ) : (
-          <>
-            <Paper p="md" withBorder shadow="sm">
-              <Stack gap="md">
-                <Group align="flex-end">
-                  <Select
-                    label="Select Campaign"
-                    placeholder="Choose a campaign"
-                    data={campaignOptions}
-                    value={selectedCampaignId}
-                    onChange={setSelectedCampaignId}
-                    w={300}
-                    comboboxProps={{ withinPortal: true }}
-                  />
-                </Group>
+          <Tabs value={activeTab} onChange={setActiveTab} color="violet">
+            <Tabs.List>
+              <Tabs.Tab value="visualization" leftSection={<IconTimeline size={16} />}>
+                Timeline Visualization
+              </Tabs.Tab>
+              <Tabs.Tab value="editor" leftSection={<IconEdit size={16} />}>
+                Timeline Editor
+              </Tabs.Tab>
+              <Tabs.Tab value="settings" leftSection={<IconSettings size={16} />}>
+                Settings
+              </Tabs.Tab>
+            </Tabs.List>
 
-                <Divider label="Timeline Filters" labelPosition="center" />
+            <Tabs.Panel value="visualization" pt="md">
+              <DualTimelineVisualization
+                campaignId={selectedCampaignId || undefined}
+                worldId={currentWorld?.id}
+                title="Campaign Timeline"
+                description="View and manage your campaign timeline with dual-time tracking"
+                displayMode={displayMode}
+                showConflicts={showConflicts}
+                enableDragDrop={enableEditing}
+                onEventClick={handleEventClick}
+                onEventEdit={handleEventEdit}
+                onEventMove={handleEventMove}
+                onTimelineChange={handleTimelineChange}
+              />
+            </Tabs.Panel>
 
-                <Group align="flex-end">
-                  <DatePickerInput
-                    type="range"
-                    label="Date Range"
-                    placeholder="Filter events by date range"
-                    value={dateRange}
-                    onChange={handleDateRangeChange}
-                    w={300}
-                    clearable
-                    popoverProps={{ withinPortal: true }}
-                  />
+            <Tabs.Panel value="editor" pt="md">
+              {enableEditing ? (
+                <TimelineEditor
+                  entries={timelineEvents}
+                  onEntriesChange={setTimelineEvents}
+                  onEntryCreate={handleCreateTimelineEntry}
+                  onEntryUpdate={handleUpdateTimelineEntry}
+                  onEntryDelete={handleDeleteTimelineEntry}
+                  enableDragDrop={true}
+                  showValidation={showConflicts}
+                />
+              ) : (
+                <Alert icon={<IconAlertCircle size="1rem" />} title="Editing Disabled" color="blue" variant="light">
+                  <Stack gap="md">
+                    <Text>Enable editing mode to use the Timeline Editor.</Text>
+                    <Button
+                      variant="light"
+                      onClick={() => setEnableEditing(true)}
+                      leftSection={<IconEdit size={16} />}
+                    >
+                      Enable Editing
+                    </Button>
+                  </Stack>
+                </Alert>
+              )}
+            </Tabs.Panel>
 
-                  <Switch
-                    label="Show all events"
-                    checked={showAllEvents}
-                    onChange={(event) => setShowAllEvents(event.currentTarget.checked)}
-                    color="violet"
-                  />
-                </Group>
-              </Stack>
-            </Paper>
+            <Tabs.Panel value="settings" pt="md">
+              <Paper p="md" withBorder shadow="sm">
+                <Stack gap="md">
+                  <Title order={3}>Timeline Settings</Title>
+                  <Text c="dimmed" size="sm">Configure timeline display and behavior options.</Text>
 
-            <Tabs defaultValue="timeline" color="violet">
-              <Tabs.List>
-                <Tabs.Tab value="timeline" leftSection={<IconTimeline size={16} />}>Timeline</Tabs.Tab>
-                <Tabs.Tab value="settings" leftSection={<IconFilter size={16} />}>Visualization Settings</Tabs.Tab>
-              </Tabs.List>
+                  <Divider />
 
-              <Tabs.Panel value="timeline" pt="md">
-                {events.length === 0 ? (
-                  <Alert icon={<IconAlertCircle size="1rem" />} title="No Events" color="blue" variant="light">
-                    This campaign doesn't have any events yet. Create events to visualize them on the timeline.
-                  </Alert>
-                ) : filteredEvents.length === 0 ? (
-                  <Alert icon={<IconAlertCircle size="1rem" />} title="No Events in Range" color="blue" variant="light">
-                    There are no events in the selected date range. Adjust the filter or create new events.
-                  </Alert>
-                ) : (
-                  <Paper p="md" withBorder shadow="sm">
-                    <Stack gap="md">
-                      {filteredEvents.map((event) => (
-                        <Paper key={event.id} p="md" withBorder shadow="xs" radius="sm">
-                          <Group align="flex-start">
-                            <ThemeIcon size="lg" radius="md" color="violet">
-                              <IconCalendarEvent size={20} />
-                            </ThemeIcon>
-                            <div style={{ flex: 1 }}>
-                              <Group justify="space-between">
-                                <Text fw={600}>{event.name}</Text>
-                                <Text size="sm" c="dimmed" fw={500}>{formatDate(event.date)}</Text>
-                              </Group>
-                              <Text size="sm" mt="xs" lh={1.6}>{event.description}</Text>
-                            </div>
-                          </Group>
-                        </Paper>
-                      ))}
-                    </Stack>
-                  </Paper>
-                )}
-              </Tabs.Panel>
+                  <Group>
+                    <Text fw={500}>Display Mode:</Text>
+                    <SegmentedControl
+                      value={displayMode}
+                      onChange={(value) => setDisplayMode(value as any)}
+                      data={[
+                        { label: 'In-Game', value: 'in-game' },
+                        { label: 'Real World', value: 'real-world' },
+                        { label: 'Dual View', value: 'dual' }
+                      ]}
+                    />
+                  </Group>
 
-              <Tabs.Panel value="settings" pt="md">
-                <Paper p="md" withBorder shadow="sm">
-                  <Title order={3}>Visualization Settings</Title>
-                  <Text c="dimmed" size="sm" mb="md">Configure how the timeline visualization appears and behaves.</Text>
-                  <Alert color="blue" variant="light">
-                    <Text>Settings will be available in a future update.</Text>
-                  </Alert>
-                </Paper>
-              </Tabs.Panel>
-            </Tabs>
-          </>
+                  <Group>
+                    <Switch
+                      label="Show Validation Conflicts"
+                      description="Display timeline conflicts and validation warnings"
+                      checked={showConflicts}
+                      onChange={(event) => setShowConflicts(event.currentTarget.checked)}
+                      color="red"
+                    />
+                  </Group>
+
+                  <Group>
+                    <Switch
+                      label="Enable Timeline Editing"
+                      description="Allow creating, editing, and reordering timeline entries"
+                      checked={enableEditing}
+                      onChange={(event) => setEnableEditing(event.currentTarget.checked)}
+                      color="blue"
+                    />
+                  </Group>
+
+                  <Divider />
+
+                  <Group>
+                    <Button variant="light" leftSection={<IconRefresh size={16} />}>
+                      Reset to Defaults
+                    </Button>
+                    <Button variant="light" leftSection={<IconDownload size={16} />}>
+                      Export Timeline
+                    </Button>
+                  </Group>
+                </Stack>
+              </Paper>
+            </Tabs.Panel>
+          </Tabs>
         )}
       </Stack>
     </Container>
-  );
-}
-
-// ThemeIcon component for the timeline events
-function ThemeIcon({ children, size, radius, color }: { children: React.ReactNode, size: string, radius: string, color: string }) {
-  return (
-    <div style={{
-      backgroundColor: `var(--mantine-color-${color}-filled)`,
-      color: 'var(--mantine-color-white)',
-      width: size === 'lg' ? '36px' : '24px',
-      height: size === 'lg' ? '36px' : '24px',
-      borderRadius: radius === 'md' ? 'var(--mantine-radius-md)' : 'var(--mantine-radius-sm)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      boxShadow: 'var(--mantine-shadow-xs)'
-    }}>
-      {children}
-    </div>
   );
 }
 

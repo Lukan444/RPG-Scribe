@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Paper,
@@ -20,8 +20,16 @@ import {
   Avatar,
   Divider,
   Collapse,
+  Switch,
+  NumberInput,
+  Slider,
+  SegmentedControl,
+  Alert,
+  Flex,
+  ScrollArea,
 } from '@mantine/core';
 import { DatePicker } from '@mantine/dates';
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import {
   IconCalendarEvent,
   IconFilter,
@@ -33,21 +41,55 @@ import {
   IconChevronRight,
   IconUser,
   IconMapPin,
-  IconSword
+  IconSword,
+  IconClock,
+  IconWorld,
+  IconZoomIn,
+  IconZoomOut,
+  IconAlertTriangle,
+  IconEdit,
+  IconGripVertical,
+  IconCalendarTime,
+  IconHistory
 } from '@tabler/icons-react';
 import { EntityType } from '../../models/EntityType';
 import { EventType } from '../../models/EventType';
+import { TimelineEntry } from '../../models/Timeline';
+import { TimelineService } from '../../services/timeline.service';
+import { TimelineValidationService } from '../../services/timelineValidation.service';
+import { TimeUnit, TimelineEntryType } from '../../constants/timelineConstants';
+import { formatTimeGap } from '../../utils/timelineUtils';
 
 /**
- * Timeline event interface
+ * Enhanced timeline event interface with dual-time support
  */
-interface TimelineEvent {
+interface EnhancedTimelineEvent {
   id: string;
   title: string;
   description?: string;
-  date: Date;
-  type: EventType;
+
+  // Dual timestamp support
+  inGameTime?: Date;
+  realWorldTime?: Date;
+
+  // Timeline positioning
+  sequence: number;
+  timeGapBefore?: {
+    duration: number;
+    unit: TimeUnit;
+    description?: string;
+  };
+  duration?: {
+    duration: number;
+    unit: TimeUnit;
+  };
+
+  // Event properties
+  type: TimelineEntryType;
   importance: number;
+  entryType: TimelineEntryType;
+
+  // Associated entities
   location?: {
     id: string;
     name: string;
@@ -61,48 +103,101 @@ interface TimelineEvent {
     id: string;
     name: string;
   }>;
+
+  // Validation and conflicts
+  hasConflicts?: boolean;
+  conflictTypes?: string[];
+  validationStatus?: 'valid' | 'warning' | 'error';
+
+  // Metadata
   imageUrl?: string;
   sessionId?: string;
+  associatedEntityId?: string;
+  associatedEntityType?: string;
 }
 
 /**
- * Timeline visualization props
+ * Timeline display mode
+ */
+type TimelineDisplayMode = 'in-game' | 'real-world' | 'dual';
+
+/**
+ * Timeline zoom level
+ */
+type TimelineZoomLevel = 'minute' | 'hour' | 'day' | 'week' | 'month' | 'year';
+
+/**
+ * Enhanced timeline visualization props
  */
 interface TimelineVisualizationProps {
   campaignId?: string;
+  worldId?: string;
   entityId?: string;
   entityType?: EntityType;
   title?: string;
   description?: string;
+
+  // Display options
+  displayMode?: TimelineDisplayMode;
+  zoomLevel?: TimelineZoomLevel;
+  showConflicts?: boolean;
+  enableDragDrop?: boolean;
+
+  // Event handlers
   onEventClick?: (eventId: string) => void;
+  onEventEdit?: (eventId: string) => void;
+  onEventMove?: (eventId: string, newPosition: number) => void;
+  onTimelineChange?: (events: EnhancedTimelineEvent[]) => void;
 }
 
 /**
- * TimelineVisualization component - Interactive timeline visualization
+ * Enhanced TimelineVisualization component with dual-time display and drag-and-drop
  */
 export function TimelineVisualization({
   campaignId,
+  worldId,
   entityId,
   entityType,
-  title = 'Timeline',
+  title = 'Dual Timeline',
   description,
-  onEventClick
+  displayMode = 'dual',
+  zoomLevel = 'day',
+  showConflicts = true,
+  enableDragDrop = true,
+  onEventClick,
+  onEventEdit,
+  onEventMove,
+  onTimelineChange
 }: TimelineVisualizationProps) {
   const navigate = useNavigate();
 
-  // State for events
-  const [events, setEvents] = useState<TimelineEvent[]>([]);
-
-  // State for loading and error
+  // Enhanced state management
+  const [events, setEvents] = useState<EnhancedTimelineEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // State for filters
-  const [typeFilter, setTypeFilter] = useState<string[]>([]);
+  // Timeline display state
+  const [currentDisplayMode, setCurrentDisplayMode] = useState<TimelineDisplayMode>(displayMode);
+  const [currentZoomLevel, setCurrentZoomLevel] = useState<TimelineZoomLevel>(zoomLevel);
+  const [showValidationConflicts, setShowValidationConflicts] = useState(showConflicts);
+
+  // Timeline services
+  const [timelineService, setTimelineService] = useState<TimelineService | null>(null);
+  const [validationService] = useState(() => TimelineValidationService.getInstance());
+
+  // Enhanced filtering state
+  const [typeFilter, setTypeFilter] = useState<TimelineEntryType[]>([]);
   const [importanceFilter, setImportanceFilter] = useState<number | null>(null);
   const [dateRange, setDateRange] = useState<[Date | null, Date | null]>([null, null]);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [expandedEvents, setExpandedEvents] = useState<Record<string, boolean>>({});
+  const [conflictFilter, setConflictFilter] = useState<boolean>(false);
+  const [entityFilter, setEntityFilter] = useState<string[]>([]);
+
+  // Timeline interaction state
+  const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [validationResults, setValidationResults] = useState<any>(null);
 
   // Load timeline data
   useEffect(() => {
@@ -115,13 +210,16 @@ export function TimelineVisualization({
         // For now, we'll create mock data
 
         // Mock events
-        const mockEvents: TimelineEvent[] = [
+        const mockEvents: EnhancedTimelineEvent[] = [
           {
             id: 'event-1',
             title: 'Campaign Start',
             description: 'The heroes meet in a tavern and decide to embark on an adventure.',
-            date: new Date('2023-01-01'),
-            type: EventType.SOCIAL,
+            inGameTime: new Date('2023-01-01'),
+            realWorldTime: new Date('2024-01-01'),
+            sequence: 0,
+            type: TimelineEntryType.SESSION,
+            entryType: TimelineEntryType.SESSION,
             importance: 10,
             location: {
               id: 'location-1',
@@ -145,8 +243,11 @@ export function TimelineVisualization({
             id: 'event-2',
             title: 'Battle at the Bridge',
             description: 'The heroes face their first major challenge as they defend a bridge from goblin attackers.',
-            date: new Date('2023-01-15'),
-            type: EventType.BATTLE,
+            inGameTime: new Date('2023-01-15'),
+            realWorldTime: new Date('2024-01-15'),
+            sequence: 1,
+            type: TimelineEntryType.EVENT,
+            entryType: TimelineEntryType.EVENT,
             importance: 7,
             location: {
               id: 'location-2',
@@ -176,8 +277,11 @@ export function TimelineVisualization({
             id: 'event-3',
             title: 'Discovery of the Ancient Ruins',
             description: 'The party discovers ancient ruins that hold clues to their quest.',
-            date: new Date('2023-02-01'),
-            type: EventType.DISCOVERY,
+            inGameTime: new Date('2023-02-01'),
+            realWorldTime: new Date('2024-02-01'),
+            sequence: 2,
+            type: TimelineEntryType.EVENT,
+            entryType: TimelineEntryType.EVENT,
             importance: 8,
             location: {
               id: 'location-3',
@@ -202,8 +306,11 @@ export function TimelineVisualization({
             id: 'event-4',
             title: 'Final Confrontation',
             description: 'The heroes face the final boss in an epic battle that determines the fate of the world.',
-            date: new Date('2023-03-01'),
-            type: EventType.BATTLE,
+            inGameTime: new Date('2023-03-01'),
+            realWorldTime: new Date('2024-03-01'),
+            sequence: 3,
+            type: TimelineEntryType.EVENT,
+            entryType: TimelineEntryType.EVENT,
             importance: 10,
             location: {
               id: 'location-4',
@@ -283,21 +390,29 @@ export function TimelineVisualization({
         return false;
       }
 
-      // Filter by date range
-      if (dateRange[0] && event.date < dateRange[0]) {
+      // Filter by date range (use inGameTime or realWorldTime)
+      const eventDate = event.inGameTime || event.realWorldTime;
+      if (dateRange[0] && eventDate && eventDate < dateRange[0]) {
         return false;
       }
-      if (dateRange[1] && event.date > dateRange[1]) {
+      if (dateRange[1] && eventDate && eventDate > dateRange[1]) {
         return false;
       }
 
       return true;
     })
     .sort((a, b) => {
-      // Sort by date
+      // Sort by date (use inGameTime or realWorldTime)
+      const aDate = a.inGameTime || a.realWorldTime;
+      const bDate = b.inGameTime || b.realWorldTime;
+
+      if (!aDate || !bDate) {
+        return 0; // Keep original order if no dates
+      }
+
       const dateComparison = sortDirection === 'asc'
-        ? a.date.getTime() - b.date.getTime()
-        : b.date.getTime() - a.date.getTime();
+        ? aDate.getTime() - bDate.getTime()
+        : bDate.getTime() - aDate.getTime();
 
       // If dates are the same, sort by importance
       if (dateComparison === 0) {
@@ -308,9 +423,9 @@ export function TimelineVisualization({
     });
 
   // Event type filter options
-  const eventTypeOptions = Object.values(EventType).map(type => ({
+  const eventTypeOptions = Object.values(TimelineEntryType).map(type => ({
     value: type,
-    label: type.charAt(0).toUpperCase() + type.slice(1).toLowerCase()
+    label: type.charAt(0).toUpperCase() + type.slice(1).toLowerCase().replace('_', ' ')
   }));
 
   // Importance filter options
@@ -335,7 +450,7 @@ export function TimelineVisualization({
               placeholder="Filter by Type"
               data={eventTypeOptions}
               value={typeFilter}
-              onChange={setTypeFilter}
+              onChange={(value) => setTypeFilter(value as TimelineEntryType[])}
               leftSection={<IconFilter size={16} />}
               w={200}
             />
@@ -420,7 +535,7 @@ export function TimelineVisualization({
                 <Card withBorder shadow="sm" p="sm" mt="xs">
                   <Group justify="space-between">
                     <Text size="sm" c="dimmed">
-                      {event.date.toLocaleDateString()}
+                      {(event.inGameTime || event.realWorldTime)?.toLocaleDateString() || 'No date'}
                     </Text>
                     <Badge color="gray">Importance: {event.importance}/10</Badge>
                   </Group>
