@@ -81,6 +81,13 @@ export class VectorServiceCircuitBreaker extends EventEmitter implements VectorS
   };
   private halfOpenTimer: NodeJS.Timeout | null = null;
 
+  // Enhanced failure detection
+  private failureTimeWindow: number[] = [];
+  private responseTimeHistory: number[] = [];
+  private slowResponseCount: number = 0;
+  private currentResetTimeout: number;
+  private consecutiveFailures: number = 0;
+
   /**
    * Create a new Vector Service Circuit Breaker
    * @param vectorService Vector service to wrap
@@ -88,7 +95,7 @@ export class VectorServiceCircuitBreaker extends EventEmitter implements VectorS
    * @param logger Logger instance
    */
   constructor(
-    vectorService: VectorService, 
+    vectorService: VectorService,
     options?: Partial<CircuitBreakerOptions>,
     logger?: Logger
   ) {
@@ -96,6 +103,7 @@ export class VectorServiceCircuitBreaker extends EventEmitter implements VectorS
     this.vectorService = vectorService;
     this.options = { ...defaultCircuitBreakerOptions, ...options };
     this.logger = logger || new Logger('VectorServiceCircuitBreaker');
+    this.currentResetTimeout = this.options.resetTimeoutMs;
     this.metrics = {
       totalRequests: 0,
       successfulRequests: 0,
@@ -107,7 +115,9 @@ export class VectorServiceCircuitBreaker extends EventEmitter implements VectorS
     this.logger.info("VectorServiceCircuitBreaker initialized", {
       failureThreshold: this.options.failureThreshold,
       resetTimeoutMs: this.options.resetTimeoutMs,
-      halfOpenRequestLimit: this.options.halfOpenRequestLimit
+      halfOpenRequestLimit: this.options.halfOpenRequestLimit,
+      enablePredictiveFailure: this.options.enablePredictiveFailure,
+      responseTimeThresholdMs: this.options.responseTimeThresholdMs
     });
   }
 
@@ -131,10 +141,10 @@ export class VectorServiceCircuitBreaker extends EventEmitter implements VectorS
       } else {
         this.logger.debug(`Circuit is OPEN, short-circuiting ${operationName}`);
         this.metrics.shortCircuitedRequests++;
-        
+
         // Emit short-circuit event
         this.emit('shortCircuit', { operationName });
-        
+
         if (fallback) {
           return fallback();
         }
@@ -142,31 +152,39 @@ export class VectorServiceCircuitBreaker extends EventEmitter implements VectorS
       }
     }
 
-    try {
-      const result = await operation();
-      this.metrics.successfulRequests++;
+    const startTime = Date.now();
 
-      if (this.state === CircuitState.HALF_OPEN) {
-        this.successCount++;
-        this.logger.debug(`Successful request in HALF_OPEN state (${this.successCount}/${this.options.halfOpenRequestLimit})`);
-        
-        if (this.successCount >= this.options.halfOpenRequestLimit) {
-          this.recordSuccess();
-        }
+    try {
+      // Add request timeout if configured
+      let result: T;
+      if (this.options.requestTimeoutMs) {
+        result = await Promise.race([
+          operation(),
+          new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error('Request timeout')), this.options.requestTimeoutMs)
+          )
+        ]);
+      } else {
+        result = await operation();
       }
 
+      const responseTime = Date.now() - startTime;
+      this.recordSuccess(responseTime);
+
       // Emit success event
-      this.emit('success', { operationName });
+      this.emit('success', { operationName, responseTime });
 
       return result;
     } catch (error) {
+      const responseTime = Date.now() - startTime;
       this.metrics.failedRequests++;
-      this.recordFailure(operationName, error);
+      this.recordFailure(operationName, error, responseTime);
 
       // Emit failure event
-      this.emit('failure', { 
-        operationName, 
-        error: error instanceof Error ? error.message : String(error) 
+      this.emit('failure', {
+        operationName,
+        error: error instanceof Error ? error.message : String(error),
+        responseTime
       });
 
       if (fallback) {
@@ -183,48 +201,106 @@ export class VectorServiceCircuitBreaker extends EventEmitter implements VectorS
    */
   private shouldReopenCircuit(): boolean {
     const now = Date.now();
-    return (now - this.lastFailureTime) > this.options.resetTimeoutMs;
+    return (now - this.lastFailureTime) > this.currentResetTimeout;
   }
 
   /**
    * Record a successful operation
    */
-  private recordSuccess(): void {
-    if (this.state === CircuitState.HALF_OPEN) {
-      this.transitionToState(CircuitState.CLOSED, 'Success threshold reached in HALF_OPEN state');
+  private recordSuccess(responseTime?: number): void {
+    this.metrics.successfulRequests++;
+    this.consecutiveFailures = 0;
+
+    // Track response time for degraded service detection
+    if (responseTime !== undefined) {
+      this.responseTimeHistory.push(responseTime);
+      if (this.responseTimeHistory.length > 100) {
+        this.responseTimeHistory = this.responseTimeHistory.slice(-100);
+      }
+
+      // Check for slow responses
+      if (this.options.responseTimeThresholdMs && responseTime > this.options.responseTimeThresholdMs) {
+        this.slowResponseCount++;
+
+        // Check if we should mark service as degraded
+        if (this.options.slowResponseThreshold &&
+            this.slowResponseCount >= this.options.slowResponseThreshold) {
+          this.emit('degradedService', {
+            reason: 'Slow response times detected',
+            averageResponseTime: this.getAverageResponseTime(),
+            threshold: this.options.responseTimeThresholdMs
+          });
+        }
+      } else {
+        this.slowResponseCount = Math.max(0, this.slowResponseCount - 1);
+      }
     }
-    
+
+    if (this.state === CircuitState.HALF_OPEN) {
+      this.successCount++;
+      this.logger.debug(`Successful request in HALF_OPEN state (${this.successCount}/${this.options.halfOpenRequestLimit})`);
+
+      if (this.successCount >= this.options.halfOpenRequestLimit) {
+        this.transitionToState(CircuitState.CLOSED, 'Success threshold reached in HALF_OPEN state');
+        this.resetBackoffTimeout();
+      }
+    }
+
     this.failureCount = 0;
-    this.successCount = 0;
   }
 
   /**
    * Record a failed operation
    * @param operationName Name of the operation
    * @param error Error that occurred
+   * @param responseTime Response time if available
    */
-  private recordFailure(operationName: string, error: any): void {
+  private recordFailure(operationName: string, error: any, responseTime?: number): void {
     this.failureCount++;
+    this.consecutiveFailures++;
     this.lastFailureTime = Date.now();
 
     const errorMessage = error instanceof Error ? error.message : String(error);
-    
+
+    // Track failures in time window for intelligent detection
+    if (this.options.failureTimeWindowMs) {
+      const now = Date.now();
+      this.failureTimeWindow.push(now);
+
+      // Remove failures outside the time window
+      this.failureTimeWindow = this.failureTimeWindow.filter(
+        timestamp => now - timestamp <= this.options.failureTimeWindowMs!
+      );
+    }
+
+    // Predictive failure detection
+    if (this.options.enablePredictiveFailure && this.shouldPredictFailure()) {
+      this.transitionToState(
+        CircuitState.OPEN,
+        `Predictive failure detection triggered: ${errorMessage}`
+      );
+      this.applyExponentialBackoff();
+      return;
+    }
+
     if (this.state === CircuitState.HALF_OPEN) {
       this.transitionToState(
-        CircuitState.OPEN, 
+        CircuitState.OPEN,
         `Failed request in HALF_OPEN state: ${errorMessage}`
       );
       this.successCount = 0;
-    } else if (this.failureCount >= this.options.failureThreshold) {
+      this.applyExponentialBackoff();
+    } else if (this.shouldOpenCircuit()) {
       this.transitionToState(
-        CircuitState.OPEN, 
-        `Failure threshold reached (${this.failureCount}/${this.options.failureThreshold}): ${errorMessage}`
+        CircuitState.OPEN,
+        `Failure threshold reached (${this.getEffectiveFailureCount()}/${this.options.failureThreshold}): ${errorMessage}`
       );
       this.successCount = 0;
+      this.applyExponentialBackoff();
     } else {
       this.logger.debug(
-        `Failure count increased for ${operationName} (${this.failureCount}/${this.options.failureThreshold})`,
-        { error: errorMessage }
+        `Failure count increased for ${operationName} (${this.getEffectiveFailureCount()}/${this.options.failureThreshold})`,
+        { error: errorMessage, consecutiveFailures: this.consecutiveFailures }
       );
     }
   }
@@ -269,12 +345,12 @@ export class VectorServiceCircuitBreaker extends EventEmitter implements VectorS
         clearTimeout(this.halfOpenTimer);
       }
 
-      // Set up new timer
+      // Set up new timer with current reset timeout (includes exponential backoff)
       this.halfOpenTimer = setTimeout(() => {
         if (this.state === CircuitState.OPEN) {
           this.transitionToState(CircuitState.HALF_OPEN, 'Automatic transition after reset timeout');
         }
-      }, this.options.resetTimeoutMs);
+      }, this.currentResetTimeout);
     }
   }
 
@@ -284,7 +360,7 @@ export class VectorServiceCircuitBreaker extends EventEmitter implements VectorS
    */
   getMetrics(): CircuitBreakerMetrics {
     const totalRequests = Math.max(this.metrics.totalRequests, 1); // Avoid division by zero
-    
+
     return {
       totalRequests: this.metrics.totalRequests,
       successfulRequests: this.metrics.successfulRequests,
@@ -435,6 +511,89 @@ export class VectorServiceCircuitBreaker extends EventEmitter implements VectorS
    */
   getCircuitState(): CircuitState {
     return this.state;
+  }
+
+  /**
+   * Check if circuit should open based on intelligent failure detection
+   * @private
+   */
+  private shouldOpenCircuit(): boolean {
+    // Use time window-based failure counting if configured
+    if (this.options.failureTimeWindowMs && this.failureTimeWindow.length > 0) {
+      return this.failureTimeWindow.length >= this.options.failureThreshold;
+    }
+
+    // Fall back to simple failure count
+    return this.failureCount >= this.options.failureThreshold;
+  }
+
+  /**
+   * Get effective failure count (considering time window)
+   * @private
+   */
+  private getEffectiveFailureCount(): number {
+    if (this.options.failureTimeWindowMs && this.failureTimeWindow.length > 0) {
+      return this.failureTimeWindow.length;
+    }
+    return this.failureCount;
+  }
+
+  /**
+   * Check if predictive failure should trigger
+   * @private
+   */
+  private shouldPredictFailure(): boolean {
+    if (!this.options.enablePredictiveFailure) {
+      return false;
+    }
+
+    // Trigger if we have multiple consecutive failures and degraded response times
+    const hasConsecutiveFailures = this.consecutiveFailures >= Math.ceil(this.options.failureThreshold / 2);
+    const hasDegradedResponseTime = this.getAverageResponseTime() > (this.options.responseTimeThresholdMs || 5000);
+
+    return hasConsecutiveFailures && hasDegradedResponseTime;
+  }
+
+  /**
+   * Apply exponential backoff to reset timeout
+   * @private
+   */
+  private applyExponentialBackoff(): void {
+    if (!this.options.maxResetTimeoutMs) {
+      return;
+    }
+
+    // Double the timeout, but cap at maximum
+    this.currentResetTimeout = Math.min(
+      this.currentResetTimeout * 2,
+      this.options.maxResetTimeoutMs
+    );
+
+    this.logger.info(`Applied exponential backoff: ${this.currentResetTimeout}ms`);
+  }
+
+  /**
+   * Reset backoff timeout to original value
+   * @private
+   */
+  private resetBackoffTimeout(): void {
+    this.currentResetTimeout = this.options.resetTimeoutMs;
+    this.consecutiveFailures = 0;
+    this.slowResponseCount = 0;
+    this.logger.info('Reset backoff timeout to original value');
+  }
+
+  /**
+   * Get average response time
+   * @private
+   */
+  private getAverageResponseTime(): number {
+    if (this.responseTimeHistory.length === 0) {
+      return 0;
+    }
+
+    const sum = this.responseTimeHistory.reduce((a, b) => a + b, 0);
+    return sum / this.responseTimeHistory.length;
   }
 
   /**

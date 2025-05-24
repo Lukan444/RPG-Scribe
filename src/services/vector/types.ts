@@ -1,6 +1,6 @@
 /**
  * Vector Database Integration Types
- * 
+ *
  * This file contains the type definitions for the Vector Database Integration
  * architecture, which enables AI-powered features in RPG Scribe using
  * Google's Vertex AI Vector Search.
@@ -168,6 +168,20 @@ export interface CircuitBreakerOptions {
   resetTimeoutMs: number;
   /** Half-open state request limit */
   halfOpenRequestLimit: number;
+  /** Timeout for individual requests (ms) */
+  requestTimeoutMs?: number;
+  /** Enable detailed logging */
+  enableLogging?: boolean;
+  /** Time window for failure counting (ms) - default: 60 seconds */
+  failureTimeWindowMs?: number;
+  /** Maximum reset timeout for exponential backoff (ms) - default: 10 minutes */
+  maxResetTimeoutMs?: number;
+  /** Response time threshold for degraded service detection (ms) - default: 5 seconds */
+  responseTimeThresholdMs?: number;
+  /** Number of slow responses before marking as degraded */
+  slowResponseThreshold?: number;
+  /** Enable predictive failure detection */
+  enablePredictiveFailure?: boolean;
 }
 
 /**
@@ -207,6 +221,76 @@ export interface SearchResult {
 }
 
 /**
+ * Service levels for graceful degradation
+ */
+export enum ServiceLevel {
+  /** Full functionality with Vertex AI */
+  FULL = 'FULL',
+  /** Degraded mode with local vector processing */
+  DEGRADED = 'DEGRADED',
+  /** Emergency mode with keyword search only */
+  EMERGENCY = 'EMERGENCY',
+  /** Offline mode with cached results only */
+  OFFLINE = 'OFFLINE'
+}
+
+/**
+ * Cache tier configuration
+ */
+export interface CacheTierConfig {
+  /** Maximum number of entries */
+  maxEntries: number;
+  /** Time-to-live in milliseconds */
+  ttlMs: number;
+  /** Storage type */
+  storageType: 'memory' | 'localStorage' | 'indexedDB' | 'firestore';
+}
+
+/**
+ * Multi-tier cache configuration
+ */
+export interface CacheConfig {
+  /** Memory cache configuration */
+  memory: CacheTierConfig;
+  /** Local storage cache configuration */
+  localStorage: CacheTierConfig;
+  /** IndexedDB cache configuration */
+  indexedDB: CacheTierConfig;
+  /** Firestore cache configuration */
+  firestore: CacheTierConfig;
+}
+
+/**
+ * Local vector processing options
+ */
+export interface LocalVectorOptions {
+  /** Enable local vector similarity calculations */
+  enabled: boolean;
+  /** Maximum number of vectors to cache locally */
+  maxCachedVectors: number;
+  /** Vector compression ratio (0-1) */
+  compressionRatio: number;
+  /** Similarity algorithm to use */
+  algorithm: 'cosine' | 'dotProduct' | 'euclidean';
+}
+
+/**
+ * Fallback strategy configuration
+ */
+export interface FallbackConfig {
+  /** Enable fallback system */
+  enabled: boolean;
+  /** Cache configuration */
+  cache: CacheConfig;
+  /** Local vector processing options */
+  localVector: LocalVectorOptions;
+  /** Keyword search fallback enabled */
+  keywordSearchEnabled: boolean;
+  /** Cache warming enabled */
+  cacheWarmingEnabled: boolean;
+}
+
+/**
  * Configuration for Vertex AI
  */
 export interface VertexAIConfig {
@@ -228,4 +312,6 @@ export interface VertexAIConfig {
   maxRetries: number;
   /** Timeout in milliseconds */
   timeoutMs: number;
+  /** Fallback configuration */
+  fallback?: FallbackConfig;
 }

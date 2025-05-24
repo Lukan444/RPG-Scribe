@@ -13,6 +13,7 @@ export type { VectorService } from './VectorService';
 // Implementations
 export { VertexAIVectorService } from './VertexAIVectorService';
 export { VertexAIClient } from './VertexAIClient';
+export { VertexAIIndexManager } from './VertexAIIndexManager';
 export { VectorServiceCircuitBreaker } from './VectorServiceCircuitBreaker';
 export { EntityVectorSynchronizer } from './EntityVectorSynchronizer';
 export {
@@ -21,6 +22,11 @@ export {
   KeywordSearchStrategy,
   CacheSearchStrategy
 } from './VectorSearchFallbackChain';
+
+// Enhanced Fallback and Resilience Components
+export { EnhancedVertexAIVectorService } from './EnhancedVertexAIVectorService';
+export { LocalVectorProcessor } from './LocalVectorProcessor';
+export { MultiTierCacheManager } from './MultiTierCacheManager';
 
 // Factory
 export { VectorServiceFactory } from './VectorServiceFactory';

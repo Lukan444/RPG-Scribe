@@ -5,6 +5,7 @@
   "dependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
+    "@google-cloud/aiplatform": "^4.2.0",
     "@hello-pangea/dnd": "^18.0.1",
     "@mantine/core": "^8.0.1",
     "@mantine/dates": "^8.0.1",
@@ -32,6 +33,7 @@
     "firebase": "^10.7.0",
     "firebaseui": "^6.1.0",
     "framer-motion": "^12.12.1",
+    "google-auth-library": "^10.0.0-rc.2",
     "i18next": "^25.2.0",
     "i18next-browser-languagedetector": "^8.1.0",
     "i18next-http-backend": "^3.0.2",
@@ -43,6 +45,7 @@
     "react-scripts": "5.0.1",
     "reactflow": "^11.11.4",
     "typescript": "^5.3.3",
+    "uuid": "^11.1.0",
     "web-vitals": "^2.1.4"
   },
   "devDependencies": {

@@ -10,6 +10,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { EntityType } from '../../models/EntityType';
 import { VectorService } from './VectorService';
 import { VertexAIClient } from './VertexAIClient';
+import { VertexAIIndexManager } from './VertexAIIndexManager';
 import {
   EmbeddingOptions,
   SimilaritySearchOptions,
@@ -25,12 +26,14 @@ import { DEFAULT_EMBEDDING_MODEL } from './config';
  */
 export class VertexAIVectorService implements VectorService {
   private client: VertexAIClient;
+  private indexManager: VertexAIIndexManager;
   private config: VertexAIConfig;
   private lastStatus: ServiceStatus = {
     available: true,
     degraded: false,
     timestamp: Date.now()
   };
+  private initialized: boolean = false;
 
   /**
    * Create a new Vertex AI Vector Service
@@ -39,6 +42,78 @@ export class VertexAIVectorService implements VectorService {
   constructor(config: VertexAIConfig) {
     this.config = config;
     this.client = new VertexAIClient(config);
+    this.indexManager = new VertexAIIndexManager(config);
+  }
+
+  /**
+   * Initialize the vector service
+   * Sets up indices and prepares for operations
+   */
+  async initialize(): Promise<void> {
+    if (this.initialized) {
+      return;
+    }
+
+    try {
+      console.log('Initializing Vertex AI Vector Service...');
+
+      // Initialize the index manager
+      await this.indexManager.initialize();
+
+      // Create default indices for each entity type if they don't exist
+      await this.ensureDefaultIndices();
+
+      this.initialized = true;
+      console.log('Vertex AI Vector Service initialized successfully');
+    } catch (error) {
+      console.error('Error initializing Vertex AI Vector Service:', error);
+      throw new Error(`Failed to initialize Vector Service: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  /**
+   * Ensure default indices exist for all entity types
+   * @private
+   */
+  private async ensureDefaultIndices(): Promise<void> {
+    const entityTypes = Object.values(EntityType);
+    const existingIndices = this.indexManager.getAllIndices();
+
+    // Check if we have indices for all entity types
+    const coveredTypes = new Set<EntityType>();
+    existingIndices.forEach(index => {
+      index.entityTypes.forEach(type => coveredTypes.add(type));
+    });
+
+    // Create indices for uncovered entity types
+    const uncoveredTypes = entityTypes.filter(type => !coveredTypes.has(type));
+
+    if (uncoveredTypes.length > 0) {
+      console.log(`Creating default indices for entity types: ${uncoveredTypes.join(', ')}`);
+
+      // Group entity types for efficient indexing
+      const groups = [
+        { name: 'characters', types: [EntityType.CHARACTER] },
+        { name: 'locations', types: [EntityType.LOCATION] },
+        { name: 'factions', types: [EntityType.FACTION] },
+        { name: 'items', types: [EntityType.ITEM] },
+        { name: 'events', types: [EntityType.EVENT] },
+        { name: 'notes', types: [EntityType.NOTE] },
+        { name: 'campaigns', types: [EntityType.CAMPAIGN] },
+        { name: 'sessions', types: [EntityType.SESSION] },
+        { name: 'story-arcs', types: [EntityType.STORY_ARC] }
+      ];
+
+      for (const group of groups) {
+        const needsIndex = group.types.some(type => uncoveredTypes.includes(type));
+        if (needsIndex) {
+          await this.indexManager.createIndex(
+            group.name,
+            group.types.filter(type => uncoveredTypes.includes(type))
+          );
+        }
+      }
+    }
   }
 
   /**
@@ -85,23 +160,27 @@ export class VertexAIVectorService implements VectorService {
     metadata?: Record<string, any>
   ): Promise<string> {
     try {
-      // In a real implementation, this would store the embedding in Vertex AI Vector Search
-      // For now, we'll use a placeholder that would be replaced with actual storage
+      // Ensure the service is initialized
+      await this.initialize();
 
-      // Generate a unique ID for the embedding
-      const embeddingId = uuidv4();
+      // Prepare entity vector data
+      const entityVectorData = [{
+        entityId,
+        entityType,
+        embedding,
+        metadata: {
+          name: metadata?.name || entityId,
+          description: metadata?.description,
+          tags: metadata?.tags || [],
+          lastUpdated: new Date()
+        }
+      }];
 
-      // In a real implementation, we would store the embedding in Vertex AI Vector Search
-      // For example:
-      // await this.client.storeEmbedding(embeddingId, embedding, {
-      //   entityId,
-      //   entityType,
-      //   ...metadata
-      // });
+      // Store in appropriate indices using the index manager
+      await this.indexManager.addEntityVectors(entityVectorData);
 
-      console.log(`Stored embedding ${embeddingId} for entity ${entityId} of type ${entityType}`);
-
-      return embeddingId;
+      console.log(`Stored embedding for entity ${entityId} of type ${entityType}`);
+      return entityId; // Use entity ID as the embedding ID
     } catch (error) {
       console.error('Error storing embedding:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -120,21 +199,30 @@ export class VertexAIVectorService implements VectorService {
     options?: SimilaritySearchOptions
   ): Promise<SimilaritySearchResult[]> {
     try {
-      // In a real implementation, this would search for similar embeddings in Vertex AI Vector Search
-      // For now, we'll use a placeholder that would be replaced with actual search
+      // Ensure the service is initialized
+      await this.initialize();
 
-      // In a real implementation, we would search for similar embeddings in Vertex AI Vector Search
-      // For example:
-      // const results = await this.client.findSimilar(embedding, {
-      //   limit: options?.limit || 10,
-      //   minScore: options?.minScore || 0.7,
-      //   filters: {
-      //     entityType: options?.entityTypes
-      //   }
-      // });
+      const entityTypes = options?.entityTypes || Object.values(EntityType);
+      const limit = options?.limit || 10;
+      const minScore = options?.minScore || 0.0;
 
-      // For now, return an empty array
-      return [];
+      // Search using the index manager
+      const results = await this.indexManager.searchSimilarEntities(
+        embedding,
+        entityTypes,
+        limit
+      );
+
+      // Convert to SimilaritySearchResult format and filter by minimum score
+      return results
+        .filter(result => result.score >= minScore)
+        .map(result => ({
+          embeddingId: result.entityId, // Use entityId as embeddingId
+          entityId: result.entityId,
+          entityType: result.metadata?.entity_type?.[0] as EntityType || EntityType.CHARACTER,
+          score: result.score,
+          metadata: result.metadata
+        }));
     } catch (error) {
       console.error('Error finding similar entities:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -171,20 +259,25 @@ export class VertexAIVectorService implements VectorService {
 
   /**
    * Delete an embedding
-   * @param embeddingId ID of the embedding to delete
+   * @param embeddingId ID of the embedding to delete (entity ID)
+   * @param entityType Type of the entity (required for targeting correct indices)
    * @returns True if successful
    */
-  async deleteEmbedding(embeddingId: string): Promise<boolean> {
+  async deleteEmbedding(embeddingId: string, entityType?: EntityType): Promise<boolean> {
     try {
-      // In a real implementation, this would delete the embedding from Vertex AI Vector Search
-      // For now, we'll use a placeholder that would be replaced with actual deletion
+      // Ensure the service is initialized
+      await this.initialize();
 
-      // In a real implementation, we would delete the embedding from Vertex AI Vector Search
-      // For example:
-      // await this.client.deleteEmbedding(embeddingId);
+      if (!entityType) {
+        // If no entity type provided, we can't efficiently target indices
+        console.warn(`No entity type provided for embedding deletion: ${embeddingId}`);
+        return false;
+      }
 
-      console.log(`Deleted embedding ${embeddingId}`);
+      // Remove from indices using the index manager
+      await this.indexManager.removeEntityVectors([embeddingId], entityType);
 
+      console.log(`Deleted embedding ${embeddingId} of type ${entityType}`);
       return true;
     } catch (error) {
       console.error('Error deleting embedding:', error);
