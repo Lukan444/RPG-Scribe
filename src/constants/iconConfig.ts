@@ -33,15 +33,15 @@ import { EntityType } from '../models/EntityType';
 export { EntityType };
 
 /**
- * Standard icon size using Mantine's rem() function
- * This ensures consistent sizing across the application
+ * Standard icon size using fixed pixel values
+ * This ensures consistent sizing across the application and prevents SVG calc() errors
  */
-export const ICON_SIZE = rem(18);
+export const ICON_SIZE = 18;
 
 /**
  * Standard icon size for larger icons
  */
-export const ICON_SIZE_LARGE = rem(24);
+export const ICON_SIZE_LARGE = 24;
 
 /**
  * Entity category colors

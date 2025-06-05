@@ -92,7 +92,7 @@ export const TimelineSetupGuide: React.FC<TimelineSetupGuideProps> = ({
 
     setLoading(true);
     try {
-      await sampleDataPopulator.populateTimelineData(user.uid);
+      await sampleDataPopulator.populateTimelineData(user.id);
 
       notifications.show({
         title: 'Sample Data Created',

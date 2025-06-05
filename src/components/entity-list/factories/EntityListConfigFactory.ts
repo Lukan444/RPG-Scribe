@@ -69,15 +69,19 @@ export class EntityListConfigFactory {
       descriptionField: 'description',
       imageField: 'imageURL',
       renderBadge: null, // Will be set in the component
-      getViewRoute: (id, worldId, campaignId) => {
-        if (worldId) {
-          return `/rpg-worlds/${worldId}/characters/${id}`;
+      getViewRoute: (id, worldId, campaignId, entity) => {
+        // Use entity's worldId if available, fallback to provided worldId
+        const effectiveWorldId = entity?.worldId || worldId;
+        if (effectiveWorldId) {
+          return `/rpg-worlds/${effectiveWorldId}/characters/${id}`;
         }
         return `/characters/${id}`;
       },
-      getEditRoute: (id, worldId, campaignId) => {
-        if (worldId) {
-          return `/rpg-worlds/${worldId}/characters/${id}/edit`;
+      getEditRoute: (id, worldId, campaignId, entity) => {
+        // Use entity's worldId if available, fallback to provided worldId
+        const effectiveWorldId = entity?.worldId || worldId;
+        if (effectiveWorldId) {
+          return `/rpg-worlds/${effectiveWorldId}/characters/${id}/edit`;
         }
         return `/characters/${id}/edit`;
       },
@@ -152,15 +156,19 @@ export class EntityListConfigFactory {
       descriptionField: 'description',
       imageField: 'imageURL',
       renderBadge: null, // Will be set in the component
-      getViewRoute: (id, worldId, campaignId) => {
-        if (worldId) {
-          return `/rpg-worlds/${worldId}/locations/${id}`;
+      getViewRoute: (id, worldId, campaignId, entity) => {
+        // Use entity's worldId if available, fallback to provided worldId
+        const effectiveWorldId = entity?.worldId || worldId;
+        if (effectiveWorldId) {
+          return `/rpg-worlds/${effectiveWorldId}/locations/${id}`;
         }
         return `/locations/${id}`;
       },
-      getEditRoute: (id, worldId, campaignId) => {
-        if (worldId) {
-          return `/rpg-worlds/${worldId}/locations/${id}/edit`;
+      getEditRoute: (id, worldId, campaignId, entity) => {
+        // Use entity's worldId if available, fallback to provided worldId
+        const effectiveWorldId = entity?.worldId || worldId;
+        if (effectiveWorldId) {
+          return `/rpg-worlds/${effectiveWorldId}/locations/${id}/edit`;
         }
         return `/locations/${id}/edit`;
       },
@@ -229,15 +237,19 @@ export class EntityListConfigFactory {
       descriptionField: 'description',
       imageField: 'imageURL',
       renderBadge: null, // Will be set in the component
-      getViewRoute: (id, worldId, campaignId) => {
-        if (worldId) {
-          return `/rpg-worlds/${worldId}/factions/${id}`;
+      getViewRoute: (id, worldId, campaignId, entity) => {
+        // Use entity's worldId if available, fallback to provided worldId
+        const effectiveWorldId = entity?.worldId || worldId;
+        if (effectiveWorldId) {
+          return `/rpg-worlds/${effectiveWorldId}/factions/${id}`;
         }
         return `/factions/${id}`;
       },
-      getEditRoute: (id, worldId, campaignId) => {
-        if (worldId) {
-          return `/rpg-worlds/${worldId}/factions/${id}/edit`;
+      getEditRoute: (id, worldId, campaignId, entity) => {
+        // Use entity's worldId if available, fallback to provided worldId
+        const effectiveWorldId = entity?.worldId || worldId;
+        if (effectiveWorldId) {
+          return `/rpg-worlds/${effectiveWorldId}/factions/${id}/edit`;
         }
         return `/factions/${id}/edit`;
       },
@@ -312,15 +324,19 @@ export class EntityListConfigFactory {
       descriptionField: 'summary',
       imageField: 'imageURL',
       renderBadge: null, // Will be set in the component
-      getViewRoute: (id, worldId, campaignId) => {
-        if (worldId) {
-          return `/rpg-worlds/${worldId}/sessions/${id}`;
+      getViewRoute: (id, worldId, campaignId, entity) => {
+        // Use entity's worldId if available, fallback to provided worldId
+        const effectiveWorldId = entity?.worldId || worldId;
+        if (effectiveWorldId) {
+          return `/rpg-worlds/${effectiveWorldId}/sessions/${id}`;
         }
         return `/sessions/${id}`;
       },
-      getEditRoute: (id, worldId, campaignId) => {
-        if (worldId) {
-          return `/rpg-worlds/${worldId}/sessions/${id}/edit`;
+      getEditRoute: (id, worldId, campaignId, entity) => {
+        // Use entity's worldId if available, fallback to provided worldId
+        const effectiveWorldId = entity?.worldId || worldId;
+        if (effectiveWorldId) {
+          return `/rpg-worlds/${effectiveWorldId}/sessions/${id}/edit`;
         }
         return `/sessions/${id}/edit`;
       },
@@ -412,15 +428,19 @@ export class EntityListConfigFactory {
       descriptionField: 'description',
       imageField: 'imageURL',
       renderBadge: null, // Will be set in the component
-      getViewRoute: (id, worldId, campaignId) => {
-        if (worldId) {
-          return `/rpg-worlds/${worldId}/story-arcs/${id}`;
+      getViewRoute: (id, worldId, campaignId, entity) => {
+        // Use entity's worldId if available, fallback to provided worldId
+        const effectiveWorldId = entity?.worldId || worldId;
+        if (effectiveWorldId) {
+          return `/rpg-worlds/${effectiveWorldId}/story-arcs/${id}`;
         }
         return `/story-arcs/${id}`;
       },
-      getEditRoute: (id, worldId, campaignId) => {
-        if (worldId) {
-          return `/rpg-worlds/${worldId}/story-arcs/${id}/edit`;
+      getEditRoute: (id, worldId, campaignId, entity) => {
+        // Use entity's worldId if available, fallback to provided worldId
+        const effectiveWorldId = entity?.worldId || worldId;
+        if (effectiveWorldId) {
+          return `/rpg-worlds/${effectiveWorldId}/story-arcs/${id}/edit`;
         }
         return `/story-arcs/${id}/edit`;
       },
@@ -504,15 +524,19 @@ export class EntityListConfigFactory {
       descriptionField: 'content',
       imageField: null,
       renderBadge: null, // Will be set in the component
-      getViewRoute: (id, worldId, campaignId) => {
-        if (worldId) {
-          return `/rpg-worlds/${worldId}/notes/${id}`;
+      getViewRoute: (id, worldId, campaignId, entity) => {
+        // Use entity's worldId if available, fallback to provided worldId
+        const effectiveWorldId = entity?.worldId || worldId;
+        if (effectiveWorldId) {
+          return `/rpg-worlds/${effectiveWorldId}/notes/${id}`;
         }
         return `/notes/${id}`;
       },
-      getEditRoute: (id, worldId, campaignId) => {
-        if (worldId) {
-          return `/rpg-worlds/${worldId}/notes/${id}/edit`;
+      getEditRoute: (id, worldId, campaignId, entity) => {
+        // Use entity's worldId if available, fallback to provided worldId
+        const effectiveWorldId = entity?.worldId || worldId;
+        if (effectiveWorldId) {
+          return `/rpg-worlds/${effectiveWorldId}/notes/${id}/edit`;
         }
         return `/notes/${id}/edit`;
       },
@@ -525,6 +549,119 @@ export class EntityListConfigFactory {
       showRelationshipCounts: true,
       emptyStateMessage: 'No notes found',
       emptyStateActionText: 'Create New Note',
+      itemsPerPage: 12,
+      showAddButton: true,
+      showFilterPanel: true,
+      showSortPanel: true,
+      showSearchBox: true,
+      showPagination: true,
+      useVirtualScrolling: false,
+      persistViewPreferences: true,
+      persistFiltersInURL: true,
+      persistSortingInURL: true,
+      persistPaginationInURL: true,
+      useAnimations: true,
+      useServerSideSorting: false,
+      useServerSideFiltering: false,
+      useServerSidePagination: false,
+      useServerSideSearch: false
+    };
+  }
+
+  /**
+   * Create an item list configuration
+   * @returns Item list configuration
+   */
+  static createItemConfig(): IEntityListConfig<any> {
+    return {
+      entityType: EntityType.ITEM,
+      displayName: 'Item',
+      icon: null, // Will be set in the component
+      color: getEntityColor(EntityType.ITEM),
+      defaultView: 'table',
+      availableViews: ['table', 'grid', 'article', 'organize'],
+      columns: [
+        { key: 'name', title: 'Name', sortable: true },
+        { key: 'itemType', title: 'Type', sortable: true },
+        { key: 'rarity', title: 'Rarity', sortable: true },
+        { key: 'requiresAttunement', title: 'Attunement', sortable: true },
+        { key: 'currentOwnerId', title: 'Current Owner', sortable: false },
+        { key: 'updatedAt', title: 'Last Updated', sortable: true }
+      ],
+      filterOptions: [
+        {
+          key: 'itemType',
+          label: 'Type',
+          options: [
+            { value: 'Weapon', label: 'Weapon' },
+            { value: 'Armor', label: 'Armor' },
+            { value: 'Potion', label: 'Potion' },
+            { value: 'Scroll', label: 'Scroll' },
+            { value: 'Wondrous Item', label: 'Wondrous Item' },
+            { value: 'Magic Item', label: 'Magic Item' },
+            { value: 'Artifact', label: 'Artifact' },
+            { value: 'Other', label: 'Other' }
+          ]
+        },
+        {
+          key: 'rarity',
+          label: 'Rarity',
+          options: [
+            { value: 'Common', label: 'Common' },
+            { value: 'Uncommon', label: 'Uncommon' },
+            { value: 'Rare', label: 'Rare' },
+            { value: 'Very Rare', label: 'Very Rare' },
+            { value: 'Legendary', label: 'Legendary' },
+            { value: 'Artifact', label: 'Artifact' },
+            { value: 'Unique', label: 'Unique' }
+          ]
+        },
+        {
+          key: 'requiresAttunement',
+          label: 'Attunement',
+          options: [
+            { value: 'true', label: 'Required' },
+            { value: 'false', label: 'Not Required' }
+          ]
+        }
+      ],
+      sortOptions: [
+        { key: 'name', label: 'Name', direction: 'asc' as 'asc', default: true },
+        { key: 'itemType', label: 'Type', direction: 'asc' as 'asc' },
+        { key: 'rarity', label: 'Rarity', direction: 'asc' as 'asc' },
+        { key: 'createdAt', label: 'Date Created', direction: 'desc' as 'desc' },
+        { key: 'updatedAt', label: 'Date Updated', direction: 'desc' as 'desc' }
+      ],
+      idField: 'id',
+      nameField: 'name',
+      descriptionField: 'description',
+      imageField: 'imageURL',
+      renderBadge: null, // Will be set in the component
+      getViewRoute: (id, worldId, campaignId, entity) => {
+        // Use entity's worldId if available, fallback to provided worldId
+        const effectiveWorldId = entity?.worldId || worldId;
+        if (effectiveWorldId) {
+          return `/rpg-worlds/${effectiveWorldId}/items/${id}`;
+        }
+        return `/items/${id}`;
+      },
+      getEditRoute: (id, worldId, campaignId, entity) => {
+        // Use entity's worldId if available, fallback to provided worldId
+        const effectiveWorldId = entity?.worldId || worldId;
+        if (effectiveWorldId) {
+          return `/rpg-worlds/${effectiveWorldId}/items/${id}/edit`;
+        }
+        return `/items/${id}/edit`;
+      },
+      getCreateRoute: (worldId, campaignId) => {
+        if (worldId) {
+          return `/rpg-worlds/${worldId}/items/new`;
+        }
+        return `/items/new`;
+      },
+      showRelationshipCounts: true,
+      emptyStateMessage: 'No items found',
+      emptyStateActionText: 'Create New Item',
       itemsPerPage: 12,
       showAddButton: true,
       showFilterPanel: true,
@@ -563,6 +700,8 @@ export class EntityListConfigFactory {
         return this.createStoryArcConfig() as unknown as IEntityListConfig<T>;
       case EntityType.NOTE:
         return this.createNoteConfig() as unknown as IEntityListConfig<T>;
+      case EntityType.ITEM:
+        return this.createItemConfig() as unknown as IEntityListConfig<T>;
       // Add more entity types as needed
       default:
         throw new Error(`Unsupported entity type: ${entityType}`);

@@ -3,7 +3,7 @@
  * True dual-axis timeline with synchronized real-world and in-game timelines
  */
 
-import React, { useRef, useCallback, useEffect, useState } from 'react';
+import React, { useRef, useCallback, useEffect, useState, useMemo } from 'react';
 import Timeline, {
   TimelineMarkers,
   TodayMarker,
@@ -52,7 +52,6 @@ import { timelineDataIntegration, TimelineDataContext, TimelineEventData } from 
 import { timelineConflictDetection, TimelineConflict } from '../../services/timelineConflictDetection.service';
 import { timelineAnalytics, TimelineMetrics } from '../../services/timelineAnalytics.service';
 import { timelineExport, ExportOptions } from '../../services/timelineExport.service';
-// Note: CSS import removed as it's not available in the current package version
 
 /**
  * Mock dual timeline event for demonstration
@@ -76,6 +75,11 @@ interface MockDualTimelineEvent {
  */
 export function DualTimelineVisualization({
   config,
+  worldId,
+  campaignId,
+  sessionId,
+  entityFilter,
+  timeRange,
   onEventClick,
   onEventEdit,
   onEventCreate,
@@ -88,6 +92,7 @@ export function DualTimelineVisualization({
   onSyncToggle,
   onConflictResolve,
   onConflictDismiss,
+  onFixParticipants,
   className,
   style
 }: DualTimelineVisualizationProps) {
@@ -96,11 +101,51 @@ export function DualTimelineVisualization({
   const realWorldTimelineRef = useRef<any>(null);
   const inGameTimelineRef = useRef<any>(null);
 
+  // Create default config if not provided
+  const timelineConfig = useMemo(() => {
+    if (config) return config;
+
+    return {
+      worldId: worldId || 'default-world',
+      campaignId: campaignId || 'default-campaign',
+      sessionId: sessionId,
+      height: 400,
+      enableEditing: true,
+      showMarkers: true,
+      showMetrics: false,
+      displayMode: 'dual' as DualTimelineDisplayMode,
+      syncOptions: {
+        syncScrolling: true,
+        syncZoom: true,
+        showConnections: true
+      },
+      realWorldConfig: {
+        timeFormat: '24h',
+        dateFormat: 'YYYY-MM-DD',
+        showWeekends: true,
+        workingHours: { start: 9, end: 17 }
+      },
+      inGameConfig: {
+        calendar: 'gregorian',
+        timeScale: 1,
+        epochYear: 1420,
+        monthNames: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+      },
+      theme: {
+        primaryColor: '#1c7ed6',
+        secondaryColor: '#51cf66',
+        backgroundColor: '#ffffff',
+        textColor: '#000000',
+        gridColor: '#e9ecef'
+      }
+    };
+  }, [config, worldId, campaignId, sessionId]);
+
   // Component state
-  const [displayMode, setDisplayMode] = useState<DualTimelineDisplayMode>(config.displayMode);
-  const [syncScrolling, setSyncScrolling] = useState(config.syncOptions.syncScrolling);
-  const [syncZoom, setSyncZoom] = useState(config.syncOptions.syncZoom);
-  const [showConnections, setShowConnections] = useState(config.syncOptions.showConnections);
+  const [displayMode, setDisplayMode] = useState<DualTimelineDisplayMode>(timelineConfig.displayMode);
+  const [syncScrolling, setSyncScrolling] = useState(timelineConfig.syncOptions.syncScrolling);
+  const [syncZoom, setSyncZoom] = useState(timelineConfig.syncOptions.syncZoom);
+  const [showConnections, setShowConnections] = useState(timelineConfig.syncOptions.showConnections);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -116,12 +161,12 @@ export function DualTimelineVisualization({
   const [exportLoading, setExportLoading] = useState(false);
 
   // Time conversion service
-  const [timeConversionService] = useState(() => new TimeConversionService(config.timeConversion));
+  const [timeConversionService] = useState(() => createDefaultTimeConversion());
 
   // Load real timeline data
   useEffect(() => {
     const loadTimelineData = async () => {
-      if (!useRealData || !config.worldId) {
+      if (!useRealData || !timelineConfig.worldId) {
         return;
       }
 
@@ -130,14 +175,14 @@ export function DualTimelineVisualization({
 
       try {
         const context: TimelineDataContext = {
-          worldId: config.worldId,
-          campaignId: config.campaignId
+          worldId: timelineConfig.worldId,
+          campaignId: timelineConfig.campaignId
         };
 
         const events = await timelineDataIntegration.loadTimelineEvents(context);
         setTimelineEvents(events);
 
-        // Run conflict detection
+        // Run conflict detection with hierarchical logic
         if (events.length > 0) {
           const detectedConflicts = timelineConflictDetection.detectConflicts(events, {
             checkOverlaps: true,
@@ -145,7 +190,10 @@ export function DualTimelineVisualization({
             checkCharacters: true,
             checkLocations: true,
             overlapThreshold: 30,
-            includeLowSeverity: true
+            includeLowSeverity: true,
+            // Enable hierarchical detection to separate real-world from in-game conflicts
+            enableHierarchicalDetection: true,
+            realWorldConflictsOnly: false // Check both timelines but with different logic
           });
           setConflicts(detectedConflicts);
 
@@ -156,14 +204,14 @@ export function DualTimelineVisualization({
       } catch (err) {
         console.error('Error loading timeline data:', err);
         setError('Failed to load timeline data');
-        setUseRealData(false); // Fall back to mock data
+        // Don't change useRealData here to prevent infinite loop
       } finally {
         setLoading(false);
       }
     };
 
     loadTimelineData();
-  }, [config.worldId, config.campaignId, useRealData]);
+  }, [timelineConfig.worldId, timelineConfig.campaignId]); // Removed useRealData from dependencies
 
   // Mock data for demonstration
   const [mockEvents] = useState<MockDualTimelineEvent[]>([
@@ -366,8 +414,8 @@ export function DualTimelineVisualization({
         includeConflicts: true,
         includeAnalytics: true,
         customization: {
-          title: `${config.worldId} Timeline Export`,
-          description: `Dual timeline export for campaign ${config.campaignId}`,
+          title: `${timelineConfig.worldId} Timeline Export`,
+          description: `Dual timeline export for campaign ${timelineConfig.campaignId}`,
           theme: 'light',
           showLegend: true,
           showGrid: true
@@ -392,7 +440,7 @@ export function DualTimelineVisualization({
     } finally {
       setExportLoading(false);
     }
-  }, [timelineEvents, config.worldId, config.campaignId, metrics, conflicts]);
+  }, [timelineEvents, timelineConfig.worldId, timelineConfig.campaignId, metrics, conflicts]);
 
   /**
    * Toggle metrics panel
@@ -548,7 +596,7 @@ export function DualTimelineVisualization({
               </Badge>
             </Group>
 
-            <Box style={{ height: config.height / (displayMode === 'dual' ? 2 : 1) }}>
+            <Box style={{ height: timelineConfig.height / (displayMode === 'dual' ? 2 : 1) }}>
               <Timeline
                 ref={realWorldTimelineRef}
                 groups={realWorldGroups}
@@ -556,12 +604,11 @@ export function DualTimelineVisualization({
                 defaultTimeStart={dayjs().subtract(1, 'month').valueOf()}
                 defaultTimeEnd={dayjs().add(1, 'month').valueOf()}
                 onTimeChange={handleRealWorldTimeChange}
-                onItemSelect={(itemId) => handleEventSelect(itemId, 'real-world')}
+                onItemSelect={(itemId: string) => handleEventSelect(itemId, 'real-world')}
                 onItemDoubleClick={handleEventDoubleClick}
-                onCanvasDoubleClick={(group, time) => handleCanvasDoubleClick(group, time, 'real-world')}
-                canMove={config.enableEditing}
-                canResize={config.enableEditing ? 'both' : false}
-                canSelect={true}
+                onCanvasDoubleClick={(group: any, time: number) => handleCanvasDoubleClick(group, time, 'real-world')}
+                canMove={timelineConfig.enableEditing}
+                canResize={timelineConfig.enableEditing ? 'both' : false}
                 stackItems={true}
                 itemHeightRatio={0.75}
                 lineHeight={50}
@@ -569,10 +616,10 @@ export function DualTimelineVisualization({
                 rightSidebarWidth={0}
                 buffer={3}
               >
-                {config.showMarkers && (
+                {timelineConfig.showMarkers && (
                   <TimelineMarkers>
                     <TodayMarker>
-                      {({ styles }) => (
+                      {({ styles }: { styles: any }) => (
                         <div style={{ ...styles, backgroundColor: '#1c7ed6', width: '2px' }} />
                       )}
                     </TodayMarker>
@@ -598,7 +645,7 @@ export function DualTimelineVisualization({
               </Badge>
             </Group>
 
-            <Box style={{ height: config.height / (displayMode === 'dual' ? 2 : 1) }}>
+            <Box style={{ height: timelineConfig.height / (displayMode === 'dual' ? 2 : 1) }}>
               <Timeline
                 ref={inGameTimelineRef}
                 groups={inGameGroups}
@@ -606,12 +653,11 @@ export function DualTimelineVisualization({
                 defaultTimeStart={dayjs('1422-05-01').valueOf()}
                 defaultTimeEnd={dayjs('1422-06-01').valueOf()}
                 onTimeChange={handleInGameTimeChange}
-                onItemSelect={(itemId) => handleEventSelect(itemId, 'in-game')}
+                onItemSelect={(itemId: string) => handleEventSelect(itemId, 'in-game')}
                 onItemDoubleClick={handleEventDoubleClick}
-                onCanvasDoubleClick={(group, time) => handleCanvasDoubleClick(group, time, 'in-game')}
-                canMove={config.enableEditing}
-                canResize={config.enableEditing ? 'both' : false}
-                canSelect={true}
+                onCanvasDoubleClick={(group: any, time: number) => handleCanvasDoubleClick(group, time, 'in-game')}
+                canMove={timelineConfig.enableEditing}
+                canResize={timelineConfig.enableEditing ? 'both' : false}
                 stackItems={true}
                 itemHeightRatio={0.75}
                 lineHeight={50}
@@ -619,10 +665,10 @@ export function DualTimelineVisualization({
                 rightSidebarWidth={0}
                 buffer={3}
               >
-                {config.showMarkers && (
+                {timelineConfig.showMarkers && (
                   <TimelineMarkers>
                     <TodayMarker>
-                      {({ styles }) => (
+                      {({ styles }: { styles: any }) => (
                         <div style={{ ...styles, backgroundColor: '#51cf66', width: '2px' }} />
                       )}
                     </TodayMarker>
@@ -716,9 +762,22 @@ export function DualTimelineVisualization({
         <Paper p="md" mt="md" withBorder>
           <Group justify="space-between" mb="md">
             <Title order={4}>Timeline Conflicts</Title>
-            <Badge color="orange" variant="light">
-              {conflicts.length} issues
-            </Badge>
+            <Group>
+              <Badge color="orange" variant="light">
+                {conflicts.length} issues
+              </Badge>
+              {onFixParticipants && (
+                <Button
+                  size="xs"
+                  variant="light"
+                  color="blue"
+                  onClick={onFixParticipants}
+                  leftSection={<IconSettings size={12} />}
+                >
+                  Fix Participants
+                </Button>
+              )}
+            </Group>
           </Group>
 
           <Stack gap="sm">

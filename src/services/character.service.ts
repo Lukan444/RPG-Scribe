@@ -93,6 +93,33 @@ export class CharacterService extends EntityService<Character> {
   }
 
   /**
+   * Convert Firestore Timestamp to date string
+   * @param timestamp Firestore Timestamp or date string
+   * @returns Formatted date string
+   */
+  private convertTimestampToDateString(timestamp: any): string {
+    try {
+      // Handle Firestore Timestamp objects
+      if (timestamp && typeof timestamp === 'object' && timestamp.toDate) {
+        return timestamp.toDate().toLocaleDateString();
+      }
+      // Handle regular Date objects
+      if (timestamp instanceof Date) {
+        return timestamp.toLocaleDateString();
+      }
+      // Handle date strings
+      if (typeof timestamp === 'string') {
+        return new Date(timestamp).toLocaleDateString();
+      }
+      // Fallback
+      return 'Invalid Date';
+    } catch (error) {
+      console.error('Error converting timestamp:', error);
+      return 'Invalid Date';
+    }
+  }
+
+  /**
    * Override getById to use API service when useAPI is true
    * @param id Entity ID
    * @param options Query options
@@ -126,11 +153,15 @@ export class CharacterService extends EntityService<Character> {
     }
 
     if (character) {
-      // Add entityType to the character
+      // Add entityType to the character and transform isPlayerCharacter to type
       return {
         ...character,
         entityType: EntityType.CHARACTER,
-        characterType: character.type || 'Other'
+        characterType: character.isPlayerCharacter ? 'PC' : 'NPC',
+        type: character.isPlayerCharacter ? 'PC' : 'NPC',
+        // Convert dates to formatted date strings for React rendering
+        createdAt: character.createdAt ? this.convertTimestampToDateString(character.createdAt) : undefined,
+        updatedAt: character.updatedAt ? this.convertTimestampToDateString(character.updatedAt) : undefined
       };
     }
 
@@ -643,11 +674,15 @@ export class CharacterService extends EntityService<Character> {
       }
     );
 
-    // Add entityType to each character
+    // Add entityType to each character and transform isPlayerCharacter to type
     return data.map(character => ({
       ...character,
       entityType: EntityType.CHARACTER,
-      characterType: character.type || 'Other'
+      characterType: character.isPlayerCharacter ? 'PC' : 'NPC',
+      type: character.isPlayerCharacter ? 'PC' : 'NPC',
+      // Convert dates to formatted date strings for React rendering
+      createdAt: character.createdAt ? this.convertTimestampToDateString(character.createdAt) : undefined,
+      updatedAt: character.updatedAt ? this.convertTimestampToDateString(character.updatedAt) : undefined
     }));
   }
 

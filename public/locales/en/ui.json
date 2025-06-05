@@ -10,6 +10,8 @@
     "online": "Connection restored",
     "welcome": "Welcome to RPG Scribe"
   },
+  "profile": "Profile",
+  "signOut": "Sign Out",
   "navigation": {
     "navigationTitle": "Navigation",
     "dashboard": "Dashboard",
@@ -209,6 +211,23 @@
       "getStarted": "Get started by creating a new {{entityType}}."
     }
   },
+  "buttons": {
+    "save": "Save",
+    "edit": "Edit",
+    "delete": "Delete",
+    "cancel": "Cancel",
+    "create": "Create",
+    "update": "Update",
+    "close": "Close",
+    "confirm": "Confirm",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "add": "Add",
+    "remove": "Remove",
+    "view": "View",
+    "manage": "Manage"
+  },
   "modals": {
     "titles": {
       "create": "Create {{entityType}}",
@@ -354,6 +373,7 @@
     "manageStoryArcEntities": "Manage story arc entities including creation, editing, and viewing details.",
     "manageCampaignEntities": "Manage campaign entities including creation, editing, and viewing details.",
     "manageRpgWorldEntities": "Manage RPG world entities including creation, editing, and viewing details.",
+    "manageRPGWorldEntities": "Manage RPG world entities including creation, editing, and viewing details.",
     "manageNoteEntities": "Manage note entities including creation, editing, and viewing details."
   },
 
@@ -408,6 +428,10 @@
       "lastUpdated": "Last Updated",
       "relationships": "Relationships",
       "actions": "Actions"
+    },
+    "filters": {
+      "search": "Search...",
+      "filterBy": "Filter by"
     }
   },
   "tooltips": {
@@ -476,6 +500,71 @@
       "worldSessions": "World Sessions",
       "subtitle": "Manage your RPG sessions and gameplay",
       "worldSubtitle": "Sessions in this world"
+    },
+    "timeline": {
+      "title": "Timeline Visualization",
+      "subtitle": "View campaign events in chronological order",
+      "dualTimelineSystem": "Dual Timeline System",
+      "dualTimelineDescription": "Synchronized real-world and in-game timeline visualization",
+      "realWorldTimeline": "Real World Timeline",
+      "inGameTimeline": "In-Game Timeline",
+      "timelineSynchronization": "Timeline Synchronization",
+      "syncScrolling": "Sync Scrolling",
+      "syncZoom": "Sync Zoom",
+      "showConnections": "Show Connections",
+      "showConflicts": "Show Conflicts",
+      "dualView": "Dual View",
+      "realWorld": "Real World",
+      "inGame": "In-Game",
+      "analytics": "Analytics",
+      "conflicts": "Conflicts",
+      "issues": "issues",
+      "events": "events",
+      "loadingTimelineData": "Loading timeline data...",
+      "timelineError": "Timeline Error",
+      "failedToLoadTimelineData": "Failed to load timeline data",
+      "timelineConflicts": "Timeline Conflicts",
+      "timelineOverlapDetected": "Timeline Overlap Detected",
+      "realWorldTimelineOverlapDetected": "Real-World Timeline Overlap Detected",
+      "inGameTimelineOverlapDetected": "In-Game Timeline Overlap Detected",
+      "suggestions": "Suggestions",
+      "adjustEventTiming": "Adjust event timing to avoid overlap",
+      "verifySimultaneousEvents": "Verify if events can occur simultaneously",
+      "splitOverlappingEvent": "Split overlapping event into multiple parts",
+      "adjustSessionTiming": "Adjust session timing to avoid overlap",
+      "verifySessionScheduling": "Verify session scheduling is correct",
+      "considerSplittingSessions": "Consider splitting long sessions",
+      "checkCharacterLocations": "Check if characters can be in multiple places",
+      "considerParallelStorylines": "Consider parallel storylines",
+      "filters": {
+        "title": "Timeline Filters",
+        "dateRange": "Date Range",
+        "filterEventsByDateRange": "Filter events by date range",
+        "showAllEvents": "Show all events",
+        "dualTimelineMode": "Dual Timeline Mode",
+        "selectCampaign": "Select Campaign",
+        "rpgWorld": "RPG World",
+        "campaign": "Campaign",
+        "session": "Session",
+        "timeFrame": "Time Frame",
+        "lastMonth": "Last Month",
+        "filtered": "Filtered",
+        "reset": "Reset"
+      },
+      "tabs": {
+        "timeline": "Timeline",
+        "visualizationSettings": "Visualization Settings",
+        "settings": "Settings"
+      },
+      "export": {
+        "exportTimeline": "Export Timeline",
+        "exportFormat": "Export Format",
+        "json": "JSON",
+        "csv": "CSV",
+        "markdown": "Markdown"
+      },
+      "refresh": "Refresh Timeline",
+      "toggleDisplayMode": "Toggle Display Mode"
     },
     "factions": {
       "title": "Factions",

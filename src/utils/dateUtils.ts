@@ -1,11 +1,11 @@
 /**
  * Format a date to a readable string
- * @param date Date to format
+ * @param date Date to format (supports Date, string, number, and Firestore Timestamp)
  * @param options Intl.DateTimeFormatOptions
  * @returns Formatted date string
  */
 export function formatDate(
-  date: Date | string | number,
+  date: Date | string | number | any,
   options: Intl.DateTimeFormatOptions = {
     year: 'numeric',
     month: 'short',
@@ -13,59 +13,119 @@ export function formatDate(
   }
 ): string {
   if (!date) return '';
-  
-  const dateObj = date instanceof Date ? date : new Date(date);
-  
-  if (isNaN(dateObj.getTime())) {
+
+  try {
+    let dateObj: Date;
+
+    // Handle already formatted date strings (e.g., "15/01/2024" from SessionServiceAdapter)
+    if (typeof date === 'string' && date.match(/^\d{1,2}\/\d{1,2}\/\d{4}$/)) {
+      // If it's already a formatted date string, return it as-is
+      return date;
+    }
+
+    // Handle Firestore Timestamp objects
+    if (date && typeof date === 'object' && typeof date.toDate === 'function') {
+      dateObj = date.toDate();
+    }
+    // Handle Date objects
+    else if (date instanceof Date) {
+      dateObj = date;
+    }
+    // Handle strings and numbers
+    else {
+      dateObj = new Date(date);
+    }
+
+    if (isNaN(dateObj.getTime())) {
+      return 'Invalid date';
+    }
+
+    return new Intl.DateTimeFormat('en-US', options).format(dateObj);
+  } catch (error) {
+    console.error('Error formatting date:', error);
     return 'Invalid date';
   }
-  
-  return new Intl.DateTimeFormat('en-US', options).format(dateObj);
 }
 
 /**
  * Format a date to a time string
- * @param date Date to format
+ * @param date Date to format (supports Date, string, number, and Firestore Timestamp)
  * @returns Formatted time string
  */
-export function formatTime(date: Date | string | number): string {
+export function formatTime(date: Date | string | number | any): string {
   if (!date) return '';
-  
-  const dateObj = date instanceof Date ? date : new Date(date);
-  
-  if (isNaN(dateObj.getTime())) {
+
+  try {
+    let dateObj: Date;
+
+    // Handle Firestore Timestamp objects
+    if (date && typeof date === 'object' && typeof date.toDate === 'function') {
+      dateObj = date.toDate();
+    }
+    // Handle Date objects
+    else if (date instanceof Date) {
+      dateObj = date;
+    }
+    // Handle strings and numbers
+    else {
+      dateObj = new Date(date);
+    }
+
+    if (isNaN(dateObj.getTime())) {
+      return 'Invalid time';
+    }
+
+    return new Intl.DateTimeFormat('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    }).format(dateObj);
+  } catch (error) {
+    console.error('Error formatting time:', error);
     return 'Invalid time';
   }
-  
-  return new Intl.DateTimeFormat('en-US', {
-    hour: 'numeric',
-    minute: '2-digit',
-    hour12: true
-  }).format(dateObj);
 }
 
 /**
  * Format a date to a datetime string
- * @param date Date to format
+ * @param date Date to format (supports Date, string, number, and Firestore Timestamp)
  * @returns Formatted datetime string
  */
-export function formatDateTime(date: Date | string | number): string {
+export function formatDateTime(date: Date | string | number | any): string {
   if (!date) return '';
-  
-  const dateObj = date instanceof Date ? date : new Date(date);
-  
-  if (isNaN(dateObj.getTime())) {
+
+  try {
+    let dateObj: Date;
+
+    // Handle Firestore Timestamp objects
+    if (date && typeof date === 'object' && typeof date.toDate === 'function') {
+      dateObj = date.toDate();
+    }
+    // Handle Date objects
+    else if (date instanceof Date) {
+      dateObj = date;
+    }
+    // Handle strings and numbers
+    else {
+      dateObj = new Date(date);
+    }
+
+    if (isNaN(dateObj.getTime())) {
+      return 'Invalid datetime';
+    }
+
+    return new Intl.DateTimeFormat('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    }).format(dateObj);
+  } catch (error) {
+    console.error('Error formatting datetime:', error);
     return 'Invalid datetime';
   }
-  
-  return new Intl.DateTimeFormat('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-    hour12: true
-  }).format(dateObj);
 }
 
 /**

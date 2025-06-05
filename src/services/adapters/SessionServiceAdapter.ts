@@ -55,6 +55,33 @@ export class SessionServiceAdapter implements IEntityService<Session> {
   }
 
   /**
+   * Convert Firestore Timestamp to date string
+   * @param timestamp Firestore Timestamp or date string
+   * @returns Formatted date string
+   */
+  private convertTimestampToDateString(timestamp: any): string {
+    try {
+      // Handle Firestore Timestamp objects
+      if (timestamp && typeof timestamp === 'object' && timestamp.toDate) {
+        return timestamp.toDate().toLocaleDateString();
+      }
+      // Handle regular Date objects
+      if (timestamp instanceof Date) {
+        return timestamp.toLocaleDateString();
+      }
+      // Handle date strings
+      if (typeof timestamp === 'string') {
+        return new Date(timestamp).toLocaleDateString();
+      }
+      // Fallback
+      return 'Invalid Date';
+    } catch (error) {
+      console.error('Error converting timestamp:', error);
+      return 'Invalid Date';
+    }
+  }
+
+  /**
    * Get a session by ID
    * @param id Session ID
    * @param options Options for the operation
@@ -74,12 +101,21 @@ export class SessionServiceAdapter implements IEntityService<Session> {
     const session = await this.sessionService.getById(id);
 
     if (session) {
-      // Convert from service Session to model Session
+      // Convert from service Session to model Session with proper field mapping
       return {
         ...session,
         entityType: EntityType.SESSION,
-        // Add sessionNumber as an alias for number
-        sessionNumber: session.number
+        // Map database fields to expected UI fields
+        title: session.name || session.title || `Session #${session.sessionNumber || session.number}`,
+        name: session.name || session.title || `Session #${session.sessionNumber || session.number}`,
+        number: session.sessionNumber || session.number,
+        sessionNumber: session.sessionNumber || session.number,
+        date: session.date ? this.convertTimestampToDateString(session.date) : undefined,
+        datePlayed: session.date ? this.convertTimestampToDateString(session.date) : undefined,
+        summary: session.description || session.summary,
+        // Convert Firestore Timestamps to formatted date strings for React rendering
+        createdAt: session.createdAt ? this.convertTimestampToDateString(session.createdAt) : undefined,
+        updatedAt: session.updatedAt ? this.convertTimestampToDateString(session.updatedAt) : undefined
       } as Session;
     }
 
@@ -253,12 +289,21 @@ export class SessionServiceAdapter implements IEntityService<Session> {
   }> {
     const result = await this.sessionService.query(constraints, pageSize, startAfterDoc, options);
 
-    // Convert from service Session to model Session
+    // Convert from service Session to model Session with proper field mapping
     const convertedData = result.data.map(session => ({
       ...session,
       entityType: EntityType.SESSION,
-      // Add sessionNumber as an alias for number
-      sessionNumber: session.number
+      // Map database fields to expected UI fields
+      title: session.name || session.title || `Session #${session.sessionNumber || session.number}`,
+      name: session.name || session.title || `Session #${session.sessionNumber || session.number}`,
+      number: session.sessionNumber || session.number,
+      sessionNumber: session.sessionNumber || session.number,
+      date: session.date ? this.convertTimestampToDateString(session.date) : undefined,
+      datePlayed: session.date ? this.convertTimestampToDateString(session.date) : undefined,
+      summary: session.description || session.summary,
+      // Convert Firestore Timestamps to formatted date strings for React rendering
+      createdAt: session.createdAt ? this.convertTimestampToDateString(session.createdAt) : undefined,
+      updatedAt: session.updatedAt ? this.convertTimestampToDateString(session.updatedAt) : undefined
     } as Session));
 
     return {

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Paper,
@@ -19,7 +19,8 @@ import {
   ThemeIcon,
   Tooltip,
   Tabs,
-  rem
+  rem,
+  Loader
 } from '@mantine/core';
 import {
   IconDotsVertical,
@@ -37,10 +38,27 @@ import {
   IconLock,
   IconWorld as IconGlobe,
   IconBuildingCastle,
-  IconInfoCircle
+  IconInfoCircle,
+  IconClock,
+  IconNote,
+  IconTimeline
 } from '@tabler/icons-react';
 import { RPGWorld, RPGWorldPrivacy } from '../../models/RPGWorld';
 import { modals } from '@mantine/modals';
+import { CharacterService } from '../../services/character.service';
+import { LocationService } from '../../services/location.service';
+import { FactionService } from '../../services/faction.service';
+import { ItemService } from '../../services/item.service';
+import { EventService } from '../../services/event.service';
+import { SessionService } from '../../services/session.service';
+import { StoryArcService } from '../../services/storyArc.service';
+import { NoteService } from '../../services/note.service';
+import { CampaignService } from '../../services/campaign.service';
+import { RelationshipCountBadge } from '../relationships/badges/RelationshipCountBadge';
+import { EntityType } from '../../models/EntityType';
+import { EntityCountTooltip } from '../common/EntityCountTooltip';
+import { OptimizedEntityCountTooltip } from '../common/OptimizedEntityCountTooltip';
+import { useOptimizedEntityCounts } from '../../hooks/useOptimizedEntityCounts';
 
 // Campaign interface (simplified)
 interface Campaign {
@@ -80,6 +98,62 @@ export function RPGWorldDetail({
 }: RPGWorldDetailProps) {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<string | null>('overview');
+
+  // Use optimized entity counts hook
+  const {
+    entityCounts: optimizedEntityCounts,
+    recentEntities: optimizedRecentEntities,
+    loading: countsLoading,
+    error: countsError,
+    lastUpdated,
+    refresh: refreshEntityCounts,
+    performanceMetrics
+  } = useOptimizedEntityCounts({
+    worldId: world?.id,
+    enableStaleWhileRevalidate: true,
+    enableBackgroundRefresh: true,
+    refreshInterval: 5 * 60 * 1000, // 5 minutes
+    onCacheHit: () => console.debug('Entity counts cache hit for world:', world?.id),
+    onCacheMiss: () => console.debug('Entity counts cache miss for world:', world?.id),
+    onError: (error) => console.error('Entity counts error for world:', world?.id, error)
+  });
+
+  // Transform optimized data to match existing component structure
+  const entityCounts = {
+    campaigns: world?.campaignCount || 0, // Campaigns are fetched separately
+    characters: optimizedEntityCounts.character || 0,
+    locations: optimizedEntityCounts.location || 0,
+    factions: optimizedEntityCounts.faction || 0,
+    items: optimizedEntityCounts.item || 0,
+    events: optimizedEntityCounts.event || 0,
+    sessions: optimizedEntityCounts.session || 0,
+    storyArcs: optimizedEntityCounts.story_arc || 0,
+    notes: optimizedEntityCounts.note || 0
+  };
+
+  const recentEntities = {
+    campaigns: [] as any[], // Campaigns are fetched separately
+    characters: optimizedRecentEntities.character || [],
+    locations: optimizedRecentEntities.location || [],
+    factions: optimizedRecentEntities.faction || [],
+    items: optimizedRecentEntities.item || [],
+    events: optimizedRecentEntities.event || [],
+    sessions: optimizedRecentEntities.session || [],
+    storyArcs: optimizedRecentEntities.story_arc || [],
+    notes: optimizedRecentEntities.note || []
+  };
+
+  // Performance metrics display (development only)
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development' && performanceMetrics.loadTime > 0) {
+      console.log('World entity counts performance:', {
+        cacheHit: performanceMetrics.cacheHit,
+        loadTime: `${performanceMetrics.loadTime.toFixed(2)}ms`,
+        source: performanceMetrics.source,
+        worldId: world?.id
+      });
+    }
+  }, [performanceMetrics, world?.id]);
 
   // Handle edit world
   const handleEditWorld = () => {
@@ -307,76 +381,427 @@ export function RPGWorldDetail({
         </Grid>
       </Paper>
 
-      {/* World Stats */}
-      <SimpleGrid cols={{ base: 2, sm: 3, md: 6 }} spacing="md">
-        <Card withBorder p="md" radius="md">
+      {/* World Stats - Clickable Entity Count Badges */}
+      <SimpleGrid cols={{ base: 2, sm: 3, md: 4, lg: 6 }} spacing="md">
+        {/* Campaigns */}
+        <Card
+          withBorder
+          p="md"
+          radius="md"
+          style={{ cursor: 'pointer' }}
+          onClick={() => navigate(`/rpg-worlds/${world.id}/campaigns`)}
+        >
           <Group wrap="nowrap">
             <ThemeIcon size="lg" radius="md" color="blue">
               <IconBook style={{ width: '20px', height: '20px' }} />
             </ThemeIcon>
-            <div>
-              <Text size="xs" c="dimmed">Campaigns</Text>
-              <Text fw={700} size="xl">{world.campaignCount || 0}</Text>
+            <div style={{ flex: 1 }}>
+              <Group justify="space-between" align="center">
+                <div>
+                  <Text size="xs" c="dimmed">Campaigns</Text>
+                  {countsLoading ? (
+                    <Text fw={700} size="xl">
+                      <Loader size="xs" />
+                    </Text>
+                  ) : (
+                    <EntityCountTooltip
+                      entityType={EntityType.CAMPAIGN}
+                      count={entityCounts.campaigns}
+                      recentEntities={recentEntities.campaigns}
+                      color="blue"
+                      position="top"
+                    >
+                      <Text fw={700} size="xl" style={{ cursor: 'help' }}>
+                        {entityCounts.campaigns}
+                      </Text>
+                    </EntityCountTooltip>
+                  )}
+                </div>
+                <RelationshipCountBadge
+                  entityId="world-scoped"
+                  entityType={EntityType.CAMPAIGN}
+                  count={0}
+                  worldId={world.id}
+                  size="sm"
+                  interactive={false}
+                />
+              </Group>
             </div>
           </Group>
         </Card>
 
-        <Card withBorder p="md" radius="md">
+        {/* Characters */}
+        <Card
+          withBorder
+          p="md"
+          radius="md"
+          style={{ cursor: 'pointer' }}
+          onClick={() => navigate(`/rpg-worlds/${world.id}/characters`)}
+        >
           <Group wrap="nowrap">
             <ThemeIcon size="lg" radius="md" color="teal">
               <IconUsers style={{ width: '20px', height: '20px' }} />
             </ThemeIcon>
-            <div>
-              <Text size="xs" c="dimmed">Characters</Text>
-              <Text fw={700} size="xl">{world.characterCount || 0}</Text>
+            <div style={{ flex: 1 }}>
+              <Group justify="space-between" align="center">
+                <div>
+                  <Text size="xs" c="dimmed">Characters</Text>
+                  {countsLoading ? (
+                    <Text fw={700} size="xl">
+                      <Loader size="xs" />
+                    </Text>
+                  ) : (
+                    <EntityCountTooltip
+                      entityType={EntityType.CHARACTER}
+                      count={entityCounts.characters}
+                      recentEntities={recentEntities.characters}
+                      color="teal"
+                      position="top"
+                    >
+                      <Text fw={700} size="xl" style={{ cursor: 'help' }}>
+                        {entityCounts.characters}
+                      </Text>
+                    </EntityCountTooltip>
+                  )}
+                </div>
+                <RelationshipCountBadge
+                  entityId="world-scoped"
+                  entityType={EntityType.CHARACTER}
+                  count={0}
+                  worldId={world.id}
+                  size="sm"
+                  interactive={false}
+                />
+              </Group>
             </div>
           </Group>
         </Card>
 
-        <Card withBorder p="md" radius="md">
+        {/* Locations */}
+        <Card
+          withBorder
+          p="md"
+          radius="md"
+          style={{ cursor: 'pointer' }}
+          onClick={() => navigate(`/rpg-worlds/${world.id}/locations`)}
+        >
           <Group wrap="nowrap">
             <ThemeIcon size="lg" radius="md" color="violet">
               <IconMap style={{ width: '20px', height: '20px' }} />
             </ThemeIcon>
-            <div>
-              <Text size="xs" c="dimmed">Locations</Text>
-              <Text fw={700} size="xl">{world.locationCount || 0}</Text>
+            <div style={{ flex: 1 }}>
+              <Group justify="space-between" align="center">
+                <div>
+                  <Text size="xs" c="dimmed">Locations</Text>
+                  {countsLoading ? (
+                    <Text fw={700} size="xl">
+                      <Loader size="xs" />
+                    </Text>
+                  ) : (
+                    <EntityCountTooltip
+                      entityType={EntityType.LOCATION}
+                      count={entityCounts.locations}
+                      recentEntities={recentEntities.locations}
+                      color="violet"
+                      position="top"
+                    >
+                      <Text fw={700} size="xl" style={{ cursor: 'help' }}>
+                        {entityCounts.locations}
+                      </Text>
+                    </EntityCountTooltip>
+                  )}
+                </div>
+                <RelationshipCountBadge
+                  entityId="world-scoped"
+                  entityType={EntityType.LOCATION}
+                  count={0}
+                  worldId={world.id}
+                  size="sm"
+                  interactive={false}
+                />
+              </Group>
             </div>
           </Group>
         </Card>
 
-        <Card withBorder p="md" radius="md">
+        {/* Factions */}
+        <Card
+          withBorder
+          p="md"
+          radius="md"
+          style={{ cursor: 'pointer' }}
+          onClick={() => navigate(`/rpg-worlds/${world.id}/factions`)}
+        >
           <Group wrap="nowrap">
             <ThemeIcon size="lg" radius="md" color="pink">
               <IconBuildingCastle style={{ width: '20px', height: '20px' }} />
             </ThemeIcon>
-            <div>
-              <Text size="xs" c="dimmed">Factions</Text>
-              <Text fw={700} size="xl">{world.factionCount || 0}</Text>
+            <div style={{ flex: 1 }}>
+              <Group justify="space-between" align="center">
+                <div>
+                  <Text size="xs" c="dimmed">Factions</Text>
+                  {countsLoading ? (
+                    <Text fw={700} size="xl">
+                      <Loader size="xs" />
+                    </Text>
+                  ) : (
+                    <EntityCountTooltip
+                      entityType={EntityType.FACTION}
+                      count={entityCounts.factions}
+                      recentEntities={recentEntities.factions}
+                      color="pink"
+                      position="top"
+                    >
+                      <Text fw={700} size="xl" style={{ cursor: 'help' }}>
+                        {entityCounts.factions}
+                      </Text>
+                    </EntityCountTooltip>
+                  )}
+                </div>
+                <RelationshipCountBadge
+                  entityId="world-scoped"
+                  entityType={EntityType.FACTION}
+                  count={0}
+                  worldId={world.id}
+                  size="sm"
+                  interactive={false}
+                />
+              </Group>
             </div>
           </Group>
         </Card>
 
-        <Card withBorder p="md" radius="md">
+        {/* Items */}
+        <Card
+          withBorder
+          p="md"
+          radius="md"
+          style={{ cursor: 'pointer' }}
+          onClick={() => navigate(`/rpg-worlds/${world.id}/items`)}
+        >
           <Group wrap="nowrap">
             <ThemeIcon size="lg" radius="md" color="yellow">
               <IconSword style={{ width: '20px', height: '20px' }} />
             </ThemeIcon>
-            <div>
-              <Text size="xs" c="dimmed">Items</Text>
-              <Text fw={700} size="xl">{world.itemCount || 0}</Text>
+            <div style={{ flex: 1 }}>
+              <Group justify="space-between" align="center">
+                <div>
+                  <Text size="xs" c="dimmed">Items</Text>
+                  {countsLoading ? (
+                    <Text fw={700} size="xl">
+                      <Loader size="xs" />
+                    </Text>
+                  ) : (
+                    <EntityCountTooltip
+                      entityType={EntityType.ITEM}
+                      count={entityCounts.items}
+                      recentEntities={recentEntities.items}
+                      color="yellow"
+                      position="top"
+                    >
+                      <Text fw={700} size="xl" style={{ cursor: 'help' }}>
+                        {entityCounts.items}
+                      </Text>
+                    </EntityCountTooltip>
+                  )}
+                </div>
+                <RelationshipCountBadge
+                  entityId="world-scoped"
+                  entityType={EntityType.ITEM}
+                  count={0}
+                  worldId={world.id}
+                  size="sm"
+                  interactive={false}
+                />
+              </Group>
             </div>
           </Group>
         </Card>
 
-        <Card withBorder p="md" radius="md">
+        {/* Events */}
+        <Card
+          withBorder
+          p="md"
+          radius="md"
+          style={{ cursor: 'pointer' }}
+          onClick={() => navigate(`/rpg-worlds/${world.id}/events`)}
+        >
           <Group wrap="nowrap">
             <ThemeIcon size="lg" radius="md" color="orange">
               <IconCalendarEvent style={{ width: '20px', height: '20px' }} />
             </ThemeIcon>
-            <div>
-              <Text size="xs" c="dimmed">Events</Text>
-              <Text fw={700} size="xl">{world.eventCount || 0}</Text>
+            <div style={{ flex: 1 }}>
+              <Group justify="space-between" align="center">
+                <div>
+                  <Text size="xs" c="dimmed">Events</Text>
+                  {countsLoading ? (
+                    <Text fw={700} size="xl">
+                      <Loader size="xs" />
+                    </Text>
+                  ) : (
+                    <EntityCountTooltip
+                      entityType={EntityType.EVENT}
+                      count={entityCounts.events}
+                      recentEntities={recentEntities.events}
+                      color="orange"
+                      position="top"
+                    >
+                      <Text fw={700} size="xl" style={{ cursor: 'help' }}>
+                        {entityCounts.events}
+                      </Text>
+                    </EntityCountTooltip>
+                  )}
+                </div>
+                <RelationshipCountBadge
+                  entityId="world-scoped"
+                  entityType={EntityType.EVENT}
+                  count={0}
+                  worldId={world.id}
+                  size="sm"
+                  interactive={false}
+                />
+              </Group>
+            </div>
+          </Group>
+        </Card>
+
+        {/* Sessions */}
+        <Card
+          withBorder
+          p="md"
+          radius="md"
+          style={{ cursor: 'pointer' }}
+          onClick={() => navigate(`/rpg-worlds/${world.id}/sessions`)}
+        >
+          <Group wrap="nowrap">
+            <ThemeIcon size="lg" radius="md" color="cyan">
+              <IconClock style={{ width: '20px', height: '20px' }} />
+            </ThemeIcon>
+            <div style={{ flex: 1 }}>
+              <Group justify="space-between" align="center">
+                <div>
+                  <Text size="xs" c="dimmed">Sessions</Text>
+                  {countsLoading ? (
+                    <Text fw={700} size="xl">
+                      <Loader size="xs" />
+                    </Text>
+                  ) : (
+                    <EntityCountTooltip
+                      entityType={EntityType.SESSION}
+                      count={entityCounts.sessions}
+                      recentEntities={recentEntities.sessions}
+                      color="cyan"
+                      position="top"
+                    >
+                      <Text fw={700} size="xl" style={{ cursor: 'help' }}>
+                        {entityCounts.sessions}
+                      </Text>
+                    </EntityCountTooltip>
+                  )}
+                </div>
+                <RelationshipCountBadge
+                  entityId="world-scoped"
+                  entityType={EntityType.SESSION}
+                  count={0}
+                  worldId={world.id}
+                  size="sm"
+                  interactive={false}
+                />
+              </Group>
+            </div>
+          </Group>
+        </Card>
+
+        {/* Story Arcs */}
+        <Card
+          withBorder
+          p="md"
+          radius="md"
+          style={{ cursor: 'pointer' }}
+          onClick={() => navigate(`/rpg-worlds/${world.id}/story-arcs`)}
+        >
+          <Group wrap="nowrap">
+            <ThemeIcon size="lg" radius="md" color="indigo">
+              <IconTimeline style={{ width: '20px', height: '20px' }} />
+            </ThemeIcon>
+            <div style={{ flex: 1 }}>
+              <Group justify="space-between" align="center">
+                <div>
+                  <Text size="xs" c="dimmed">Story Arcs</Text>
+                  {countsLoading ? (
+                    <Text fw={700} size="xl">
+                      <Loader size="xs" />
+                    </Text>
+                  ) : (
+                    <EntityCountTooltip
+                      entityType={EntityType.STORY_ARC}
+                      count={entityCounts.storyArcs}
+                      recentEntities={recentEntities.storyArcs}
+                      color="indigo"
+                      position="top"
+                    >
+                      <Text fw={700} size="xl" style={{ cursor: 'help' }}>
+                        {entityCounts.storyArcs}
+                      </Text>
+                    </EntityCountTooltip>
+                  )}
+                </div>
+                <RelationshipCountBadge
+                  entityId="world-scoped"
+                  entityType={EntityType.STORY_ARC}
+                  count={0}
+                  worldId={world.id}
+                  size="sm"
+                  interactive={false}
+                />
+              </Group>
+            </div>
+          </Group>
+        </Card>
+
+        {/* Notes */}
+        <Card
+          withBorder
+          p="md"
+          radius="md"
+          style={{ cursor: 'pointer' }}
+          onClick={() => navigate(`/rpg-worlds/${world.id}/notes`)}
+        >
+          <Group wrap="nowrap">
+            <ThemeIcon size="lg" radius="md" color="grape">
+              <IconNote style={{ width: '20px', height: '20px' }} />
+            </ThemeIcon>
+            <div style={{ flex: 1 }}>
+              <Group justify="space-between" align="center">
+                <div>
+                  <Text size="xs" c="dimmed">Notes</Text>
+                  {countsLoading ? (
+                    <Text fw={700} size="xl">
+                      <Loader size="xs" />
+                    </Text>
+                  ) : (
+                    <EntityCountTooltip
+                      entityType={EntityType.NOTE}
+                      count={entityCounts.notes}
+                      recentEntities={recentEntities.notes}
+                      color="grape"
+                      position="top"
+                    >
+                      <Text fw={700} size="xl" style={{ cursor: 'help' }}>
+                        {entityCounts.notes}
+                      </Text>
+                    </EntityCountTooltip>
+                  )}
+                </div>
+                <RelationshipCountBadge
+                  entityId="world-scoped"
+                  entityType={EntityType.NOTE}
+                  count={0}
+                  worldId={world.id}
+                  size="sm"
+                  interactive={false}
+                />
+              </Group>
             </div>
           </Group>
         </Card>

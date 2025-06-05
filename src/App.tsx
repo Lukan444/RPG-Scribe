@@ -82,7 +82,7 @@ const LocationDetailPage = lazy(() => import('./pages/locations/LocationDetailPa
 const LocationFormPage = lazy(() => import('./pages/locations/LocationFormPage'));
 
 // Item components
-const ItemListPage = lazy(() => import('./pages/items/ItemListPage'));
+const ItemListPage = lazy(() => import('./pages/items/UnifiedItemListPage'));
 const ItemDetailPage = lazy(() => import('./pages/items/ItemDetailPage'));
 const ItemFormPage = lazy(() => import('./pages/items/ItemFormPage'));
 
@@ -188,7 +188,7 @@ function App() {
       <AuthProvider>
         <ActivityLogProvider>
           <LanguageProvider>
-            <BrowserRouter>
+            <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
             <Routes>
             {/* Protected routes */}
             <Route
@@ -507,14 +507,22 @@ function App() {
                 </Suspense>
               } />
               <Route path="timeline" element={
-                <Suspense fallback={<LoadingFallback />}>
-                  <TimelinePage />
-                </Suspense>
+                <ErrorBoundary>
+                  <Suspense fallback={<LoadingFallback />}>
+                    <RPGWorldContextWrapper>
+                      <TimelinePage />
+                    </RPGWorldContextWrapper>
+                  </Suspense>
+                </ErrorBoundary>
               } />
               <Route path="timeline/:campaignId" element={
-                <Suspense fallback={<LoadingFallback />}>
-                  <TimelinePage />
-                </Suspense>
+                <ErrorBoundary>
+                  <Suspense fallback={<LoadingFallback />}>
+                    <RPGWorldContextWrapper>
+                      <TimelinePage />
+                    </RPGWorldContextWrapper>
+                  </Suspense>
+                </ErrorBoundary>
               } />
               <Route path="relationshipweb" element={
                 <Suspense fallback={<LoadingFallback />}>
@@ -903,6 +911,26 @@ function App() {
                 <ErrorBoundary>
                   <Suspense fallback={<LoadingFallback />}>
                     <NoteFormPage />
+                  </Suspense>
+                </ErrorBoundary>
+              } />
+
+              {/* World-specific visualization routes */}
+              <Route path=":worldId/visualizations/timeline" element={
+                <ErrorBoundary>
+                  <Suspense fallback={<LoadingFallback />}>
+                    <RPGWorldContextWrapper>
+                      <TimelinePage />
+                    </RPGWorldContextWrapper>
+                  </Suspense>
+                </ErrorBoundary>
+              } />
+              <Route path=":worldId/campaigns/:campaignId/visualizations/timeline" element={
+                <ErrorBoundary>
+                  <Suspense fallback={<LoadingFallback />}>
+                    <RPGWorldContextWrapper>
+                      <TimelinePage />
+                    </RPGWorldContextWrapper>
                   </Suspense>
                 </ErrorBoundary>
               } />

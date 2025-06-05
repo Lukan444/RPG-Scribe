@@ -102,10 +102,47 @@ npm run typecheck
 
 ### Writing Tests
 - Write tests for all new features
-- Maintain or improve test coverage
+- Maintain or improve test coverage (minimum 80%)
 - Use descriptive test names
 - Follow existing test patterns
-- Mock external dependencies
+- Mock external dependencies properly
+
+### Test Patterns and Best Practices
+
+#### Vitest Mocking
+```typescript
+// Use vi.hoisted for variables needed during mock hoisting
+const mockGetDoc = vi.hoisted(() => vi.fn());
+const mockTimelineService = vi.hoisted(() => ({
+  getTimelineEntries: vi.fn()
+}));
+
+// Mock Firebase modules
+vi.mock('firebase/firestore', () => ({
+  getDoc: mockGetDoc,
+  doc: vi.fn(),
+  collection: vi.fn()
+}));
+```
+
+#### Fake Timers for TTL Testing
+```typescript
+describe('Cache TTL Tests', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('should expire cache after TTL', () => {
+    cacheService.set('key', 'value', 1000);
+    vi.advanceTimersByTime(1100);
+    expect(cacheService.get('key')).toBeNull();
+  });
+});
+```
 
 ### Test Structure
 ```typescript
@@ -116,6 +153,10 @@ describe('ComponentName', () => {
 
   it('should handle user interaction', () => {
     // Test implementation
+  });
+
+  it('should handle error states', () => {
+    // Test error scenarios
   });
 });
 ```

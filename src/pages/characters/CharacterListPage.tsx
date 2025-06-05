@@ -262,11 +262,23 @@ export function CharacterListPage() {
       key: 'updatedAt',
       title: t('tables.headers.lastUpdated'),
       sortable: true,
-      render: (character: Character) => (
-        <Text size="sm">
-          {character.updatedAt ? new Date(character.updatedAt).toLocaleDateString() : t('tooltips.invalidDate')}
-        </Text>
-      )
+      render: (character: Character) => {
+        try {
+          if (character.updatedAt) {
+            const date = typeof character.updatedAt === 'string'
+              ? new Date(character.updatedAt)
+              : character.updatedAt;
+            return (
+              <Text size="sm">
+                {date.toLocaleDateString()}
+              </Text>
+            );
+          }
+          return <Text size="sm" c="dimmed">N/A</Text>;
+        } catch (error) {
+          return <Text size="sm" c="dimmed">Invalid Date</Text>;
+        }
+      }
     }
   ];
 

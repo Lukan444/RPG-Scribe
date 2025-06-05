@@ -25,7 +25,7 @@ import {
   IconEdit,
   IconTrash,
   IconCopy,
-  IconPlay,
+  IconPlayerPlay,
   IconTemplate,
   IconInfoCircle,
   IconFilter
@@ -237,7 +237,7 @@ export const PromptTemplateList: React.FC<PromptTemplateListProps> = ({
 
                       <Menu.Dropdown>
                         <Menu.Item
-                          leftSection={<IconPlay size={14} />}
+                          leftSection={<IconPlayerPlay size={14} />}
                           onClick={() => onExecuteTemplate(template.id, {})}
                         >
                           Execute
@@ -336,7 +336,7 @@ export const PromptTemplateList: React.FC<PromptTemplateListProps> = ({
                       <Button
                         size="xs"
                         variant="light"
-                        leftSection={<IconPlay size={12} />}
+                        leftSection={<IconPlayerPlay size={12} />}
                         onClick={() => onExecuteTemplate(template.id, {})}
                       >
                         Execute

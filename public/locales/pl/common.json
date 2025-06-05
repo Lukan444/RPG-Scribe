@@ -230,5 +230,7 @@
     "back": "Wstecz",
     "next": "Dalej",
     "previous": "Poprzedni"
-  }
+  },
+  "profile": "Profil",
+  "signOut": "Wyloguj się"
 }

@@ -3,7 +3,7 @@
  * Provides state management for the dual timeline system
  */
 
-import React, { createContext, useContext, useReducer, useCallback, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useReducer, useCallback, useEffect, ReactNode, useMemo } from 'react';
 import { addDays, subDays } from 'date-fns';
 import {
   DualTimelineState,
@@ -189,7 +189,26 @@ interface DualTimelineProviderProps {
  */
 export function DualTimelineProvider({ children, config }: DualTimelineProviderProps) {
   const [state, dispatch] = useReducer(dualTimelineReducer, createInitialState());
-  const timeConversionService = new TimeConversionService(config.timeConversion);
+
+  // Add provider instance logging to debug context mismatch
+  const providerInstanceId = useMemo(() => Math.random().toString(36).substr(2, 9), []);
+  console.log('🏭 DualTimelineProvider instance:', {
+    providerInstanceId,
+    config: {
+      worldId: config.worldId,
+      campaignId: config.campaignId,
+      displayMode: config.displayMode
+    },
+    stateEventsCount: state.events.length,
+    stateLoading: state.loading,
+    dispatchFunction: typeof dispatch
+  });
+
+  // Memoize time conversion service to prevent recreation
+  const timeConversionService = useMemo(() =>
+    new TimeConversionService(config.timeConversion),
+    [config.timeConversion]
+  );
 
   /**
    * Load events from the backend
@@ -458,11 +477,12 @@ export function DualTimelineProvider({ children, config }: DualTimelineProviderP
     }
   };
 
-  const contextValue: DualTimelineContextValue = {
+  // Memoize context value to prevent provider re-instantiation
+  const contextValue = useMemo((): DualTimelineContextValue => ({
     state,
     actions,
     utils
-  };
+  }), [state, actions, utils]);
 
   return (
     <DualTimelineContext.Provider value={contextValue}>

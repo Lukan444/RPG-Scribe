@@ -12,10 +12,14 @@ import './i18n/config';
 
 // Import Mantine styles
 import '@mantine/core/styles.css';
+import '@mantine/carousel/styles.css';
 import '@mantine/notifications/styles.css';
 import '@mantine/dates/styles.css';
 import '@mantine/dropzone/styles.css';
 import '@mantine/spotlight/styles.css';
+
+// Import React Calendar Timeline styles
+import 'react-calendar-timeline/dist/style.css';
 
 // Import application styles
 import './index.css';

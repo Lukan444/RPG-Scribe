@@ -56,20 +56,44 @@ export function ReactCalendarTimeline({
   style
 }: TimelineComponentProps) {
   const { state, actions, utils } = useTimeline();
+
+  // Add context instance logging to debug context mismatch
+  console.log('🔍 ReactCalendarTimeline context instance:', {
+    stateEventsCount: state.events.length,
+    stateLoading: state.loading,
+    actionsLoadEvents: typeof actions.loadEvents,
+    contextInstanceId: Math.random().toString(36).substr(2, 9) // Unique ID for this render
+  });
   const timelineRef = useRef<any>(null);
   const [showEventModal, setShowEventModal] = useState(false);
   const [editingEvent, setEditingEvent] = useState<RPGTimelineEvent | null>(null);
   const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
 
-  // Load events when component mounts or config changes
-  useEffect(() => {
-    actions.loadEvents();
-  }, [actions, config.worldId, config.campaignId, config.entityId]);
-
-  // Update timeline config when props change
+  // Update timeline config when props change (only when config actually changes)
   useEffect(() => {
     actions.setConfig(config);
-  }, [actions, config]);
+  }, [actions.setConfig, config.worldId, config.campaignId, config.entityId, config.entityType, config.height, config.enableEditing, config.showMarkers, config.showControls]);
+
+  // Load events when component mounts or config changes (prevent infinite loop)
+  const [loadingKey, setLoadingKey] = useState<string>('');
+
+  useEffect(() => {
+    const currentKey = `${config.worldId}-${config.campaignId}`;
+
+    if (config.worldId && config.campaignId && !state.loading && loadingKey !== currentKey) {
+      console.log('🔄 ReactCalendarTimeline triggering loadEvents with config:', {
+        worldId: config.worldId,
+        campaignId: config.campaignId,
+        entityId: config.entityId,
+        currentEventsCount: state.events.length,
+        loading: state.loading,
+        loadingKey,
+        currentKey
+      });
+      actions.loadEvents();
+      setLoadingKey(currentKey);
+    }
+  }, [config.worldId, config.campaignId, config.entityId, state.loading, loadingKey, actions.loadEvents]);
 
   // Transform events to timeline format with safety checks
   const timelineItems = utils.transformToTimelineItems(state.events || []);
@@ -365,7 +389,6 @@ export function ReactCalendarTimeline({
             onItemResize={config.enableEditing ? handleItemResize : undefined}
             canMove={config.enableEditing}
             canResize={config.enableEditing ? 'both' : false}
-            canSelect={true}
             stackItems={true}
             itemHeightRatio={0.75}
             lineHeight={60}
@@ -378,7 +401,7 @@ export function ReactCalendarTimeline({
             {config.showMarkers && (
               <TimelineMarkers>
                 <TodayMarker>
-                  {({ styles, date }) => (
+                  {({ styles }: { styles: any }) => (
                     <div style={{ ...styles, backgroundColor: '#e64980', width: '2px' }} />
                   )}
                 </TodayMarker>

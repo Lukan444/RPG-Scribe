@@ -47,8 +47,15 @@ function timelineReducer(state: TimelineState, action: TimelineAction): Timeline
       return { ...state, error: action.payload, loading: false };
     
     case 'SET_EVENTS':
-      return { 
-        ...state, 
+      console.log('🔧 TimelineContext Reducer - SET_EVENTS:', {
+        actionType: action.type,
+        payloadLength: action.payload?.length || 0,
+        payloadSample: action.payload?.slice(0, 2).map(e => ({ id: e.id, title: e.title })) || [],
+        currentStateEventsLength: state.events.length,
+        loading: state.loading
+      });
+      return {
+        ...state,
         events: action.payload,
         loading: false,
         error: null
@@ -121,6 +128,16 @@ export function TimelineProvider({ children, initialConfig }: TimelineProviderPr
   const [state, dispatch] = useReducer(timelineReducer, {
     ...initialState,
     config: { ...initialState.config, ...initialConfig }
+  });
+
+  // Add provider instance logging to debug context mismatch
+  const providerInstanceId = useMemo(() => Math.random().toString(36).substr(2, 9), []);
+  console.log('🏭 TimelineProvider instance:', {
+    providerInstanceId,
+    initialConfig,
+    stateEventsCount: state.events.length,
+    stateLoading: state.loading,
+    dispatchFunction: typeof dispatch
   });
 
   // Timeline service instance
@@ -291,39 +308,94 @@ export function TimelineProvider({ children, initialConfig }: TimelineProviderPr
    * Load timeline events
    */
   const loadEvents = useCallback(async () => {
-    if (!timelineService) {
-      dispatch({ type: 'SET_ERROR', payload: 'Timeline service not available' });
+    console.log('🔄 TimelineContext.loadEvents called with config:', {
+      worldId: state.config.worldId,
+      campaignId: state.config.campaignId
+    });
+
+    if (!state.config.worldId || !state.config.campaignId) {
+      console.error('❌ Missing required config:', { worldId: state.config.worldId, campaignId: state.config.campaignId });
+      dispatch({ type: 'SET_ERROR', payload: 'World ID and Campaign ID are required' });
+      dispatch({ type: 'SET_LOADING', payload: false });
       return;
     }
 
     try {
       dispatch({ type: 'SET_LOADING', payload: true });
-      
-      const entries = await timelineService.getTimelineEntries();
-      
-      // Convert timeline entries to RPG events (simplified for now)
-      const events: RPGTimelineEvent[] = entries.map(entry => ({
-        id: entry.id || `event-${Date.now()}`,
-        title: entry.title,
-        description: entry.description,
-        startDate: entry.position.inGameTimestamp || entry.position.realWorldTimestamp || new Date(),
-        endDate: undefined, // TODO: Calculate from duration
-        importance: entry.importance || 5,
-        eventType: 'custom' as const,
-        worldId: state.config.worldId || '',
-        campaignId: state.config.campaignId || 'default',
-        playerVisible: true,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        createdBy: 'current-user' // TODO: Get from auth context
-      }));
+      dispatch({ type: 'SET_ERROR', payload: null });
+      console.log('⏳ Loading events from Firebase...');
 
+      // Load events directly from Firebase events collection
+      const { collection, getDocs, query, where, orderBy } = await import('firebase/firestore');
+      const { db } = await import('../firebase/config');
+
+      const eventsRef = collection(db, 'events');
+      const q = query(
+        eventsRef,
+        where('campaignId', '==', state.config.campaignId),
+        orderBy('date', 'asc')
+      );
+
+      console.log('🔍 Executing Firebase query for campaignId:', state.config.campaignId);
+      const querySnapshot = await getDocs(q);
+      console.log('📊 Firebase query returned', querySnapshot.size, 'documents');
+
+      // Convert Firestore events to RPG timeline events
+      const events: RPGTimelineEvent[] = [];
+      querySnapshot.forEach((doc) => {
+        const eventData = doc.data();
+        console.log('📄 Processing event document:', doc.id, eventData);
+
+        // Convert Firestore timestamp to Date
+        let startDate = new Date();
+        if (eventData.date && typeof eventData.date.toDate === 'function') {
+          startDate = eventData.date.toDate();
+        } else if (eventData.date) {
+          startDate = new Date(eventData.date);
+        }
+
+        const event: RPGTimelineEvent = {
+          id: doc.id,
+          title: eventData.name || eventData.title || 'Untitled Event',
+          description: eventData.description || '',
+          startDate,
+          endDate: eventData.endDate ? (typeof eventData.endDate.toDate === 'function' ? eventData.endDate.toDate() : new Date(eventData.endDate)) : undefined,
+          importance: eventData.importance || 5,
+          eventType: (eventData.eventType || eventData.type || 'custom').toLowerCase(),
+          worldId: state.config.worldId || '',
+          campaignId: state.config.campaignId || '',
+          entityId: eventData.entityId,
+          entityType: eventData.entityType,
+          tags: eventData.tags || [],
+          participants: Array.isArray(eventData.participants) ? eventData.participants :
+                       (typeof eventData.participants === 'string' ? JSON.parse(eventData.participants) :
+                       eventData.participantIds || []),
+          location: eventData.location,
+          gmNotes: eventData.gmNotes,
+          playerVisible: eventData.playerVisible !== false, // Default to true
+          createdAt: eventData.createdAt ? (typeof eventData.createdAt.toDate === 'function' ? eventData.createdAt.toDate() : new Date(eventData.createdAt)) : new Date(),
+          updatedAt: eventData.updatedAt ? (typeof eventData.updatedAt.toDate === 'function' ? eventData.updatedAt.toDate() : new Date(eventData.updatedAt)) : new Date(),
+          createdBy: eventData.createdBy || 'unknown'
+        };
+
+        events.push(event);
+      });
+
+      console.log(`📅 Loaded ${events.length} timeline events for campaign ${state.config.campaignId}`);
+      console.log('🚀 About to dispatch SET_EVENTS with events:', {
+        eventsLength: events.length,
+        eventsPreview: events.slice(0, 2).map(e => ({ id: e.id, title: e.title })),
+        dispatchFunction: typeof dispatch
+      });
       dispatch({ type: 'SET_EVENTS', payload: events });
+      console.log('✅ SET_EVENTS dispatch completed');
+      dispatch({ type: 'SET_LOADING', payload: false });
     } catch (error) {
       console.error('Error loading timeline events:', error);
       dispatch({ type: 'SET_ERROR', payload: 'Failed to load timeline events' });
+      dispatch({ type: 'SET_LOADING', payload: false });
     }
-  }, [timelineService, state.config.worldId, state.config.campaignId]);
+  }, [state.config.worldId, state.config.campaignId]);
 
   /**
    * Create new event
@@ -401,22 +473,36 @@ export function TimelineProvider({ children, initialConfig }: TimelineProviderPr
     dispatch({ type: 'RESET' });
   }, []);
 
-  // Update derived state when events change
-  React.useEffect(() => {
-    const filteredEvents = state.config.filterBy 
+  // REMOVED: Problematic useEffect that was causing infinite loops
+  // The derived state (filtered/sorted events) should be computed in useMemo, not useEffect
+  // This was causing SET_EVENTS to trigger another SET_EVENTS, creating an infinite loop
+
+  // Compute derived state using useMemo to prevent infinite loops
+  const derivedState = useMemo(() => {
+    console.log('🔄 TimelineContext computing derived state:', {
+      eventsCount: state.events.length,
+      filterBy: state.config.filterBy,
+      groupBy: state.config.groupBy
+    });
+
+    const filteredEvents = state.config.filterBy
       ? filterEvents(state.events, state.config.filterBy)
       : state.events;
-    
+
     const sortedEvents = sortEvents(filteredEvents);
     const items = transformToTimelineItems(sortedEvents);
     const groups = transformToTimelineGroups(sortedEvents);
 
-    // Update state with derived data
-    dispatch({ type: 'SET_EVENTS', payload: state.events });
-  }, [state.events, state.config.filterBy, state.config.groupBy, filterEvents, sortEvents, transformToTimelineItems, transformToTimelineGroups]);
+    return {
+      ...state,
+      events: sortedEvents,
+      items,
+      groups
+    };
+  }, [state.events, state.config.filterBy, state.config.groupBy, state.loading, state.error, state.selectedEvent, state.visibleTimeStart, state.visibleTimeEnd, state.config, filterEvents, sortEvents, transformToTimelineItems, transformToTimelineGroups]);
 
   const contextValue: UseTimelineReturn = {
-    state,
+    state: derivedState,
     actions: {
       loadEvents,
       createEvent,

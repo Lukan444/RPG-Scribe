@@ -63,13 +63,21 @@ export function DualTimelineWidget({
   onEventEdit
 }: DualTimelineWidgetProps) {
   
-  // Create dual timeline configuration
+  // Memoize individual props to ensure stable references
+  const memoizedWorldId = useMemo(() => worldId || '', [worldId]);
+  const memoizedCampaignId = useMemo(() => campaignId || '', [campaignId]);
+  const memoizedDisplayMode = useMemo(() => displayMode, [displayMode]);
+  const memoizedHeight = useMemo(() => height, [height]);
+  const memoizedCompact = useMemo(() => compact, [compact]);
+  const memoizedEnableEditing = useMemo(() => enableEditing, [enableEditing]);
+
+  // Create dual timeline configuration with stable references
   const dualTimelineConfig = useMemo((): DualTimelineConfig => ({
-    worldId: worldId || '',
-    campaignId: campaignId || '',
-    
+    worldId: memoizedWorldId,
+    campaignId: memoizedCampaignId,
+
     // Display configuration
-    displayMode: displayMode,
+    displayMode: memoizedDisplayMode,
     syncOptions: {
       syncScrolling: true,
       syncZoom: true,
@@ -82,8 +90,8 @@ export function DualTimelineWidget({
       id: 'real-world',
       label: 'Real World Timeline',
       timeSystem: 'real-world',
-      visible: displayMode === 'dual' || displayMode === 'real-world',
-      height: compact ? 200 : 300,
+      visible: memoizedDisplayMode === 'dual' || memoizedDisplayMode === 'real-world',
+      height: memoizedCompact ? 200 : 300,
       color: '#1c7ed6',
       groups: [
         { id: 'sessions', title: 'Gaming Sessions', timeSystem: 'real-world' }
@@ -94,8 +102,8 @@ export function DualTimelineWidget({
       id: 'in-game',
       label: 'In-Game Timeline',
       timeSystem: 'in-game',
-      visible: displayMode === 'dual' || displayMode === 'in-game',
-      height: compact ? 200 : 300,
+      visible: memoizedDisplayMode === 'dual' || memoizedDisplayMode === 'in-game',
+      height: memoizedCompact ? 200 : 300,
       color: '#51cf66',
       groups: [
         { id: 'events', title: 'Campaign Events', timeSystem: 'in-game' }
@@ -108,13 +116,13 @@ export function DualTimelineWidget({
     // Visual options
     showMarkers: !compact,
     showConflicts: !compact,
-    enableEditing: enableEditing,
-    height: height,
+    enableEditing: memoizedEnableEditing,
+    height: memoizedHeight,
     
     // Connection visualization
     connectionStyle: 'lines',
-    connectionOpacity: compact ? 0.4 : 0.6
-  }), [worldId, campaignId, displayMode, height, compact, enableEditing]);
+    connectionOpacity: memoizedCompact ? 0.4 : 0.6
+  }), [memoizedWorldId, memoizedCampaignId, memoizedDisplayMode, memoizedHeight, memoizedCompact, memoizedEnableEditing]);
 
   const handleEventClick = (eventId: string, timeline: 'real-world' | 'in-game') => {
     onEventClick?.(eventId, timeline);

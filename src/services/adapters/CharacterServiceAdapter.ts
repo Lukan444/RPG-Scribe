@@ -55,6 +55,33 @@ export class CharacterServiceAdapter implements IEntityService<Character> {
   }
 
   /**
+   * Convert Firestore Timestamp to date string
+   * @param timestamp Firestore Timestamp or date string
+   * @returns Formatted date string
+   */
+  private convertTimestampToDateString(timestamp: any): string {
+    try {
+      // Handle Firestore Timestamp objects
+      if (timestamp && typeof timestamp === 'object' && timestamp.toDate) {
+        return timestamp.toDate().toLocaleDateString();
+      }
+      // Handle regular Date objects
+      if (timestamp instanceof Date) {
+        return timestamp.toLocaleDateString();
+      }
+      // Handle date strings
+      if (typeof timestamp === 'string') {
+        return new Date(timestamp).toLocaleDateString();
+      }
+      // Fallback
+      return 'Invalid Date';
+    } catch (error) {
+      console.error('Error converting timestamp:', error);
+      return 'Invalid Date';
+    }
+  }
+
+  /**
    * Get a character by ID
    * @param id Character ID
    * @param options Options for the operation
@@ -74,11 +101,14 @@ export class CharacterServiceAdapter implements IEntityService<Character> {
     const character = await this.characterService.getById(id, options);
 
     if (character) {
-      // Convert from service Character to model Character
+      // Convert from service Character to model Character with proper field mapping
       return {
         ...character,
         entityType: EntityType.CHARACTER,
-        type: character.characterType || 'Other'
+        type: character.characterType || 'Other',
+        // Convert Firestore Timestamps to formatted date strings for React rendering
+        createdAt: character.createdAt ? this.convertTimestampToDateString(character.createdAt) : undefined,
+        updatedAt: character.updatedAt ? this.convertTimestampToDateString(character.updatedAt) : undefined
       } as Character;
     }
 
@@ -93,11 +123,14 @@ export class CharacterServiceAdapter implements IEntityService<Character> {
   async getByIds(ids: string[]): Promise<Character[]> {
     const characters = await this.characterService.getByIds(ids);
 
-    // Convert from service Character to model Character
+    // Convert from service Character to model Character with proper field mapping
     return characters.map(character => ({
       ...character,
       entityType: EntityType.CHARACTER,
-      type: character.characterType || 'Other'
+      type: character.characterType || 'Other',
+      // Convert Firestore Timestamps to formatted date strings for React rendering
+      createdAt: character.createdAt ? this.convertTimestampToDateString(character.createdAt) : undefined,
+      updatedAt: character.updatedAt ? this.convertTimestampToDateString(character.updatedAt) : undefined
     } as Character));
   }
 
@@ -203,11 +236,14 @@ export class CharacterServiceAdapter implements IEntityService<Character> {
   }> {
     const result = await this.characterService.query(constraints, pageSize, startAfterDoc, options);
 
-    // Convert from service Character to model Character
+    // Convert from service Character to model Character with proper field mapping
     const convertedData = result.data.map(character => ({
       ...character,
       entityType: EntityType.CHARACTER,
-      type: character.characterType || 'Other'
+      type: character.characterType || 'Other',
+      // Convert Firestore Timestamps to formatted date strings for React rendering
+      createdAt: character.createdAt ? this.convertTimestampToDateString(character.createdAt) : undefined,
+      updatedAt: character.updatedAt ? this.convertTimestampToDateString(character.updatedAt) : undefined
     } as Character));
 
     return {
@@ -316,7 +352,10 @@ export class CharacterServiceAdapter implements IEntityService<Character> {
         const modelCharacter = {
           ...character,
           entityType: EntityType.CHARACTER,
-          type: character.characterType || 'Other'
+          type: character.characterType || 'Other',
+          // Convert Firestore Timestamps to formatted date strings for React rendering
+          createdAt: character.createdAt ? this.convertTimestampToDateString(character.createdAt) : undefined,
+          updatedAt: character.updatedAt ? this.convertTimestampToDateString(character.updatedAt) : undefined
         } as Character;
         callback(modelCharacter);
       } else {
@@ -348,7 +387,10 @@ export class CharacterServiceAdapter implements IEntityService<Character> {
       const modelCharacters = characters.map(character => ({
         ...character,
         entityType: EntityType.CHARACTER,
-        type: character.characterType || 'Other'
+        type: character.characterType || 'Other',
+        // Convert Firestore Timestamps to formatted date strings for React rendering
+        createdAt: character.createdAt ? this.convertTimestampToDateString(character.createdAt) : undefined,
+        updatedAt: character.updatedAt ? this.convertTimestampToDateString(character.updatedAt) : undefined
       } as Character));
 
       callback(modelCharacters);

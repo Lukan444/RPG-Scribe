@@ -136,7 +136,6 @@ export const PromptTemplateEditor: React.FC<PromptTemplateEditorProps> = ({
       onClose={onClose}
       title={mode === 'create' ? 'Create Prompt Template' : 'Edit Prompt Template'}
       size="xl"
-      scrollAreaComponent={Modal.NativeScrollArea}
     >
       <form onSubmit={form.onSubmit(handleSubmit)}>
         <Stack gap="md">

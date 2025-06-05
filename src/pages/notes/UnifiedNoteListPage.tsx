@@ -1,5 +1,5 @@
 import React from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Badge, Group, Text, rem } from '@mantine/core';
 import { IconNote } from '@tabler/icons-react';
 import { EntityListPage } from '../../components/entity-list/EntityListPage';
@@ -14,8 +14,9 @@ import { getWorldIdFromParams, getCampaignIdFromParams } from '../../utils/route
  * Displays a list of notes using the unified entity list component
  */
 export function UnifiedNoteListPage() {
-  // Get params
+  // Get params and navigation
   const params = useParams();
+  const navigate = useNavigate();
   const worldId = getWorldIdFromParams(params);
   const campaignId = getCampaignIdFromParams(params);
 
@@ -111,6 +112,13 @@ export function UnifiedNoteListPage() {
     emptyStateActionText: 'Create New Note'
   };
 
+  // Handle back to world navigation
+  const handleBackToWorld = () => {
+    if (worldId) {
+      navigate(`/rpg-worlds/${worldId}`);
+    }
+  };
+
   return (
     <EntityListPage
       config={configWithCustomBadge}
@@ -120,6 +128,7 @@ export function UnifiedNoteListPage() {
       title={worldId ? 'World Notes' : 'All Notes'}
       showBackButton={!!worldId}
       backButtonLabel="Back to World"
+      onBackClick={handleBackToWorld}
     />
   );
 }

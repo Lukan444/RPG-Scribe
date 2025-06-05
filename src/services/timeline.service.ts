@@ -36,6 +36,15 @@ import {
 } from '../utils/timelineUtils';
 import { DEFAULT_WORLD_ID, DEFAULT_CAMPAIGN_ID } from '../constants/appConstants';
 
+export interface EntityEventFilter {
+  worldId?: string;
+  campaignId?: string;
+  sessionId?: string;
+  timeFrame?: 'last-week' | 'last-month' | 'last-3-months' | 'all-time' | 'custom';
+  startDate?: Date;
+  endDate?: Date;
+}
+
 /**
  * Timeline Service
  * Manages timeline entries and provides timeline operations
@@ -601,6 +610,141 @@ export class TimelineService extends EnhancedFirestoreService<TimelineEntry> {
     } catch (error) {
       console.error('Error recalculating timeline positions:', error);
       // Don't throw - this is a background operation
+    }
+  }
+
+  /**
+   * Get events related to a specific entity
+   * @param entityType Type of entity
+   * @param entityId ID of entity
+   * @param filter Additional filters
+   * @returns Array of timeline entries
+   */
+  async getEntityEvents(
+    entityType: string,
+    entityId: string,
+    filter: EntityEventFilter = {}
+  ): Promise<TimelineEntry[]> {
+    try {
+      const constraints: QueryConstraint[] = [];
+
+      // Add world and campaign filters
+      const worldId = filter.worldId || this.worldId;
+      const campaignId = filter.campaignId || this.campaignId;
+
+      constraints.push(where('worldId', '==', worldId));
+      constraints.push(where('campaignId', '==', campaignId));
+
+      // Add entity filters
+      constraints.push(where('associatedEntityType', '==', entityType));
+      constraints.push(where('associatedEntityId', '==', entityId));
+
+      // Add session filter if provided
+      if (filter.sessionId) {
+        constraints.push(where('sessionId', '==', filter.sessionId));
+      }
+
+      // Add time frame filters
+      if (filter.timeFrame && filter.timeFrame !== 'all-time') {
+        const now = new Date();
+        let startDate: Date;
+
+        switch (filter.timeFrame) {
+          case 'last-week':
+            startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+            break;
+          case 'last-month':
+            startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+            break;
+          case 'last-3-months':
+            startDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+            break;
+          case 'custom':
+            startDate = filter.startDate || new Date(0);
+            break;
+          default:
+            startDate = new Date(0);
+        }
+
+        constraints.push(where('dualTimestamp.realWorldTime', '>=', startDate));
+
+        if (filter.timeFrame === 'custom' && filter.endDate) {
+          constraints.push(where('dualTimestamp.realWorldTime', '<=', filter.endDate));
+        }
+      }
+
+      // Add sorting
+      constraints.push(orderBy('position.sequence', 'asc'));
+
+      const result = await this.query(constraints);
+      return result.data;
+    } catch (error) {
+      console.error('Error getting entity events:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get events for a campaign with optional entity filtering
+   * @param campaignId Campaign ID
+   * @param filter Additional filters
+   * @returns Array of timeline entries
+   */
+  async getCampaignEvents(
+    campaignId: string,
+    filter: EntityEventFilter = {}
+  ): Promise<TimelineEntry[]> {
+    try {
+      const constraints: QueryConstraint[] = [];
+
+      // Add world and campaign filters
+      const worldId = filter.worldId || this.worldId;
+
+      constraints.push(where('worldId', '==', worldId));
+      constraints.push(where('campaignId', '==', campaignId));
+
+      // Add session filter if provided
+      if (filter.sessionId) {
+        constraints.push(where('sessionId', '==', filter.sessionId));
+      }
+
+      // Add time frame filters
+      if (filter.timeFrame && filter.timeFrame !== 'all-time') {
+        const now = new Date();
+        let startDate: Date;
+
+        switch (filter.timeFrame) {
+          case 'last-week':
+            startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+            break;
+          case 'last-month':
+            startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+            break;
+          case 'last-3-months':
+            startDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+            break;
+          case 'custom':
+            startDate = filter.startDate || new Date(0);
+            break;
+          default:
+            startDate = new Date(0);
+        }
+
+        constraints.push(where('dualTimestamp.realWorldTime', '>=', startDate));
+
+        if (filter.timeFrame === 'custom' && filter.endDate) {
+          constraints.push(where('dualTimestamp.realWorldTime', '<=', filter.endDate));
+        }
+      }
+
+      // Add sorting
+      constraints.push(orderBy('position.sequence', 'asc'));
+
+      const result = await this.query(constraints);
+      return result.data;
+    } catch (error) {
+      console.error('Error getting campaign events:', error);
+      throw error;
     }
   }
 }

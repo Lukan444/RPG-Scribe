@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ReactFlow, {
   Node,
@@ -116,8 +116,8 @@ export function MindMapVisualization({
   const [edgeTypeFilter, setEdgeTypeFilter] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Define custom node types
-  const nodeTypes: NodeTypes = {
+  // Define custom node types (memoized to prevent React Flow performance warnings)
+  const nodeTypes: NodeTypes = useMemo(() => ({
     character: CharacterNode,
     location: LocationNode,
     item: ItemNode,
@@ -125,12 +125,12 @@ export function MindMapVisualization({
     campaign: CampaignNode,
     session: SessionNode,
     note: NoteNode
-  };
+  }), []);
 
-  // Define custom edge types
-  const edgeTypes: EdgeTypes = {
+  // Define custom edge types (memoized to prevent React Flow performance warnings)
+  const edgeTypes: EdgeTypes = useMemo(() => ({
     relationship: RelationshipEdge
-  };
+  }), []);
 
   // Node type filter options
   const nodeTypeOptions = Object.values(EntityType).map(type => ({

@@ -31,10 +31,14 @@ import {
   IconEdit,
   IconTrash,
   IconLock,
-  IconMail
+  IconMail,
+  IconTrash as IconBroom,
+  IconDatabase
 } from '@tabler/icons-react';
 import { modals } from '@mantine/modals';
 import { useNavigate } from 'react-router-dom';
+import { DataIntegrityAuditPanel } from './DataIntegrityAuditPanel';
+import { DuplicateCleanupPanel } from './DuplicateCleanupPanel';
 
 /**
  * Admin Page component
@@ -234,8 +238,10 @@ const AdminPage: React.FC = () => {
 
       <Tabs value={activeTab} onChange={setActiveTab}>
         <Tabs.List>
-          <Tabs.Tab value="users" leftSection={<IconUsers size={16} />}>User Management</Tabs.Tab>
+          <Tabs.Tab value="users" leftSection={<IconUsers size={16} />}>Users</Tabs.Tab>
           <Tabs.Tab value="activity" leftSection={<IconActivity size={16} />}>Activity Logs</Tabs.Tab>
+          <Tabs.Tab value="settings" leftSection={<IconDatabase size={16} />}>Settings</Tabs.Tab>
+          <Tabs.Tab value="cleanup" leftSection={<IconBroom size={16} />}>Duplicate Cleanup</Tabs.Tab>
         </Tabs.List>
 
         <Tabs.Panel value="users" pt="xl">
@@ -463,6 +469,14 @@ const AdminPage: React.FC = () => {
               </Group>
             )}
           </Card>
+        </Tabs.Panel>
+
+        <Tabs.Panel value="settings" pt="xl">
+          <DataIntegrityAuditPanel />
+        </Tabs.Panel>
+
+        <Tabs.Panel value="cleanup" pt="xl">
+          <DuplicateCleanupPanel />
         </Tabs.Panel>
       </Tabs>
 

@@ -43,6 +43,7 @@ import { RelationshipService, Relationship } from '../../services/relationship.s
 import { EntityType } from '../../models/EntityType';
 import { useRPGWorld } from '../../contexts/RPGWorldContext';
 import { RelationshipCountBadge } from '../../components/relationships/badges';
+import { EntityTimelineAccess } from '../../components/timeline/EntityTimelineAccess';
 
 export function CharacterDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -307,6 +308,17 @@ export function CharacterDetailPage() {
                   <Text size="xs" c="dimmed">Status</Text>
                 </Stack>
               </Group>
+
+              <Divider w="100%" />
+
+              {/* Timeline Access */}
+              <EntityTimelineAccess
+                entityType="character"
+                entityId={id || ''}
+                entityName={character.name || 'Unnamed Character'}
+                worldId={character.worldId || currentWorld?.id}
+                campaignId={character.campaignId || currentCampaign?.id}
+              />
             </Stack>
           </Paper>
         </Grid.Col>

@@ -150,7 +150,8 @@ export function CampaignCharacters({
   };
 
   // Handle view character
-  const handleViewCharacter = (characterId: string) => {
+  const handleViewCharacter = (character: any) => {
+    const characterId = character.id;
     if (onViewCharacter) {
       onViewCharacter(characterId);
     } else if (worldId) {
@@ -161,7 +162,8 @@ export function CampaignCharacters({
   };
 
   // Handle edit character
-  const handleEditCharacter = (characterId: string) => {
+  const handleEditCharacter = (character: any) => {
+    const characterId = character.id;
     if (onEditCharacter) {
       onEditCharacter(characterId);
     } else if (worldId) {
@@ -172,13 +174,11 @@ export function CampaignCharacters({
   };
 
   // Handle delete character
-  const handleDeleteCharacter = (characterId: string) => {
+  const handleDeleteCharacter = (character: any) => {
+    const characterId = character.id;
     if (onDeleteCharacter) {
       onDeleteCharacter(characterId);
     } else {
-      // Find the character by ID
-      const character = characters.find(c => c.id === characterId);
-
       if (character) {
         // Show confirmation dialog
         modals.openConfirmModal({

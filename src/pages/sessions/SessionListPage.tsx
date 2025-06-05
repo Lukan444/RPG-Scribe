@@ -12,7 +12,7 @@ import {
   IconAlertCircle, IconArrowLeft
 } from '@tabler/icons-react';
 import { Session } from '../../models/Session';
-import { SessionService } from '../../services/session.service';
+import { SessionServiceAdapter } from '../../services/adapters/SessionServiceAdapter';
 import { EntityType } from '../../models/EntityType';
 import { getCampaignIdFromParams } from '../../utils/routeUtils';
 import { buildEntityRoutePath } from '../../utils/routeUtils';
@@ -47,9 +47,10 @@ export function SessionListPage() {
         // Use empty string for worldId to get global sessions
         const worldId = '';
 
-        // Get sessions
-        const sessionService = SessionService.getInstance(worldId, campaignId);
-        const allSessions = await sessionService.listEntities();
+        // Get sessions using SessionServiceAdapter
+        const sessionService = new SessionServiceAdapter(worldId, campaignId || 'default-campaign');
+        const result = await sessionService.query();
+        const allSessions = result.data;
 
         // Add entityType to each session
         setSessions(allSessions.map(session => ({
@@ -104,7 +105,7 @@ export function SessionListPage() {
         // Use empty string for worldId to delete from global sessions
         const worldId = '';
 
-        const sessionService = SessionService.getInstance(worldId, campaignId);
+        const sessionService = new SessionServiceAdapter(worldId, campaignId || 'default-campaign');
         await sessionService.delete(sessionId);
 
         // Update local state
@@ -410,8 +411,19 @@ function getStatusColor(status: string | undefined): string {
 // Helper function to format date
 function formatDate(date: any): string {
   if (!date) return 'No date';
+
+  // If it's already a formatted string from SessionServiceAdapter, return it
+  if (typeof date === 'string' && date !== 'Invalid date') {
+    return date;
+  }
+
   try {
-    return new Date(date.toDate()).toLocaleDateString();
+    // Handle Firestore Timestamp objects
+    if (date.toDate) {
+      return date.toDate().toLocaleDateString();
+    }
+    // Handle Date objects or date strings
+    return new Date(date).toLocaleDateString();
   } catch (e) {
     return 'Invalid date';
   }

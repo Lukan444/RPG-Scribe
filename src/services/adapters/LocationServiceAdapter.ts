@@ -31,6 +31,33 @@ export class LocationServiceAdapter implements IEntityService<Location> {
   }
 
   /**
+   * Convert Firestore Timestamp to date string
+   * @param timestamp Firestore Timestamp or date string
+   * @returns Formatted date string
+   */
+  private convertTimestampToDateString(timestamp: any): string {
+    try {
+      // Handle Firestore Timestamp objects
+      if (timestamp && typeof timestamp === 'object' && timestamp.toDate) {
+        return timestamp.toDate().toLocaleDateString();
+      }
+      // Handle regular Date objects
+      if (timestamp instanceof Date) {
+        return timestamp.toLocaleDateString();
+      }
+      // Handle date strings
+      if (typeof timestamp === 'string') {
+        return new Date(timestamp).toLocaleDateString();
+      }
+      // Fallback
+      return 'Invalid Date';
+    } catch (error) {
+      console.error('Error converting timestamp:', error);
+      return 'Invalid Date';
+    }
+  }
+
+  /**
    * Get the entity type
    * @returns Entity type
    */
@@ -74,10 +101,13 @@ export class LocationServiceAdapter implements IEntityService<Location> {
     const location = await this.locationService.getById(id, options);
 
     if (location) {
-      // Convert from service Location to model Location
+      // Convert from service Location to model Location with proper field mapping
       return {
         ...location,
-        entityType: EntityType.LOCATION
+        entityType: EntityType.LOCATION,
+        // Convert Firestore Timestamps to formatted date strings for React rendering
+        createdAt: location.createdAt ? this.convertTimestampToDateString(location.createdAt) : undefined,
+        updatedAt: location.updatedAt ? this.convertTimestampToDateString(location.updatedAt) : undefined
       } as Location;
     }
 
@@ -92,10 +122,13 @@ export class LocationServiceAdapter implements IEntityService<Location> {
   async getByIds(ids: string[]): Promise<Location[]> {
     const locations = await this.locationService.getByIds(ids);
 
-    // Convert from service Location to model Location
+    // Convert from service Location to model Location with proper field mapping
     return locations.map(location => ({
       ...location,
-      entityType: EntityType.LOCATION
+      entityType: EntityType.LOCATION,
+      // Convert Firestore Timestamps to formatted date strings for React rendering
+      createdAt: location.createdAt ? this.convertTimestampToDateString(location.createdAt) : undefined,
+      updatedAt: location.updatedAt ? this.convertTimestampToDateString(location.updatedAt) : undefined
     } as Location));
   }
 
@@ -190,10 +223,13 @@ export class LocationServiceAdapter implements IEntityService<Location> {
   }> {
     const result = await this.locationService.query(constraints, pageSize, startAfterDoc, options);
 
-    // Convert from service Location to model Location
+    // Convert from service Location to model Location with proper field mapping
     const convertedData = result.data.map(location => ({
       ...location,
-      entityType: EntityType.LOCATION
+      entityType: EntityType.LOCATION,
+      // Convert Firestore Timestamps to formatted date strings for React rendering
+      createdAt: location.createdAt ? this.convertTimestampToDateString(location.createdAt) : undefined,
+      updatedAt: location.updatedAt ? this.convertTimestampToDateString(location.updatedAt) : undefined
     } as Location));
 
     return {
@@ -309,7 +345,10 @@ export class LocationServiceAdapter implements IEntityService<Location> {
       if (location) {
         const modelLocation = {
           ...location,
-          entityType: EntityType.LOCATION
+          entityType: EntityType.LOCATION,
+          // Convert Firestore Timestamps to formatted date strings for React rendering
+          createdAt: location.createdAt ? this.convertTimestampToDateString(location.createdAt) : undefined,
+          updatedAt: location.updatedAt ? this.convertTimestampToDateString(location.updatedAt) : undefined
         } as Location;
         callback(modelLocation);
       } else {
@@ -340,7 +379,10 @@ export class LocationServiceAdapter implements IEntityService<Location> {
     const wrappedCallback = (locations: any[]) => {
       const modelLocations = locations.map(location => ({
         ...location,
-        entityType: EntityType.LOCATION
+        entityType: EntityType.LOCATION,
+        // Convert Firestore Timestamps to formatted date strings for React rendering
+        createdAt: location.createdAt ? this.convertTimestampToDateString(location.createdAt) : undefined,
+        updatedAt: location.updatedAt ? this.convertTimestampToDateString(location.updatedAt) : undefined
       } as Location));
 
       callback(modelLocations);

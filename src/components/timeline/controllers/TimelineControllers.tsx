@@ -5,7 +5,7 @@
  */
 
 import React from 'react';
-import { Controller, Control, FieldPath, FieldValues } from 'react-hook-form';
+import { Controller, Control, FieldPath, FieldValues, ControllerRenderProps, ControllerFieldState } from 'react-hook-form';
 import { TimelineDatePicker, TimelineDatePickerProps } from '../TimelineDatePicker';
 import { TimelinePositionControl, TimelinePositionControlProps } from '../TimelinePositionControl';
 import { TimelineImportanceSlider, TimelineImportanceSliderProps } from '../TimelineImportanceSlider';
@@ -32,7 +32,7 @@ const TimelineDatePickerControllerComponent = <T extends FieldValues>({
     <Controller
       control={control}
       name={name}
-      render={({ field, fieldState }) => (
+      render={({ field, fieldState }: { field: ControllerRenderProps<T, any>; fieldState: ControllerFieldState }) => (
         <TimelineDatePicker
           {...props}
           value={field.value}
@@ -60,7 +60,7 @@ const TimelinePositionControllerComponent = <T extends FieldValues>({
     <Controller
       control={control}
       name={name}
-      render={({ field, fieldState }) => (
+      render={({ field, fieldState }: { field: ControllerRenderProps<T, any>; fieldState: ControllerFieldState }) => (
         <TimelinePositionControl
           {...props}
           value={field.value}
@@ -88,7 +88,7 @@ const TimelineImportanceControllerComponent = <T extends FieldValues>({
     <Controller
       control={control}
       name={name}
-      render={({ field, fieldState }) => (
+      render={({ field, fieldState }: { field: ControllerRenderProps<T, any>; fieldState: ControllerFieldState }) => (
         <TimelineImportanceSlider
           {...props}
           value={field.value}
@@ -116,7 +116,7 @@ const TimelineNotesControllerComponent = <T extends FieldValues>({
     <Controller
       control={control}
       name={name}
-      render={({ field, fieldState }) => (
+      render={({ field, fieldState }: { field: ControllerRenderProps<T, any>; fieldState: ControllerFieldState }) => (
         <TimelineNotesField
           {...props}
           value={field.value}

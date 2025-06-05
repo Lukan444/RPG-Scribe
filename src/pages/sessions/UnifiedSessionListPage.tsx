@@ -1,5 +1,5 @@
 import React from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Badge, Group, Text, rem } from '@mantine/core';
 import { IconCalendarEvent } from '@tabler/icons-react';
 import { EntityListPage } from '../../components/entity-list/EntityListPage';
@@ -15,8 +15,9 @@ import { formatDate } from '../../utils/dateUtils';
  * Displays a list of sessions using the unified entity list component
  */
 export function UnifiedSessionListPage() {
-  // Get params
+  // Get params and navigation
   const params = useParams();
+  const navigate = useNavigate();
   const worldId = getWorldIdFromParams(params);
   const campaignId = getCampaignIdFromParams(params);
 
@@ -97,6 +98,13 @@ export function UnifiedSessionListPage() {
     emptyStateActionText: 'Create New Session'
   };
 
+  // Handle back to world navigation
+  const handleBackToWorld = () => {
+    if (worldId) {
+      navigate(`/rpg-worlds/${worldId}`);
+    }
+  };
+
   return (
     <EntityListPage
       config={configWithCustomBadge}
@@ -106,6 +114,7 @@ export function UnifiedSessionListPage() {
       title={worldId ? 'World Sessions' : 'All Sessions'}
       showBackButton={!!worldId}
       backButtonLabel="Back to World"
+      onBackClick={handleBackToWorld}
     />
   );
 }

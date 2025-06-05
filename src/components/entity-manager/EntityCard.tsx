@@ -67,7 +67,7 @@ export function EntityCard({
         <Group justify="space-between">
           <Group gap="xs">
             <ThemeIcon size="lg" color={color} variant="light" radius="md">
-              <IconComponent size={rem(18)} />
+              <IconComponent size={18} />
             </ThemeIcon>
             <Title order={4}>{displayName}</Title>
           </Group>

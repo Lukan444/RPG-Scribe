@@ -42,6 +42,8 @@ import { ConfirmationDialog } from '../../components/common/ConfirmationDialog';
 import { EventService, Event } from '../../services/event.service';
 import { RelationshipService, Relationship } from '../../services/relationship.service';
 import { EntityType } from '../../models/EntityType';
+import { useRPGWorld } from '../../contexts/RPGWorldContext';
+import { formatDate, formatDateTime } from '../../utils/dateUtils';
 import '@mantine/dates/styles.css'; // Import date styles
 
 /**
@@ -55,8 +57,9 @@ import '@mantine/dates/styles.css'; // Import date styles
  * @see {@link https://mantine.dev/core/badge/} - Mantine Badge documentation
  */
 export function EventDetailPage() {
-  const { id } = useParams<{ id: string }>();
+  const { id, worldId } = useParams<{ id: string; worldId?: string }>();
   const navigate = useNavigate();
+  const { currentWorld, currentCampaign } = useRPGWorld();
 
   const [event, setEvent] = useState<Event | null>(null);
   const [relationships, setRelationships] = useState<Relationship[]>([]);
@@ -65,6 +68,10 @@ export function EventDetailPage() {
   const [activeTab, setActiveTab] = useState<string | null>('details');
   const [confirmDeleteOpened, { open: openConfirmDelete, close: closeConfirmDelete }] = useDisclosure(false);
 
+  // Get current world and campaign IDs following proper hierarchy
+  const currentWorldId = worldId || currentWorld?.id || '';
+  const campaignId = currentCampaign?.id || 'default-campaign';
+
   // Load event data
   useEffect(() => {
     const loadEvent = async () => {
@@ -72,11 +79,8 @@ export function EventDetailPage() {
 
       try {
         setLoading(true);
-        // For now, we'll use a hardcoded world and campaign ID
-        const worldId = 'default-world';
-        const campaignId = 'default-campaign';
 
-        const eventService = EventService.getInstance(worldId, campaignId);
+        const eventService = EventService.getInstance(currentWorldId, campaignId);
         const eventData = await eventService.getEntity(id);
 
         if (!eventData) {
@@ -87,7 +91,7 @@ export function EventDetailPage() {
         setEvent(eventData);
 
         // Load relationships
-        const relationshipService = RelationshipService.getInstance(worldId, campaignId);
+        const relationshipService = RelationshipService.getInstance(currentWorldId, campaignId);
         const relationshipsData = await relationshipService.getRelationshipsByEntity(id, EntityType.EVENT);
         setRelationships(relationshipsData);
       } catch (err) {
@@ -99,7 +103,7 @@ export function EventDetailPage() {
     };
 
     loadEvent();
-  }, [id]);
+  }, [id, currentWorldId, campaignId]);
 
   // Handle delete event
   const handleDeleteEvent = () => {
@@ -112,14 +116,13 @@ export function EventDetailPage() {
 
     try {
       setLoading(true);
-      // For now, we'll use a hardcoded world and campaign ID
-      const worldId = 'default-world';
-      const campaignId = 'default-campaign';
 
-      const eventService = EventService.getInstance(worldId, campaignId);
+      const eventService = EventService.getInstance(currentWorldId, campaignId);
       await eventService.deleteEntity(id);
 
-      navigate('/events');
+      // Navigate back to events list with proper world context
+      const eventsPath = worldId ? `/rpg-worlds/${worldId}/events` : '/events';
+      navigate(eventsPath);
     } catch (err) {
       console.error('Error deleting event:', err);
       setError('Failed to delete event. Please try again later.');
@@ -214,7 +217,7 @@ export function EventDetailPage() {
             variant="subtle"
             leftSection={<IconArrowLeft size={16} />}
             component={Link}
-            to="/events"
+            to={worldId ? `/rpg-worlds/${worldId}/events` : '/events'}
             mb="xs"
           >
             Back to Events
@@ -225,7 +228,7 @@ export function EventDetailPage() {
         <Group>
           <Button
             component={Link}
-            to={`/events/${id}/edit`}
+            to={worldId ? `/rpg-worlds/${worldId}/events/${id}/edit` : `/events/${id}/edit`}
             leftSection={<IconEdit size={16} />}
           >
             Edit
@@ -301,7 +304,7 @@ export function EventDetailPage() {
               {event.date && (
                 <Group grow w="100%">
                   <Stack align="center" gap={5}>
-                    <Text fw={700} size="lg">{new Date(event.date.toDate()).toLocaleDateString()}</Text>
+                    <Text fw={700} size="lg">{formatDate(event.date) || 'N/A'}</Text>
                     <Text size="xs" c="dimmed">Date</Text>
                   </Stack>
                 </Group>
@@ -342,7 +345,7 @@ export function EventDetailPage() {
                       <Text>{event.type || 'N/A'}</Text>
 
                       <Text fw={700} mt="md">Date</Text>
-                      <Text>{event.date ? new Date(event.date.toDate()).toLocaleDateString() : 'N/A'}</Text>
+                      <Text>{formatDate(event.date) || 'N/A'}</Text>
 
                       <Text fw={700} mt="md">Importance</Text>
                       <Text>{event.importance ? `${event.importance}/10` : 'N/A'}</Text>
@@ -355,10 +358,10 @@ export function EventDetailPage() {
                       <Text>{event.createdBy || 'N/A'}</Text>
 
                       <Text fw={700} mt="md">Created At</Text>
-                      <Text>{event.createdAt ? new Date(event.createdAt.toDate()).toLocaleString() : 'N/A'}</Text>
+                      <Text>{formatDateTime(event.createdAt) || 'N/A'}</Text>
 
                       <Text fw={700} mt="md">Updated At</Text>
-                      <Text>{event.updatedAt ? new Date(event.updatedAt.toDate()).toLocaleString() : 'N/A'}</Text>
+                      <Text>{formatDateTime(event.updatedAt) || 'N/A'}</Text>
                     </Stack>
                   </Grid.Col>
 

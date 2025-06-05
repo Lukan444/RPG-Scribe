@@ -225,7 +225,7 @@ function EntityListPageContent<T extends DocumentData>({
     const id = entity[config.idField];
     const effectiveWorldId = worldId || params.worldId || '';
     const effectiveCampaignId = campaignId || params.campaignId || '';
-    navigate(config.getViewRoute(id, effectiveWorldId, effectiveCampaignId));
+    navigate(config.getViewRoute(id, effectiveWorldId, effectiveCampaignId, entity));
   };
 
   // Handle edit entity

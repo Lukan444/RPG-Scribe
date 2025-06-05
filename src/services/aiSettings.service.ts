@@ -63,7 +63,9 @@ export class AISettingsService {
   async updateAISettings(userId: string, aiSettings: Partial<AISettings>): Promise<boolean> {
     try {
       const currentPrefs = await this.userPreferencesService.getUserPreferences(userId);
-      const updatedAISettings = {
+      const defaultSettings = this.getDefaultAISettings();
+      const updatedAISettings: AISettings = {
+        ...defaultSettings,
         ...currentPrefs.ai,
         ...aiSettings,
         updatedAt: new Date()

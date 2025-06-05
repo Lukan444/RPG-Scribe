@@ -19,7 +19,9 @@ import {
   Alert,
   Card,
   Avatar,
-  SimpleGrid
+  SimpleGrid,
+  ThemeIcon,
+  Loader
 } from '@mantine/core';
 import {
   IconEdit,
@@ -33,11 +35,15 @@ import {
   IconBook,
   IconAlertCircle,
   IconClock,
-  IconNote
+  IconNote,
+  IconSword,
+  IconCalendarEvent,
+  IconBuildingCastle,
+  IconTimeline
 } from '@tabler/icons-react';
 import { Campaign } from '../../models/Campaign';
 import { campaignService } from '../../services/api/campaign.service';
-import { EntityType } from '../../models/Relationship';
+import { EntityType } from '../../models/EntityType';
 import { EntityList } from '../common/EntityList';
 import { useAuth } from '../../contexts/AuthContext';
 import { formatDate } from '../../utils/dateUtils';
@@ -45,6 +51,19 @@ import CampaignSessions from '../campaign/CampaignSessions';
 import CampaignCharacters from '../campaign/CampaignCharacters';
 import CampaignLocations from '../campaign/CampaignLocations';
 import CampaignNotes from '../campaign/CampaignNotes';
+import { EntityCountTooltip } from '../common/EntityCountTooltip';
+import { OptimizedEntityCountTooltip } from '../common/OptimizedEntityCountTooltip';
+import { useOptimizedEntityCounts } from '../../hooks/useOptimizedEntityCounts';
+
+// Import service classes for campaign-scoped data fetching
+import { CharacterService } from '../../services/character.service';
+import { LocationService } from '../../services/location.service';
+import { ItemService } from '../../services/item.service';
+import { EventService } from '../../services/event.service';
+import { SessionService } from '../../services/session.service';
+import { FactionService } from '../../services/faction.service';
+import { StoryArcService } from '../../services/storyArc.service';
+import { NoteService } from '../../services/note.service';
 
 /**
  * CampaignDetail component - Detailed view of a campaign
@@ -59,6 +78,49 @@ export function CampaignDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<string | null>('overview');
+
+  // Use optimized entity counts hook for campaign-scoped data
+  const {
+    entityCounts: optimizedEntityCounts,
+    recentEntities: optimizedRecentEntities,
+    loading: countsLoading,
+    error: countsError,
+    lastUpdated,
+    refresh: refreshEntityCounts,
+    performanceMetrics
+  } = useOptimizedEntityCounts({
+    worldId: campaign?.worldId,
+    campaignId: campaign?.id,
+    enableStaleWhileRevalidate: true,
+    enableBackgroundRefresh: true,
+    refreshInterval: 5 * 60 * 1000, // 5 minutes
+    onCacheHit: () => console.debug('Entity counts cache hit for campaign:', campaign?.id),
+    onCacheMiss: () => console.debug('Entity counts cache miss for campaign:', campaign?.id),
+    onError: (error) => console.error('Entity counts error for campaign:', campaign?.id, error)
+  });
+
+  // Transform optimized data to match existing component structure
+  const entityCounts = {
+    characters: optimizedEntityCounts.character || 0,
+    locations: optimizedEntityCounts.location || 0,
+    factions: optimizedEntityCounts.faction || 0,
+    items: optimizedEntityCounts.item || 0,
+    events: optimizedEntityCounts.event || 0,
+    sessions: optimizedEntityCounts.session || 0,
+    storyArcs: optimizedEntityCounts.story_arc || 0,
+    notes: optimizedEntityCounts.note || 0
+  };
+
+  const recentEntities = {
+    characters: optimizedRecentEntities.character || [],
+    locations: optimizedRecentEntities.location || [],
+    factions: optimizedRecentEntities.faction || [],
+    items: optimizedRecentEntities.item || [],
+    events: optimizedRecentEntities.event || [],
+    sessions: optimizedRecentEntities.session || [],
+    storyArcs: optimizedRecentEntities.story_arc || [],
+    notes: optimizedRecentEntities.note || []
+  };
 
   // Load campaign data
   useEffect(() => {
@@ -87,6 +149,18 @@ export function CampaignDetail() {
 
     loadCampaign();
   }, [id]);
+
+  // Performance metrics display (development only)
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development' && performanceMetrics.loadTime > 0) {
+      console.log('Campaign entity counts performance:', {
+        cacheHit: performanceMetrics.cacheHit,
+        loadTime: `${performanceMetrics.loadTime.toFixed(2)}ms`,
+        source: performanceMetrics.source,
+        campaignId: campaign?.id
+      });
+    }
+  }, [performanceMetrics, campaign?.id]);
 
   // Handle edit campaign
   const handleEditCampaign = () => {
@@ -256,7 +330,12 @@ export function CampaignDetail() {
             </Tabs.List>
 
             <Tabs.Panel value="overview">
-              <CampaignOverview campaign={campaign} />
+              <CampaignOverview
+                campaign={campaign}
+                entityCounts={entityCounts}
+                recentEntities={recentEntities}
+                countsLoading={countsLoading}
+              />
             </Tabs.Panel>
 
             <Tabs.Panel value="sessions">
@@ -284,23 +363,199 @@ export function CampaignDetail() {
 /**
  * CampaignOverview component - Overview tab content
  */
-function CampaignOverview({ campaign }: { campaign: Campaign }) {
+function CampaignOverview({
+  campaign,
+  entityCounts,
+  recentEntities,
+  countsLoading
+}: {
+  campaign: Campaign;
+  entityCounts: any;
+  recentEntities: any;
+  countsLoading: boolean;
+}) {
+  const navigate = useNavigate();
+
   return (
-    <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md">
+    <Stack gap="md">
+      {/* Campaign Stats - Clickable Entity Count Badges */}
       <Paper p="md" withBorder>
-        <Title order={4} mb="md">Campaign Summary</Title>
-        <Text>{campaign.description}</Text>
+        <Title order={4} mb="md">Campaign Statistics</Title>
+        <SimpleGrid cols={{ base: 2, sm: 3, md: 4, lg: 4 }} spacing="md">
+          {/* Characters */}
+          <Card
+            withBorder
+            p="md"
+            radius="md"
+            style={{ cursor: 'pointer' }}
+            onClick={() => navigate(`/campaigns/${campaign.id}/characters`)}
+          >
+            <Group wrap="nowrap">
+              <ThemeIcon size="lg" radius="md" color="teal">
+                <IconUsers style={{ width: '20px', height: '20px' }} />
+              </ThemeIcon>
+              <div style={{ flex: 1 }}>
+                <Group justify="space-between" align="center">
+                  <div>
+                    <Text size="xs" c="dimmed">Characters</Text>
+                    {countsLoading ? (
+                      <Text fw={700} size="xl">
+                        <Loader size="xs" />
+                      </Text>
+                    ) : (
+                      <EntityCountTooltip
+                        entityType={EntityType.CHARACTER}
+                        count={entityCounts.characters}
+                        recentEntities={recentEntities.characters}
+                        color="teal"
+                        position="top"
+                      >
+                        <Text fw={700} size="xl" style={{ cursor: 'help' }}>
+                          {entityCounts.characters}
+                        </Text>
+                      </EntityCountTooltip>
+                    )}
+                  </div>
+                </Group>
+              </div>
+            </Group>
+          </Card>
 
-        {/* Additional campaign details would go here */}
+          {/* Locations */}
+          <Card
+            withBorder
+            p="md"
+            radius="md"
+            style={{ cursor: 'pointer' }}
+            onClick={() => navigate(`/campaigns/${campaign.id}/locations`)}
+          >
+            <Group wrap="nowrap">
+              <ThemeIcon size="lg" radius="md" color="violet">
+                <IconMapPin style={{ width: '20px', height: '20px' }} />
+              </ThemeIcon>
+              <div style={{ flex: 1 }}>
+                <Group justify="space-between" align="center">
+                  <div>
+                    <Text size="xs" c="dimmed">Locations</Text>
+                    {countsLoading ? (
+                      <Text fw={700} size="xl">
+                        <Loader size="xs" />
+                      </Text>
+                    ) : (
+                      <EntityCountTooltip
+                        entityType={EntityType.LOCATION}
+                        count={entityCounts.locations}
+                        recentEntities={recentEntities.locations}
+                        color="violet"
+                        position="top"
+                      >
+                        <Text fw={700} size="xl" style={{ cursor: 'help' }}>
+                          {entityCounts.locations}
+                        </Text>
+                      </EntityCountTooltip>
+                    )}
+                  </div>
+                </Group>
+              </div>
+            </Group>
+          </Card>
+
+          {/* Factions */}
+          <Card
+            withBorder
+            p="md"
+            radius="md"
+            style={{ cursor: 'pointer' }}
+            onClick={() => navigate(`/campaigns/${campaign.id}/factions`)}
+          >
+            <Group wrap="nowrap">
+              <ThemeIcon size="lg" radius="md" color="pink">
+                <IconBuildingCastle style={{ width: '20px', height: '20px' }} />
+              </ThemeIcon>
+              <div style={{ flex: 1 }}>
+                <Group justify="space-between" align="center">
+                  <div>
+                    <Text size="xs" c="dimmed">Factions</Text>
+                    {countsLoading ? (
+                      <Text fw={700} size="xl">
+                        <Loader size="xs" />
+                      </Text>
+                    ) : (
+                      <EntityCountTooltip
+                        entityType={EntityType.FACTION}
+                        count={entityCounts.factions}
+                        recentEntities={recentEntities.factions}
+                        color="pink"
+                        position="top"
+                      >
+                        <Text fw={700} size="xl" style={{ cursor: 'help' }}>
+                          {entityCounts.factions}
+                        </Text>
+                      </EntityCountTooltip>
+                    )}
+                  </div>
+                </Group>
+              </div>
+            </Group>
+          </Card>
+
+          {/* Items */}
+          <Card
+            withBorder
+            p="md"
+            radius="md"
+            style={{ cursor: 'pointer' }}
+            onClick={() => navigate(`/campaigns/${campaign.id}/items`)}
+          >
+            <Group wrap="nowrap">
+              <ThemeIcon size="lg" radius="md" color="yellow">
+                <IconSword style={{ width: '20px', height: '20px' }} />
+              </ThemeIcon>
+              <div style={{ flex: 1 }}>
+                <Group justify="space-between" align="center">
+                  <div>
+                    <Text size="xs" c="dimmed">Items</Text>
+                    {countsLoading ? (
+                      <Text fw={700} size="xl">
+                        <Loader size="xs" />
+                      </Text>
+                    ) : (
+                      <EntityCountTooltip
+                        entityType={EntityType.ITEM}
+                        count={entityCounts.items}
+                        recentEntities={recentEntities.items}
+                        color="yellow"
+                        position="top"
+                      >
+                        <Text fw={700} size="xl" style={{ cursor: 'help' }}>
+                          {entityCounts.items}
+                        </Text>
+                      </EntityCountTooltip>
+                    )}
+                  </div>
+                </Group>
+              </div>
+            </Group>
+          </Card>
+        </SimpleGrid>
       </Paper>
 
-      <Paper p="md" withBorder>
-        <Title order={4} mb="md">Recent Activity</Title>
-        <Text c="dimmed">No recent activity</Text>
+      <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md">
+        <Paper p="md" withBorder>
+          <Title order={4} mb="md">Campaign Summary</Title>
+          <Text>{campaign.description}</Text>
 
-        {/* Recent activity would go here */}
-      </Paper>
-    </SimpleGrid>
+          {/* Additional campaign details would go here */}
+        </Paper>
+
+        <Paper p="md" withBorder>
+          <Title order={4} mb="md">Recent Activity</Title>
+          <Text c="dimmed">No recent activity</Text>
+
+          {/* Recent activity would go here */}
+        </Paper>
+      </SimpleGrid>
+    </Stack>
   );
 }
 

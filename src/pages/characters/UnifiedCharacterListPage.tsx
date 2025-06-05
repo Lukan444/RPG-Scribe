@@ -5,7 +5,7 @@
  */
 
 import React from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Badge, Group, Text, rem } from '@mantine/core';
 import { IconUser } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
@@ -20,6 +20,7 @@ import { EntityType } from '../../models/EntityType';
  */
 export function UnifiedCharacterListPage() {
   const { worldId } = useParams<{ worldId?: string }>();
+  const navigate = useNavigate();
   const { t } = useTranslation(['ui', 'common']);
 
   // Get character service
@@ -80,6 +81,13 @@ export function UnifiedCharacterListPage() {
     return t('pages.characters.subtitle');
   };
 
+  // Handle back to world navigation
+  const handleBackToWorld = () => {
+    if (worldId) {
+      navigate(`/rpg-worlds/${worldId}`);
+    }
+  };
+
   return (
     <EntityListPage<Character>
       config={configWithCustomBadge}
@@ -89,6 +97,7 @@ export function UnifiedCharacterListPage() {
       subtitle={renderSubtitle()}
       showBackButton={!!worldId}
       backButtonLabel={t('pages.worlds.backToWorld')}
+      onBackClick={handleBackToWorld}
     />
   );
 }

@@ -49,7 +49,7 @@ export function MindMapPage() {
         }
 
         const campaignsRef = collection(db, 'campaigns');
-        const q = query(campaignsRef, where('userId', '==', user.uid));
+        const q = query(campaignsRef, where('userId', '==', user.id));
         const querySnapshot = await getDocs(q);
 
         const campaignData: Campaign[] = [];

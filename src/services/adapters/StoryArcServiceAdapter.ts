@@ -31,6 +31,33 @@ export class StoryArcServiceAdapter implements IEntityService<StoryArc> {
   }
 
   /**
+   * Convert Firestore Timestamp to date string
+   * @param timestamp Firestore Timestamp or date string
+   * @returns Formatted date string
+   */
+  private convertTimestampToDateString(timestamp: any): string {
+    try {
+      // Handle Firestore Timestamp objects
+      if (timestamp && typeof timestamp === 'object' && timestamp.toDate) {
+        return timestamp.toDate().toLocaleDateString();
+      }
+      // Handle regular Date objects
+      if (timestamp instanceof Date) {
+        return timestamp.toLocaleDateString();
+      }
+      // Handle date strings
+      if (typeof timestamp === 'string') {
+        return new Date(timestamp).toLocaleDateString();
+      }
+      // Fallback
+      return 'Invalid Date';
+    } catch (error) {
+      console.error('Error converting timestamp:', error);
+      return 'Invalid Date';
+    }
+  }
+
+  /**
    * Get the entity type
    * @returns Entity type
    */
@@ -74,10 +101,13 @@ export class StoryArcServiceAdapter implements IEntityService<StoryArc> {
     const storyArc = await this.storyArcService.getById(id);
     
     if (storyArc) {
-      // Convert from service StoryArc to model StoryArc
+      // Convert from service StoryArc to model StoryArc with proper field mapping
       return {
         ...storyArc,
-        entityType: EntityType.STORY_ARC
+        entityType: EntityType.STORY_ARC,
+        // Convert Firestore Timestamps to formatted date strings for React rendering
+        createdAt: storyArc.createdAt ? this.convertTimestampToDateString(storyArc.createdAt) : undefined,
+        updatedAt: storyArc.updatedAt ? this.convertTimestampToDateString(storyArc.updatedAt) : undefined
       } as StoryArc;
     }
     
@@ -92,10 +122,13 @@ export class StoryArcServiceAdapter implements IEntityService<StoryArc> {
   async getByIds(ids: string[]): Promise<StoryArc[]> {
     const storyArcs = await this.storyArcService.getByIds(ids);
     
-    // Convert from service StoryArc to model StoryArc
+    // Convert from service StoryArc to model StoryArc with proper field mapping
     return storyArcs.map(storyArc => ({
       ...storyArc,
-      entityType: EntityType.STORY_ARC
+      entityType: EntityType.STORY_ARC,
+      // Convert Firestore Timestamps to formatted date strings for React rendering
+      createdAt: storyArc.createdAt ? this.convertTimestampToDateString(storyArc.createdAt) : undefined,
+      updatedAt: storyArc.updatedAt ? this.convertTimestampToDateString(storyArc.updatedAt) : undefined
     } as StoryArc));
   }
 
@@ -190,10 +223,13 @@ export class StoryArcServiceAdapter implements IEntityService<StoryArc> {
   }> {
     const result = await this.storyArcService.query(constraints, pageSize, startAfterDoc, options);
     
-    // Convert from service StoryArc to model StoryArc
+    // Convert from service StoryArc to model StoryArc with proper field mapping
     const convertedData = result.data.map(storyArc => ({
       ...storyArc,
-      entityType: EntityType.STORY_ARC
+      entityType: EntityType.STORY_ARC,
+      // Convert Firestore Timestamps to formatted date strings for React rendering
+      createdAt: storyArc.createdAt ? this.convertTimestampToDateString(storyArc.createdAt) : undefined,
+      updatedAt: storyArc.updatedAt ? this.convertTimestampToDateString(storyArc.updatedAt) : undefined
     } as StoryArc));
     
     return {
@@ -309,7 +345,10 @@ export class StoryArcServiceAdapter implements IEntityService<StoryArc> {
       if (storyArc) {
         const modelStoryArc = {
           ...storyArc,
-          entityType: EntityType.STORY_ARC
+          entityType: EntityType.STORY_ARC,
+          // Convert Firestore Timestamps to formatted date strings for React rendering
+          createdAt: storyArc.createdAt ? this.convertTimestampToDateString(storyArc.createdAt) : undefined,
+          updatedAt: storyArc.updatedAt ? this.convertTimestampToDateString(storyArc.updatedAt) : undefined
         } as StoryArc;
         callback(modelStoryArc);
       } else {
@@ -340,9 +379,12 @@ export class StoryArcServiceAdapter implements IEntityService<StoryArc> {
     const wrappedCallback = (storyArcs: any[]) => {
       const modelStoryArcs = storyArcs.map(storyArc => ({
         ...storyArc,
-        entityType: EntityType.STORY_ARC
+        entityType: EntityType.STORY_ARC,
+        // Convert Firestore Timestamps to formatted date strings for React rendering
+        createdAt: storyArc.createdAt ? this.convertTimestampToDateString(storyArc.createdAt) : undefined,
+        updatedAt: storyArc.updatedAt ? this.convertTimestampToDateString(storyArc.updatedAt) : undefined
       } as StoryArc));
-      
+
       callback(modelStoryArcs);
     };
     

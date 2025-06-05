@@ -69,12 +69,18 @@ export class RPGWorldService extends FirestoreService<RPGWorld> {
 
     // Get worlds shared with the user
     const sharedWorldIds = await this.getSharedWorldsForUser(userId);
-    const sharedWorlds: RPGWorld[] = [];
 
-    for (const worldId of sharedWorldIds) {
-      const world = await this.getById(worldId);
-      if (world) {
-        sharedWorlds.push(world);
+    // Optimize: Use batch query instead of individual getById calls
+    const sharedWorlds: RPGWorld[] = [];
+    if (sharedWorldIds.length > 0) {
+      // Batch query for shared worlds (Firestore supports up to 10 documents per batch)
+      const batchSize = 10;
+      for (let i = 0; i < sharedWorldIds.length; i += batchSize) {
+        const batch = sharedWorldIds.slice(i, i + batchSize);
+        const { data } = await this.query([
+          where('__name__', 'in', batch)
+        ]);
+        sharedWorlds.push(...data);
       }
     }
 

@@ -79,7 +79,7 @@ export const useAISettings = () => {
   /**
    * Create a new prompt template
    */
-  const createPromptTemplate = useCallback(async (template: Omit<PromptTemplate, 'id' | 'createdAt' | 'updatedAt' | 'createdBy'>) => {
+  const createPromptTemplate = useCallback(async (template: Omit<PromptTemplate, 'id' | 'createdAt' | 'updatedAt' | 'createdBy'>): Promise<void> => {
     if (!user?.id) {
       throw new Error('User not authenticated');
     }
@@ -94,7 +94,6 @@ export const useAISettings = () => {
           message: `Prompt template "${template.name}" has been created`,
           color: 'green'
         });
-        return newTemplate;
       } else {
         throw new Error('Failed to create template');
       }
@@ -112,7 +111,7 @@ export const useAISettings = () => {
   /**
    * Update a prompt template
    */
-  const updatePromptTemplate = useCallback(async (templateId: string, updates: Partial<PromptTemplate>) => {
+  const updatePromptTemplate = useCallback(async (templateId: string, updates: Partial<PromptTemplate>): Promise<void> => {
     try {
       const success = await aiSettingsService.updatePromptTemplate(templateId, updates);
       
@@ -129,7 +128,6 @@ export const useAISettings = () => {
           message: 'Prompt template has been updated successfully',
           color: 'green'
         });
-        return true;
       } else {
         throw new Error('Failed to update template');
       }
@@ -147,7 +145,7 @@ export const useAISettings = () => {
   /**
    * Delete a prompt template
    */
-  const deletePromptTemplate = useCallback(async (templateId: string) => {
+  const deletePromptTemplate = useCallback(async (templateId: string): Promise<void> => {
     try {
       const success = await aiSettingsService.deletePromptTemplate(templateId);
       
@@ -158,7 +156,6 @@ export const useAISettings = () => {
           message: 'Prompt template has been deleted successfully',
           color: 'green'
         });
-        return true;
       } else {
         throw new Error('Failed to delete template');
       }
@@ -176,7 +173,7 @@ export const useAISettings = () => {
   /**
    * Execute a prompt template
    */
-  const executePrompt = useCallback(async (templateId: string, variables: Record<string, any>) => {
+  const executePrompt = useCallback(async (templateId: string, variables: Record<string, any>): Promise<void> => {
     if (!user?.id) {
       throw new Error('User not authenticated');
     }
@@ -202,8 +199,6 @@ export const useAISettings = () => {
       } else {
         throw new Error(response.error || 'Failed to execute prompt');
       }
-
-      return response;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to execute prompt';
       notifications.show({

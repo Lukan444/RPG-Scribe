@@ -254,6 +254,8 @@ export function CampaignSessions({ campaignId, worldId }: CampaignSessionsProps)
               showRelationshipCounts={true}
               campaignId={campaignId}
               worldId={worldId}
+              nameField="title"
+              descriptionField="summary"
             />
           )}
 

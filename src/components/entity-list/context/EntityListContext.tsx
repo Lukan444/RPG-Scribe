@@ -5,7 +5,7 @@
  * It manages view preferences, filters, sorting, and pagination.
  */
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { DocumentData } from 'firebase/firestore';
 import { EntityListViewType, IEntityListConfig } from '../interfaces/EntityListConfig.interface';
@@ -66,6 +66,18 @@ export function EntityListProvider<T extends DocumentData>({
   config
 }: EntityListProviderProps<T>) {
   const [searchParams, setSearchParams] = useSearchParams();
+
+  // Add provider instance logging to debug context mismatch
+  const providerInstanceId = useMemo(() => Math.random().toString(36).substr(2, 9), []);
+  console.log('🏭 EntityListProvider instance:', {
+    providerInstanceId,
+    config: {
+      entityType: config.entityType,
+      defaultView: config.defaultView,
+      itemsPerPage: config.itemsPerPage
+    },
+    dispatchFunction: 'N/A (state-based provider)'
+  });
   
   // Initialize state from URL parameters or defaults
   const [viewType, setViewTypeState] = useState<EntityListViewType>(
@@ -288,8 +300,8 @@ export function EntityListProvider<T extends DocumentData>({
     setPage(1); // Reset to first page when page size changes
   };
   
-  // Context value
-  const value: EntityListContextState<T> = {
+  // Memoize context value to prevent provider re-instantiation
+  const value = useMemo((): EntityListContextState<T> => ({
     viewType,
     setViewType,
     filters,
@@ -308,8 +320,27 @@ export function EntityListProvider<T extends DocumentData>({
     pageSize,
     setPageSize,
     config
-  };
-  
+  }), [
+    viewType,
+    setViewType,
+    filters,
+    setFilters,
+    addFilter,
+    removeFilter,
+    clearFilters,
+    sortBy,
+    setSortBy,
+    sortDirection,
+    setSortDirection,
+    searchQuery,
+    setSearchQuery,
+    page,
+    setPage,
+    pageSize,
+    setPageSize,
+    config
+  ]);
+
   return (
     <EntityListContext.Provider value={value}>
       {children}

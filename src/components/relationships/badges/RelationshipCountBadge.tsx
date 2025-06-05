@@ -383,23 +383,23 @@ export function RelationshipCountBadge({
     }
   };
 
-  // Get icon based on entity type with dynamic sizing
+  // Get icon based on entity type with fixed sizing
   const getIcon = () => {
-    // Determine icon size based on badge size
+    // Determine icon size based on badge size (using fixed pixel values)
     const getIconSize = () => {
       switch (size) {
         case 'xs':
-          return rem(10);
+          return 10;
         case 'sm':
-          return rem(12);
+          return 12;
         case 'md':
-          return rem(14);
+          return 14;
         case 'lg':
-          return rem(16);
+          return 16;
         case 'xl':
-          return rem(18);
+          return 18;
         default:
-          return rem(14);
+          return 14;
       }
     };
 
@@ -514,13 +514,13 @@ export function RelationshipCountBadge({
               : relationshipCount >= 10
                 ? {
                     // Ensure consistent width for 2-digit numbers
-                    minWidth: showIcon ? undefined : rem(28),
-                    padding: showIcon ? undefined : `0 ${rem(4)}`,
+                    minWidth: showIcon ? undefined : '28px',
+                    padding: showIcon ? undefined : '0 4px',
                   }
                 : {
                     // For single-digit numbers
-                    minWidth: showIcon ? 'calc(var(--badge-height) + var(--badge-padding))' : undefined,
-                    padding: showIcon ? undefined : '0 var(--badge-padding)',
+                    minWidth: showIcon ? '32px' : undefined,
+                    padding: showIcon ? undefined : '0 4px',
                   }
             ),
             // Ensure consistent height

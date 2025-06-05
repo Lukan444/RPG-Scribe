@@ -74,7 +74,7 @@ export class ItemService extends FirestoreService<Item> {
    * @param campaignId Campaign ID
    */
   private constructor(worldId: string, campaignId: string) {
-    super(`rpgworlds/${worldId}/campaigns/${campaignId}/items`);
+    super('items');
     this.worldId = worldId;
     this.campaignId = campaignId;
 

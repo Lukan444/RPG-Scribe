@@ -74,10 +74,17 @@ export class FactionServiceAdapter implements IEntityService<Faction> {
     const faction = await this.factionService.getById(id, options);
     
     if (faction) {
-      // Convert from service Faction to model Faction
+      // Convert from service Faction to model Faction with proper field mapping
       return {
         ...faction,
-        entityType: EntityType.FACTION
+        entityType: EntityType.FACTION,
+        // Map database fields to UI expected fields
+        scope: (faction as any).scope || 'Unknown', // Default if not present
+        leaderTitle: faction.leaderId ? 'Leader' : undefined, // Show "Leader" if leaderId exists
+        headquartersId: (faction as any).headquarters || undefined, // Use headquarters string as display value
+        // Convert Firestore Timestamps to formatted date strings for React rendering
+        createdAt: faction.createdAt ? new Date(faction.createdAt).toLocaleDateString() : undefined,
+        updatedAt: faction.updatedAt ? new Date(faction.updatedAt).toLocaleDateString() : undefined
       } as Faction;
     }
     
@@ -91,11 +98,18 @@ export class FactionServiceAdapter implements IEntityService<Faction> {
    */
   async getByIds(ids: string[]): Promise<Faction[]> {
     const factions = await this.factionService.getByIds(ids);
-    
-    // Convert from service Faction to model Faction
+
+    // Convert from service Faction to model Faction with proper field mapping
     return factions.map(faction => ({
       ...faction,
-      entityType: EntityType.FACTION
+      entityType: EntityType.FACTION,
+      // Map database fields to UI expected fields
+      scope: (faction as any).scope || 'Unknown', // Default if not present
+      leaderTitle: faction.leaderId ? 'Leader' : undefined, // Show "Leader" if leaderId exists
+      headquartersId: (faction as any).headquarters || undefined, // Use headquarters string as display value
+      // Convert Firestore Timestamps to formatted date strings for React rendering
+      createdAt: faction.createdAt ? new Date(faction.createdAt).toLocaleDateString() : undefined,
+      updatedAt: faction.updatedAt ? new Date(faction.updatedAt).toLocaleDateString() : undefined
     } as Faction));
   }
 
@@ -190,10 +204,17 @@ export class FactionServiceAdapter implements IEntityService<Faction> {
   }> {
     const result = await this.factionService.query(constraints, pageSize, startAfterDoc, options);
     
-    // Convert from service Faction to model Faction
+    // Convert from service Faction to model Faction with proper field mapping
     const convertedData = result.data.map(faction => ({
       ...faction,
-      entityType: EntityType.FACTION
+      entityType: EntityType.FACTION,
+      // Map database fields to UI expected fields
+      scope: (faction as any).scope || 'Unknown', // Default if not present
+      leaderTitle: faction.leaderId ? 'Leader' : undefined, // Show "Leader" if leaderId exists
+      headquartersId: (faction as any).headquarters || undefined, // Use headquarters string as display value
+      // Convert Firestore Timestamps to formatted date strings for React rendering
+      createdAt: faction.createdAt ? new Date(faction.createdAt).toLocaleDateString() : undefined,
+      updatedAt: faction.updatedAt ? new Date(faction.updatedAt).toLocaleDateString() : undefined
     } as Faction));
     
     return {
@@ -309,7 +330,14 @@ export class FactionServiceAdapter implements IEntityService<Faction> {
       if (faction) {
         const modelFaction = {
           ...faction,
-          entityType: EntityType.FACTION
+          entityType: EntityType.FACTION,
+          // Map database fields to UI expected fields
+          scope: (faction as any).scope || 'Unknown', // Default if not present
+          leaderTitle: faction.leaderId ? 'Leader' : undefined, // Show "Leader" if leaderId exists
+          headquartersId: (faction as any).headquarters || undefined, // Use headquarters string as display value
+          // Convert Firestore Timestamps to formatted date strings for React rendering
+          createdAt: faction.createdAt ? new Date(faction.createdAt).toLocaleDateString() : undefined,
+          updatedAt: faction.updatedAt ? new Date(faction.updatedAt).toLocaleDateString() : undefined
         } as Faction;
         callback(modelFaction);
       } else {
@@ -340,9 +368,16 @@ export class FactionServiceAdapter implements IEntityService<Faction> {
     const wrappedCallback = (factions: any[]) => {
       const modelFactions = factions.map(faction => ({
         ...faction,
-        entityType: EntityType.FACTION
+        entityType: EntityType.FACTION,
+        // Map database fields to UI expected fields
+        scope: (faction as any).scope || 'Unknown', // Default if not present
+        leaderTitle: faction.leaderId ? 'Leader' : undefined, // Show "Leader" if leaderId exists
+        headquartersId: (faction as any).headquarters || undefined, // Use headquarters string as display value
+        // Convert Firestore Timestamps to formatted date strings for React rendering
+        createdAt: faction.createdAt ? new Date(faction.createdAt).toLocaleDateString() : undefined,
+        updatedAt: faction.updatedAt ? new Date(faction.updatedAt).toLocaleDateString() : undefined
       } as Faction));
-      
+
       callback(modelFactions);
     };
     

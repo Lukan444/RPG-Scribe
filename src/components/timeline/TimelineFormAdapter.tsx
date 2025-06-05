@@ -6,7 +6,7 @@
  */
 
 import React from 'react';
-import { Controller, Control, FieldError } from 'react-hook-form';
+import { Controller, Control, FieldError, ControllerRenderProps, ControllerFieldState } from 'react-hook-form';
 import { UseFormReturnType } from '@mantine/form';
 import { TimelineFormSection, TimelineFormValues } from './TimelineFormSection';
 
@@ -113,7 +113,7 @@ export const TimelineFormAdapter: React.FC<TimelineFormAdapterProps> = (props) =
           timelineImportance: 5,
           timelineNotes: ''
         }}
-        render={({ field, fieldState }) => {
+        render={({ field, fieldState }: { field: ControllerRenderProps<any, any>; fieldState: ControllerFieldState }) => {
           // Convert React Hook Form error to our error format
           const convertError = (error: FieldError | undefined): Partial<Record<keyof TimelineFormValues, string>> => {
             if (!error) return {};

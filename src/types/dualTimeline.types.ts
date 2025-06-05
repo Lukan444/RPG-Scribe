@@ -180,8 +180,21 @@ export interface ConflictResolution {
  * Dual timeline component props
  */
 export interface DualTimelineVisualizationProps {
-  config: DualTimelineConfig;
-  
+  config?: DualTimelineConfig;
+
+  // Filtering props
+  worldId?: string;
+  campaignId?: string;
+  sessionId?: string;
+  entityFilter?: {
+    type: string;
+    id: string;
+  };
+  timeRange?: {
+    start: number;
+    end: number;
+  };
+
   // Event handlers
   onEventClick?: (eventId: string, timeline: 'real-world' | 'in-game') => void;
   onEventEdit?: (eventId: string) => void;
@@ -201,7 +214,10 @@ export interface DualTimelineVisualizationProps {
   // Conflict handlers
   onConflictResolve?: (conflictId: string, resolution: ConflictResolution) => void;
   onConflictDismiss?: (conflictId: string) => void;
-  
+
+  // Data fix handlers
+  onFixParticipants?: () => Promise<void>;
+
   // Style props
   className?: string;
   style?: React.CSSProperties;

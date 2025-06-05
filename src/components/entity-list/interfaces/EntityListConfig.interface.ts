@@ -134,12 +134,12 @@ export interface IEntityListConfig<T extends DocumentData> {
   /**
    * Function to get the route for viewing an entity
    */
-  getViewRoute: (id: string, worldId?: string, campaignId?: string) => string;
+  getViewRoute: (id: string, worldId?: string, campaignId?: string, entity?: T) => string;
 
   /**
    * Function to get the route for editing an entity
    */
-  getEditRoute: (id: string, worldId?: string, campaignId?: string) => string;
+  getEditRoute: (id: string, worldId?: string, campaignId?: string, entity?: T) => string;
 
   /**
    * Function to get the route for creating a new entity

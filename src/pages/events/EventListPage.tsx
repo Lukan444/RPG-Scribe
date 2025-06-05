@@ -39,6 +39,7 @@ import { EventService, Event } from '../../services/event.service';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import '@mantine/dates/styles.css'; // Import date styles
 import { getWorldIdFromParams, getCampaignIdFromParams, buildEntityRoutePath } from '../../utils/routeUtils';
+import { formatDate } from '../../utils/dateUtils';
 
 /**
  * EventListPage component - Displays a list of events with various view options
@@ -266,7 +267,7 @@ export function EventListPage() {
       sortable: true,
       render: (event: Event) => (
         <Text size="sm">
-          {event.date ? new Date(event.date.toDate()).toLocaleDateString() : 'N/A'}
+          {formatDate(event.date) || 'N/A'}
         </Text>
       )
     },
@@ -481,7 +482,7 @@ export function EventListPage() {
                     description={event.description || ''}
                     entityType={EntityType.EVENT}
                     category={event.type}
-                    date={event.date ? new Date(event.date.toDate()).toLocaleDateString() : undefined}
+                    date={formatDate(event.date)}
                     onView={() => handleViewEvent(event)}
                     onEdit={() => handleEditEvent(event)}
                     onDelete={() => handleDeleteEvent(event)}

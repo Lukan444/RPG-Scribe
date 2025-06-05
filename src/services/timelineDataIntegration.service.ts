@@ -63,6 +63,39 @@ export class TimelineDataIntegrationService {
   }
 
   /**
+   * Convert any date-like value to a proper Date object
+   */
+  private ensureDate(dateValue: any): Date {
+    if (!dateValue) {
+      return new Date();
+    }
+
+    // Already a Date object
+    if (dateValue instanceof Date) {
+      return dateValue;
+    }
+
+    // Firestore Timestamp object
+    if (dateValue && typeof dateValue === 'object' && dateValue.seconds) {
+      return new Date(dateValue.seconds * 1000);
+    }
+
+    // Firestore Timestamp with toDate method
+    if (dateValue && typeof dateValue.toDate === 'function') {
+      return dateValue.toDate();
+    }
+
+    // String or number
+    if (typeof dateValue === 'string' || typeof dateValue === 'number') {
+      return new Date(dateValue);
+    }
+
+    // Fallback to current date
+    console.warn('Unable to convert date value:', dateValue);
+    return new Date();
+  }
+
+  /**
    * Load timeline events for a given context
    */
   public async loadTimelineEvents(context: TimelineDataContext): Promise<TimelineEventData[]> {
@@ -260,8 +293,8 @@ export class TimelineDataIntegrationService {
       id: entry.id || '',
       title: entry.title || 'Untitled Event',
       description: entry.summary || entry.description,
-      realWorldTime: entry.dualTimestamp?.realWorldTime || entry.createdAt || new Date(),
-      inGameTime: entry.dualTimestamp?.inGameTime || entry.inGameTime || new Date(),
+      realWorldTime: this.ensureDate(entry.dualTimestamp?.realWorldTime || entry.createdAt),
+      inGameTime: this.ensureDate(entry.dualTimestamp?.inGameTime),
       timeline: 'in-game', // Timeline entries are primarily in-game
       entityId: entry.associatedEntityId,
       entityType: entry.associatedEntityType,
@@ -290,10 +323,8 @@ export class TimelineDataIntegrationService {
       id: sessionData.id || '',
       title: sessionData.title || sessionData.name || `Session #${sessionData.number || 0}`,
       description: sessionData.summary,
-      realWorldTime: sessionData.datePlayed ?
-        (sessionData.datePlayed.seconds ? new Date(sessionData.datePlayed.seconds * 1000) : new Date(sessionData.datePlayed)) :
-        new Date(),
-      inGameTime: sessionData.inGameTime || sessionData.inGameStartTime || new Date(),
+      realWorldTime: this.ensureDate(sessionData.datePlayed),
+      inGameTime: this.ensureDate(sessionData.inGameTime || sessionData.inGameStartTime),
       timeline: 'real-world', // Sessions are primarily real-world
       entityId: sessionData.id,
       entityType: 'session',
@@ -322,12 +353,8 @@ export class TimelineDataIntegrationService {
       id: eventData.id || '',
       title: eventData.name || eventData.timelineTitle || 'Untitled Event',
       description: eventData.description || eventData.timelineSummary,
-      realWorldTime: eventData.createdAt ?
-        (eventData.createdAt.seconds ? new Date(eventData.createdAt.seconds * 1000) : new Date(eventData.createdAt)) :
-        (eventData.date ?
-          (eventData.date.seconds ? new Date(eventData.date.seconds * 1000) : new Date(eventData.date)) :
-          new Date()),
-      inGameTime: eventData.inGameTime || eventData.eventDate || eventData.date || new Date(),
+      realWorldTime: this.ensureDate(eventData.createdAt || eventData.date),
+      inGameTime: this.ensureDate(eventData.inGameTime || eventData.eventDate || eventData.date),
       timeline: 'in-game', // Events are primarily in-game
       entityId: eventData.id,
       entityType: 'event',

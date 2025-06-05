@@ -78,7 +78,7 @@ export class SessionService extends FirestoreService<Session> {
    * @param campaignId Campaign ID
    */
   private constructor(worldId: string, campaignId: string) {
-    super(`rpgworlds/${worldId}/campaigns/${campaignId}/sessions`);
+    super('sessions');
     this.worldId = worldId;
     this.campaignId = campaignId;
   }
@@ -92,11 +92,16 @@ export class SessionService extends FirestoreService<Session> {
     const session = await super.getById(id);
 
     if (session) {
-      // Add entityType to the session
+      // Add entityType to the session and map database fields to UI fields
       return {
         ...session,
         entityType: EntityType.SESSION,
-        name: session.title || `Session #${session.number}`
+        // Map database fields to expected UI fields
+        title: session.name || session.title || `Session #${session.sessionNumber || session.number}`,
+        name: session.name || session.title || `Session #${session.sessionNumber || session.number}`,
+        number: session.sessionNumber || session.number,
+        datePlayed: session.date || session.datePlayed,
+        summary: session.description || session.summary
       };
     }
 
@@ -406,15 +411,20 @@ export class SessionService extends FirestoreService<Session> {
     } = {}
   ): Promise<Session[]> {
     const { data } = await this.query(
-      [orderBy('number', 'desc')],
+      [orderBy('sessionNumber', 'desc')],
       options.pageSize || 100
     );
 
-    // Add entityType to each session
+    // Add entityType to each session and map database fields to UI fields
     return data.map(session => ({
       ...session,
       entityType: EntityType.SESSION,
-      name: session.title || `Session #${session.number}`
+      // Map database fields to expected UI fields
+      title: session.name || session.title || `Session #${session.sessionNumber || session.number}`,
+      name: session.name || session.title || `Session #${session.sessionNumber || session.number}`,
+      number: session.sessionNumber || session.number,
+      datePlayed: session.date || session.datePlayed,
+      summary: session.description || session.summary
     }));
   }
 

@@ -42,9 +42,9 @@ interface EntityCardGridProps<T> {
   entityType: any; // Accept any EntityType to handle different enum implementations
   loading?: boolean;
   error?: string | null;
-  onView?: ((id: string) => void) | ((item: T) => void); // Accept both id and item callbacks
-  onEdit?: ((id: string) => void) | ((item: T) => void); // Accept both id and item callbacks
-  onDelete?: ((id: string) => void) | ((item: T) => void); // Accept both id and item callbacks
+  onView?: (item: T) => void; // Always pass the entire entity object
+  onEdit?: (item: T) => void; // Always pass the entire entity object
+  onDelete?: (item: T) => void; // Always pass the entire entity object
   idField?: string;
   nameField?: string;
   descriptionField?: string;
@@ -381,7 +381,7 @@ export function EntityCardGrid<T extends { [key: string]: any }>({
                         color={getEntityColor()}
                         size="xs"
                         leftSection={<IconEye size={14} />}
-                        onClick={() => onView(item[idField])}
+                        onClick={() => onView(item)}
                       >
                         View
                       </Button>
@@ -397,18 +397,7 @@ export function EntityCardGrid<T extends { [key: string]: any }>({
                         {onView && (
                           <Menu.Item
                             leftSection={<IconEye size={14} />}
-                            onClick={() => {
-                              // Check if the callback expects an item or an id
-                              const callback = onView as any;
-                              if (callback.length === 1) {
-                                // If it expects one parameter, it could be either item or id
-                                // Try to pass the whole item, which will work if the callback expects an item
-                                callback(item);
-                              } else {
-                                // Default to passing just the ID
-                                callback(item[idField]);
-                              }
-                            }}
+                            onClick={() => onView(item)}
                           >
                             View details
                           </Menu.Item>
@@ -416,18 +405,7 @@ export function EntityCardGrid<T extends { [key: string]: any }>({
                         {onEdit && (
                           <Menu.Item
                             leftSection={<IconEdit size={14} />}
-                            onClick={() => {
-                              // Check if the callback expects an item or an id
-                              const callback = onEdit as any;
-                              if (callback.length === 1) {
-                                // If it expects one parameter, it could be either item or id
-                                // Try to pass the whole item, which will work if the callback expects an item
-                                callback(item);
-                              } else {
-                                // Default to passing just the ID
-                                callback(item[idField]);
-                              }
-                            }}
+                            onClick={() => onEdit(item)}
                           >
                             Edit
                           </Menu.Item>
@@ -436,18 +414,7 @@ export function EntityCardGrid<T extends { [key: string]: any }>({
                           <Menu.Item
                             leftSection={<IconTrash size={14} />}
                             color="red"
-                            onClick={() => {
-                              // Check if the callback expects an item or an id
-                              const callback = onDelete as any;
-                              if (callback.length === 1) {
-                                // If it expects one parameter, it could be either item or id
-                                // Try to pass the whole item, which will work if the callback expects an item
-                                callback(item);
-                              } else {
-                                // Default to passing just the ID
-                                callback(item[idField]);
-                              }
-                            }}
+                            onClick={() => onDelete(item)}
                           >
                             Delete
                           </Menu.Item>

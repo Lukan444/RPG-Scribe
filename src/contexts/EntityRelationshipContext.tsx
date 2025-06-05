@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode, useMemo, useCallback } from 'react';
 import { EntityRelationshipsService, EntityReference } from '../services/api/entityRelationships.service';
 import { Relationship, EntityType, RelationshipType } from '../models/Relationship';
 import { useEntity } from './EntityContext';
@@ -59,8 +59,24 @@ export const EntityRelationshipProvider = ({ children, campaignId }: EntityRelat
   // Get selected entity from EntityContext
   const { selectedEntityId, selectedEntityType } = useEntity();
 
-  // Create service instance
-  const relationshipService = new EntityRelationshipsService(campaignId);
+  // Add provider instance logging to debug context mismatch
+  const providerInstanceId = useMemo(() => Math.random().toString(36).substr(2, 9), []);
+  console.log('🏭 EntityRelationshipProvider instance:', {
+    providerInstanceId,
+    campaignId,
+    selectedEntityId,
+    selectedEntityType,
+    relationshipsCount: relationships.length,
+    relatedEntitiesCount: relatedEntities.length,
+    isLoading,
+    hasError: !!error
+  });
+
+  // Memoize service instance to prevent recreation
+  const relationshipService = useMemo(() =>
+    new EntityRelationshipsService(campaignId),
+    [campaignId]
+  );
 
   // Load relationships for selected entity
   useEffect(() => {
@@ -256,8 +272,8 @@ export const EntityRelationshipProvider = ({ children, campaignId }: EntityRelat
     }
   };
 
-  // Context value
-  const value: EntityRelationshipContextType = {
+  // Memoize context value to prevent provider re-instantiation
+  const value = useMemo((): EntityRelationshipContextType => ({
     relationships,
     relatedEntities,
     isLoading,
@@ -266,7 +282,16 @@ export const EntityRelationshipProvider = ({ children, campaignId }: EntityRelat
     updateRelationship,
     deleteRelationship,
     refreshRelationships
-  };
+  }), [
+    relationships,
+    relatedEntities,
+    isLoading,
+    error,
+    addRelationship,
+    updateRelationship,
+    deleteRelationship,
+    refreshRelationships
+  ]);
 
   return <EntityRelationshipContext.Provider value={value}>{children}</EntityRelationshipContext.Provider>;
 };

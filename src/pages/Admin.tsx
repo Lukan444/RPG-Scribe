@@ -29,7 +29,9 @@ import {
   IconSettings,
   IconMail,
   IconCheck,
+  IconDatabase,
 } from '@tabler/icons-react';
+import { SampleDataCreator } from '../components/admin/SampleDataCreator';
 import { useAuth } from '../contexts/AuthContext';
 import ActivityLogs from './admin/ActivityLogs';
 import { UserService } from '../services/user.service';
@@ -971,12 +973,16 @@ function Admin() {
             <Tabs.Tab value="settings" leftSection={<IconSettings size="0.8rem" />}>
               Settings
             </Tabs.Tab>
+            <Tabs.Tab value="sampledata" leftSection={<IconDatabase size="0.8rem" />}>
+              Sample Data
+            </Tabs.Tab>
           </Tabs.List>
         </Tabs>
 
         {activeTab === 'users' && <UserManagement />}
         {activeTab === 'logs' && <ActivityLogs />}
         {activeTab === 'settings' && <SystemSettings />}
+        {activeTab === 'sampledata' && <SampleDataCreator />}
       </Paper>
     </Container>
   );

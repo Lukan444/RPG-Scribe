@@ -413,22 +413,7 @@
     "article": "Artykuł",
     "organize": "Organizuj"
   },
-  "tables": {
-    "headers": {
-      "name": "Nazwa",
-      "type": "Typ",
-      "level": "Poziom",
-      "race": "Rasa",
-      "class": "Klasa",
-      "location": "Lokacja",
-      "status": "Status",
-      "createdAt": "Utworzono",
-      "updatedAt": "Zaktualizowano",
-      "lastUpdated": "Ostatnia aktualizacja",
-      "relationships": "Relacje",
-      "actions": "Akcje"
-    }
-  },
+
   "tooltips": {
     "playerCharacters": "Postacie graczy",
     "nonPlayerCharacters": "Postacie niezależne",
@@ -549,7 +534,7 @@
       "sortBy": "Sortuj według",
       "ascending": "Rosnąco",
       "descending": "Malejąco",
-      "search": "Szukaj",
+      "search": "Szukaj...",
       "clear": "Wyczyść filtry",
       "apply": "Zastosuj filtry"
     },
@@ -600,9 +585,75 @@
     "manageStoryArcEntities": "Zarządzaj elementami wątków fabularnych, w tym tworzeniem, edycją i przeglądaniem szczegółów.",
     "manageCampaignEntities": "Zarządzaj elementami kampanii, w tym tworzeniem, edycją i przeglądaniem szczegółów.",
     "manageRpgWorldEntities": "Zarządzaj elementami światów RPG, w tym tworzeniem, edycją i przeglądaniem szczegółów.",
+    "manageRPGWorldEntities": "Zarządzaj elementami światów RPG, w tym tworzeniem, edycją i przeglądaniem szczegółów.",
     "manageNoteEntities": "Zarządzaj elementami notatek, w tym tworzeniem, edycją i przeglądaniem szczegółów."
   },
 
+  "timeline": {
+    "title": "Wizualizacja Osi Czasu",
+    "subtitle": "Przeglądaj wydarzenia kampanii w porządku chronologicznym",
+    "dualTimelineSystem": "System Podwójnej Osi Czasu",
+    "dualTimelineDescription": "Zsynchronizowana wizualizacja osi czasu świata rzeczywistego i gry",
+    "realWorldTimeline": "Oś Czasu Świata Rzeczywistego",
+    "inGameTimeline": "Oś Czasu W Grze",
+    "timelineSynchronization": "Synchronizacja Osi Czasu",
+    "syncScrolling": "Synchronizuj Przewijanie",
+    "syncZoom": "Synchronizuj Powiększenie",
+    "showConnections": "Pokaż Połączenia",
+    "showConflicts": "Pokaż Konflikty",
+    "dualView": "Widok Podwójny",
+    "realWorld": "Świat Rzeczywisty",
+    "inGame": "W Grze",
+    "analytics": "Analityka",
+    "conflicts": "Konflikty",
+    "issues": "problemy",
+    "events": "wydarzenia",
+    "loadingTimelineData": "Ładowanie danych osi czasu...",
+    "timelineError": "Błąd Osi Czasu",
+    "failedToLoadTimelineData": "Nie udało się załadować danych osi czasu",
+    "timelineConflicts": "Konflikty Osi Czasu",
+    "timelineOverlapDetected": "Wykryto Nakładanie się Osi Czasu",
+    "realWorldTimelineOverlapDetected": "Wykryto Nakładanie się Osi Czasu Świata Rzeczywistego",
+    "inGameTimelineOverlapDetected": "Wykryto Nakładanie się Osi Czasu W Grze",
+    "suggestions": "Sugestie",
+    "adjustEventTiming": "Dostosuj czas wydarzenia, aby uniknąć nakładania",
+    "verifySimultaneousEvents": "Sprawdź, czy wydarzenia mogą wystąpić jednocześnie",
+    "splitOverlappingEvent": "Podziel nakładające się wydarzenie na wiele części",
+    "adjustSessionTiming": "Dostosuj czas sesji, aby uniknąć nakładania",
+    "verifySessionScheduling": "Sprawdź harmonogram sesji",
+    "considerSplittingSessions": "Rozważ podział długich sesji",
+    "checkCharacterLocations": "Sprawdź, czy postacie mogą być w wielu miejscach",
+    "considerParallelStorylines": "Rozważ równoległe wątki fabularne",
+    "filters": {
+      "title": "Filtry Osi Czasu",
+      "dateRange": "Zakres Dat",
+      "filterEventsByDateRange": "Filtruj wydarzenia według zakresu dat",
+      "showAllEvents": "Pokaż wszystkie wydarzenia",
+      "dualTimelineMode": "Tryb Podwójnej Osi Czasu",
+      "selectCampaign": "Wybierz Kampanię",
+      "rpgWorld": "Świat RPG",
+      "campaign": "Kampania",
+      "session": "Sesja",
+      "timeFrame": "Przedział Czasowy",
+      "lastMonth": "Ostatni Miesiąc",
+      "filtered": "Przefiltrowane",
+      "reset": "Resetuj"
+    },
+    "tabs": {
+      "timeline": "Oś Czasu",
+      "visualizationSettings": "Ustawienia Wizualizacji",
+      "settings": "Ustawienia"
+    },
+    "export": {
+      "exportTimeline": "Eksportuj Oś Czasu",
+      "exportFormat": "Format Eksportu",
+      "json": "JSON",
+      "csv": "CSV",
+      "markdown": "Markdown"
+    },
+    "refresh": "Odśwież Oś Czasu",
+    "toggleDisplayMode": "Przełącz Tryb Wyświetlania"
+  },
   "tabs": {
     "overview": "Przegląd",
     "inventory": "Ekwipunek",

@@ -56,12 +56,28 @@ export class CampaignService extends FirestoreService<Campaign> {
    * @returns Array of campaigns
    */
   async getCampaignsByGM(userId: string): Promise<Campaign[]> {
-    const { data } = await this.query([
-      where('gmIds', 'array-contains', userId),
-      orderBy('updatedAt', 'desc')
-    ]);
+    try {
+      // Check if userId is valid
+      if (!userId || userId === undefined) {
+        console.error('getCampaignsByGM: userId is undefined or empty');
+        return [];
+      }
 
-    return data;
+      // Use simpler query without orderBy to avoid composite index requirement
+      const { data } = await this.query([
+        where('gmIds', 'array-contains', userId)
+      ]);
+
+      // Sort in memory instead of in the query
+      return data.sort((a, b) => {
+        const aDate = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
+        const bDate = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
+        return bDate - aDate;
+      });
+    } catch (error) {
+      console.error('Error getting campaigns by GM:', error);
+      return [];
+    }
   }
 
   /**
@@ -70,12 +86,28 @@ export class CampaignService extends FirestoreService<Campaign> {
    * @returns Array of campaigns
    */
   async getCampaignsByPlayer(userId: string): Promise<Campaign[]> {
-    const { data } = await this.query([
-      where('playerIds', 'array-contains', userId),
-      orderBy('updatedAt', 'desc')
-    ]);
+    try {
+      // Check if userId is valid
+      if (!userId || userId === undefined) {
+        console.error('getCampaignsByPlayer: userId is undefined or empty');
+        return [];
+      }
 
-    return data;
+      // Use simpler query without orderBy to avoid composite index requirement
+      const { data } = await this.query([
+        where('playerIds', 'array-contains', userId)
+      ]);
+
+      // Sort in memory instead of in the query
+      return data.sort((a, b) => {
+        const aDate = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
+        const bDate = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
+        return bDate - aDate;
+      });
+    } catch (error) {
+      console.error('Error getting campaigns by player:', error);
+      return [];
+    }
   }
 
   /**
@@ -106,12 +138,23 @@ export class CampaignService extends FirestoreService<Campaign> {
    * @returns Array of public campaigns
    */
   async getPublicCampaigns(): Promise<Campaign[]> {
-    const { data } = await this.query([
-      where('privacySetting', '==', CampaignPrivacy.PUBLIC),
-      orderBy('updatedAt', 'desc')
-    ]);
+    try {
+      // Use string value directly to avoid enum issues
+      const { data } = await this.query([
+        where('privacySetting', '==', 'public')
+      ]);
 
-    return data;
+      // Sort in memory to avoid composite index requirement
+      return data.sort((a, b) => {
+        const aDate = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
+        const bDate = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
+        return bDate - aDate;
+      });
+    } catch (error) {
+      console.error('Error getting public campaigns:', error);
+      // Fallback: return empty array if query fails
+      return [];
+    }
   }
 
   /**

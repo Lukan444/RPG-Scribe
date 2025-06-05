@@ -56,8 +56,8 @@ export function CampaignsListPage() {
         setLoading(true);
         setError(null);
 
-        // Get campaigns for the current user
-        const userCampaigns = await campaignService.getCampaignsByUser(currentUser.uid);
+        // Get campaigns for the current user (use id instead of uid)
+        const userCampaigns = await campaignService.getCampaignsByUser(currentUser.id);
 
         // Get public campaigns
         const publicCampaigns = await campaignService.getPublicCampaigns();
@@ -138,7 +138,7 @@ export function CampaignsListPage() {
   }, [campaigns, searchQuery, filterStatus, filterSystem, sortBy, sortOrder]);
 
   // Get unique systems for filter
-  const systems = [...new Set(campaigns.map(campaign => campaign.system))].map(system => ({
+  const systems = [...new Set(campaigns.map(campaign => campaign.system).filter(Boolean))].map(system => ({
     value: system,
     label: system
   }));

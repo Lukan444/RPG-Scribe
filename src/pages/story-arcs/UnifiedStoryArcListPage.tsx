@@ -1,5 +1,5 @@
 import React from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Badge, Group, Text, rem } from '@mantine/core';
 import { IconTimeline } from '@tabler/icons-react';
 import { EntityListPage } from '../../components/entity-list/EntityListPage';
@@ -14,8 +14,9 @@ import { getWorldIdFromParams, getCampaignIdFromParams } from '../../utils/route
  * Displays a list of story arcs using the unified entity list component
  */
 export function UnifiedStoryArcListPage() {
-  // Get params
+  // Get params and navigation
   const params = useParams();
+  const navigate = useNavigate();
   const worldId = getWorldIdFromParams(params);
   const campaignId = getCampaignIdFromParams(params);
 
@@ -137,6 +138,13 @@ export function UnifiedStoryArcListPage() {
     emptyStateActionText: 'Create New Story Arc'
   };
 
+  // Handle back to world navigation
+  const handleBackToWorld = () => {
+    if (worldId) {
+      navigate(`/rpg-worlds/${worldId}`);
+    }
+  };
+
   return (
     <EntityListPage
       config={configWithCustomBadge}
@@ -146,6 +154,7 @@ export function UnifiedStoryArcListPage() {
       title={worldId ? 'World Story Arcs' : 'All Story Arcs'}
       showBackButton={!!worldId}
       backButtonLabel="Back to World"
+      onBackClick={handleBackToWorld}
     />
   );
 }

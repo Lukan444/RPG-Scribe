@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode, useMemo, useCallback } from 'react';
 import { aiBrainService } from '../services/api/aiBrain.service';
 import { 
   AIProposal, 
@@ -60,6 +60,18 @@ export const AIBrainProvider = ({ children, campaignId, userId }: AIBrainProvide
   const [conversations, setConversations] = useState<AIConversation[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<Error | null>(null);
+
+  // Add provider instance logging to debug context mismatch
+  const providerInstanceId = useMemo(() => Math.random().toString(36).substr(2, 9), []);
+  console.log('🏭 AIBrainProvider instance:', {
+    providerInstanceId,
+    campaignId,
+    userId,
+    proposalsCount: proposals.length,
+    conversationsCount: conversations.length,
+    isLoading,
+    hasError: !!error
+  });
   
   // Load initial data
   useEffect(() => {
@@ -89,8 +101,8 @@ export const AIBrainProvider = ({ children, campaignId, userId }: AIBrainProvide
     }
   }, [campaignId]);
   
-  // Get proposals for an entity
-  const getProposalsForEntity = async (entityId: string, entityType: EntityType): Promise<AIProposal[]> => {
+  // Memoize callback functions to prevent unnecessary re-renders
+  const getProposalsForEntity = useCallback(async (entityId: string, entityType: EntityType): Promise<AIProposal[]> => {
     try {
       setIsLoading(true);
       setError(null);
@@ -117,7 +129,7 @@ export const AIBrainProvider = ({ children, campaignId, userId }: AIBrainProvide
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [campaignId]);
   
   // Update a proposal
   const updateProposal = async (id: string, updates: AIProposalUpdateParams): Promise<AIProposal> => {
@@ -274,8 +286,8 @@ export const AIBrainProvider = ({ children, campaignId, userId }: AIBrainProvide
     }
   };
   
-  // Context value
-  const value: AIBrainContextType = {
+  // Memoize context value to prevent provider re-instantiation
+  const value = useMemo((): AIBrainContextType => ({
     proposals,
     conversations,
     isLoading,
@@ -286,8 +298,19 @@ export const AIBrainProvider = ({ children, campaignId, userId }: AIBrainProvide
     createConversation,
     addMessageToConversation,
     getAIResponse
-  };
-  
+  }), [
+    proposals,
+    conversations,
+    isLoading,
+    error,
+    getProposalsForEntity,
+    updateProposal,
+    generateAnalysis,
+    createConversation,
+    addMessageToConversation,
+    getAIResponse
+  ]);
+
   return <AIBrainContext.Provider value={value}>{children}</AIBrainContext.Provider>;
 };
 

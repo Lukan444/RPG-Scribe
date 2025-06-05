@@ -48,7 +48,9 @@ export interface RPGWorld {
   factionCount?: number;         // Number of factions in this world
   itemCount?: number;            // Number of items in this world
   eventCount?: number;           // Number of events in this world
+  sessionCount?: number;         // Number of sessions in this world
   storyArcCount?: number;        // Number of story arcs in this world
+  noteCount?: number;            // Number of notes in this world
 
   // Timestamps
   createdAt?: Date;              // When the world was created

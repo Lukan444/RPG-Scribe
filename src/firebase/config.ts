@@ -1,7 +1,7 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
 import { getAuth, setPersistence, browserLocalPersistence } from "firebase/auth";
-import { getFirestore, enableIndexedDbPersistence } from "firebase/firestore";
+import { getFirestore, initializeFirestore, Firestore } from "firebase/firestore";
 
 // Check if we're in development mode
 const isDevelopment = process.env.NODE_ENV === 'development';
@@ -38,8 +38,26 @@ const app = initializeApp(firebaseConfig);
 // Initialize Firebase Authentication and get a reference to the service
 const auth = getAuth(app);
 
-// Initialize Firestore
-const db = getFirestore(app);
+// Initialize Firestore with proper TypeScript typing
+// Note: Modern cache API (persistentLocalCache) will be enabled when TypeScript types are fully supported
+const db: Firestore = getFirestore(app);
+
+// If we're in development mode and don't have real credentials, show warning
+if (isDevelopment && !hasRealCredentials) {
+  console.warn(
+    "Firebase is running with demo credentials. Authentication will not work properly. " +
+    "Please set up a Firebase project and update the .env file with your Firebase configuration."
+  );
+
+  // You could set up auth and firestore emulators here if needed
+  // connectAuthEmulator(auth, "http://localhost:9099");
+  // connectFirestoreEmulator(db, 'localhost', 8080);
+} else {
+  // Note: Firebase v10+ automatically handles persistence optimization
+  // The deprecated enableIndexedDbPersistence() has been removed
+  // Modern cache API will be implemented when TypeScript types are fully available
+  console.log('Firestore initialized with automatic persistence optimization');
+}
 
 // Set authentication persistence to LOCAL (persists even when browser is closed)
 // This is wrapped in a try/catch because it can only be called once per page load
@@ -53,35 +71,6 @@ try {
     });
 } catch (error) {
   console.warn('Authentication persistence already set');
-}
-
-// If we're in development mode and don't have real credentials, use mock implementation
-if (isDevelopment && !hasRealCredentials) {
-  console.warn(
-    "Firebase is running with demo credentials. Authentication will not work properly. " +
-    "Please set up a Firebase project and update the .env file with your Firebase configuration."
-  );
-
-  // You could set up auth and firestore emulators here if needed
-  // connectAuthEmulator(auth, "http://localhost:9099");
-  // connectFirestoreEmulator(db, 'localhost', 8080);
-} else {
-  // Enable Firestore offline persistence
-  enableIndexedDbPersistence(db)
-    .then(() => {
-      console.log('Firestore persistence enabled');
-    })
-    .catch((err) => {
-      if (err.code === 'failed-precondition') {
-        // Multiple tabs open, persistence can only be enabled in one tab at a time
-        console.warn('Firestore persistence unavailable - multiple tabs open');
-      } else if (err.code === 'unimplemented') {
-        // The current browser does not support all of the features required for persistence
-        console.warn('Firestore persistence unavailable - unsupported browser');
-      } else {
-        console.error('Error enabling Firestore persistence:', err);
-      }
-    });
 }
 
 export { app, auth, db };

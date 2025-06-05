@@ -16,6 +16,7 @@ import { SessionService } from './session.service';
 import { FactionService } from './faction.service';
 import { StoryArcService } from './storyArc.service';
 import { NoteService } from './note.service';
+import { ItemServiceAdapter } from './adapters/ItemServiceAdapter';
 import { DEFAULT_WORLD_ID, DEFAULT_CAMPAIGN_ID } from '../constants/appConstants';
 
 /**
@@ -86,7 +87,7 @@ export class EntityServiceFactory {
         service = LocationService.getInstance(worldId, campaignId) as unknown as IEntityService<T>;
         break;
       case EntityType.ITEM:
-        service = ItemService.getInstance(worldId, campaignId) as unknown as IEntityService<T>;
+        service = new ItemServiceAdapter(worldId, campaignId) as unknown as IEntityService<T>;
         break;
       case EntityType.EVENT:
         service = EventService.getInstance(worldId, campaignId) as unknown as IEntityService<T>;

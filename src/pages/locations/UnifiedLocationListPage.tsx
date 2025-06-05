@@ -5,7 +5,7 @@
  */
 
 import React from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Badge, Group, Text, rem } from '@mantine/core';
 import { IconMapPin } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
@@ -20,6 +20,7 @@ import { EntityType } from '../../models/EntityType';
  */
 export function UnifiedLocationListPage() {
   const { worldId } = useParams<{ worldId?: string }>();
+  const navigate = useNavigate();
   const { t } = useTranslation(['ui', 'common']);
 
   // Get location service
@@ -34,7 +35,7 @@ export function UnifiedLocationListPage() {
   // Override the icon and renderBadge function to provide a custom badge
   const configWithCustomBadge = {
     ...config,
-    icon: <IconMapPin size={rem(20)} />,
+    icon: <IconMapPin size={20} />,
     renderBadge: (location: Location) => {
       const getTypeColor = () => {
         switch (location.locationType) {
@@ -84,6 +85,13 @@ export function UnifiedLocationListPage() {
     return t('pages.locations.subtitle');
   };
 
+  // Handle back to world navigation
+  const handleBackToWorld = () => {
+    if (worldId) {
+      navigate(`/rpg-worlds/${worldId}`);
+    }
+  };
+
   return (
     <EntityListPage<Location>
       config={configWithCustomBadge}
@@ -93,6 +101,7 @@ export function UnifiedLocationListPage() {
       subtitle={renderSubtitle()}
       showBackButton={!!worldId}
       backButtonLabel={t('pages.worlds.backToWorld')}
+      onBackClick={handleBackToWorld}
     />
   );
 }

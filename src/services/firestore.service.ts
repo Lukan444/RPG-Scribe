@@ -311,21 +311,17 @@ export async function executeWithRetry<T>(
 /**
  * Initialize offline persistence for Firestore
  * @returns Promise that resolves when persistence is enabled
+ * @deprecated Persistence is now handled automatically by the modern cache API in firebase/config.ts
  */
 export async function initializeFirestorePersistence(): Promise<void> {
   if (persistenceEnabled) {
-    console.log('Firestore persistence already enabled');
+    console.log('Firestore persistence already enabled via modern cache API');
     return;
   }
 
-  try {
-    await enableIndexedDbPersistence(db);
-    persistenceEnabled = true;
-    console.log('Firestore persistence enabled');
-  } catch (error) {
-    console.error('Error enabling Firestore persistence:', error);
-    throw error;
-  }
+  // Persistence is now handled automatically by initializeFirestore with persistentLocalCache
+  persistenceEnabled = true;
+  console.log('Firestore persistence handled by modern cache API');
 }
 
 /**

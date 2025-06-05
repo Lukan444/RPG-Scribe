@@ -83,7 +83,7 @@ export class EventService extends FirestoreService<Event> {
    * @param campaignId Campaign ID
    */
   private constructor(worldId: string, campaignId: string) {
-    super(`rpgworlds/${worldId}/campaigns/${campaignId}/events`);
+    super('events');
     this.worldId = worldId;
     this.campaignId = campaignId;
 
@@ -128,11 +128,12 @@ export class EventService extends FirestoreService<Event> {
     }
 
     if (event) {
-      // Add entityType to the event
+      // Add entityType to the event and map eventType to type for UI compatibility
       return {
         ...event,
         entityType: EntityType.EVENT,
-        eventType: event.type || 'Other',
+        type: event.eventType || 'Other', // Map eventType to type for UI
+        eventType: event.eventType || 'Other',
         timelinePosition: event.timelinePosition || 0
       };
     }
@@ -332,11 +333,12 @@ export class EventService extends FirestoreService<Event> {
       }
     );
 
-    // Add entityType to each event
+    // Add entityType to each event and map eventType to type for UI compatibility
     return data.map(event => ({
       ...event,
       entityType: EntityType.EVENT,
-      eventType: event.type || 'Other',
+      type: event.eventType || 'Other', // Map eventType to type for UI
+      eventType: event.eventType || 'Other',
       timelinePosition: event.timelinePosition || 0
     }));
   }

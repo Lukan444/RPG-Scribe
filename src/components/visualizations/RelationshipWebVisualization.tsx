@@ -140,8 +140,8 @@ export function RelationshipWebVisualization({
   const [focusMode, setFocusMode] = useState<string>('all');
   const [layoutType, setLayoutType] = useState<string>('force');
 
-  // Define custom node types
-  const nodeTypes: NodeTypes = {
+  // Define custom node types (memoized to prevent React Flow performance warnings)
+  const nodeTypes: NodeTypes = useMemo(() => ({
     character: CharacterNode,
     location: LocationNode,
     item: ItemNode,
@@ -149,12 +149,19 @@ export function RelationshipWebVisualization({
     note: NoteNode,
     faction: FactionNode,
     session: SessionNode
-  };
+  }), []);
 
-  // Define custom edge types
-  const edgeTypes: EdgeTypes = {
+  // Define custom edge types (memoized to prevent React Flow performance warnings)
+  const edgeTypes: EdgeTypes = useMemo(() => ({
     relationship: RelationshipEdge
-  };
+  }), []);
+
+  // Memoize service instances to prevent recreation on every render
+  const relationshipService = useMemo(() => RelationshipService.getInstance(worldId, campaignId), [worldId, campaignId]);
+  const characterService = useMemo(() => CharacterService.getInstance(worldId, campaignId), [worldId, campaignId]);
+  const locationService = useMemo(() => LocationService.getInstance(worldId, campaignId), [worldId, campaignId]);
+  const itemService = useMemo(() => ItemService.getInstance(worldId, campaignId), [worldId, campaignId]);
+  const eventService = useMemo(() => EventService.getInstance(worldId, campaignId), [worldId, campaignId]);
 
   /**
    * Fetch entity data based on entity type and ID
@@ -305,7 +312,6 @@ export function RelationshipWebVisualization({
 
       // Fetch characters
       if (characterIds.length > 0) {
-        const characterService = CharacterService.getInstance(worldId, campaignId);
         for (const id of characterIds) {
           try {
             const character = await characterService.getEntity(id);
@@ -326,7 +332,6 @@ export function RelationshipWebVisualization({
 
       // Fetch locations
       if (locationIds.length > 0) {
-        const locationService = LocationService.getInstance(worldId, campaignId);
         for (const id of locationIds) {
           try {
             const location = await locationService.getEntity(id);
@@ -347,7 +352,6 @@ export function RelationshipWebVisualization({
 
       // Fetch items
       if (itemIds.length > 0) {
-        const itemService = ItemService.getInstance(worldId, campaignId);
         for (const id of itemIds) {
           try {
             const item = await itemService.getEntity(id);
@@ -368,7 +372,6 @@ export function RelationshipWebVisualization({
 
       // Fetch events
       if (eventIds.length > 0) {
-        const eventService = EventService.getInstance(worldId, campaignId);
         for (const id of eventIds) {
           try {
             const event = await eventService.getEntity(id);
@@ -407,7 +410,7 @@ export function RelationshipWebVisualization({
       console.error('Error processing relationships:', error);
       setError('Failed to process relationship data');
     }
-  }, [entityId, worldId, campaignId, entityDataMap, layoutType]);
+  }, [entityId, worldId, campaignId, entityDataMap, layoutType, characterService, locationService, itemService, eventService]);
 
   // Load relationship web data with real-time updates
   useEffect(() => {
@@ -418,8 +421,7 @@ export function RelationshipWebVisualization({
         setLoading(true);
         setError(null);
 
-        // Initialize services
-        const relationshipService = RelationshipService.getInstance(worldId, campaignId);
+        // Use memoized relationship service
 
         // If we have an entity ID and type, fetch the central entity data
         let centralEntityData: EntityData | undefined = undefined;
@@ -484,7 +486,7 @@ export function RelationshipWebVisualization({
         unsubscribe();
       }
     };
-  }, [entityId, entityType, worldId, campaignId, fetchEntityData, processRelationships]);
+  }, [entityId, entityType, worldId, campaignId, fetchEntityData, processRelationships, relationshipService]);
 
   // Handle node click
   const handleNodeClick = useCallback((event: React.MouseEvent, node: Node) => {
@@ -539,31 +541,32 @@ export function RelationshipWebVisualization({
 
   const { nodes: displayedNodes, edges: displayedEdges } = focusedElements();
 
-  // Node type filter options
-  const nodeTypeOptions = Object.values(EntityType).map(type => ({
-    value: type,
-    label: type.charAt(0) + type.slice(1).toLowerCase()
-  }));
+  // Memoize filter options to prevent recreation on every render
+  const nodeTypeOptions = useMemo(() =>
+    Object.values(EntityType).map(type => ({
+      value: type,
+      label: type.charAt(0) + type.slice(1).toLowerCase()
+    })), []
+  );
 
-  // Relationship type filter options
-  const relationshipTypeOptions = Object.values(RelationshipType).map(type => ({
-    value: type,
-    label: type.replace('_', ' ')
-  }));
+  const relationshipTypeOptions = useMemo(() =>
+    Object.values(RelationshipType).map(type => ({
+      value: type,
+      label: type.replace('_', ' ')
+    })), []
+  );
 
-  // Layout options
-  const layoutOptions = [
+  const layoutOptions = useMemo(() => [
     { value: 'force', label: 'Force' },
     { value: 'dagre', label: 'Hierarchical' },
     { value: 'grid', label: 'Grid' },
     { value: 'circular', label: 'Circular' }
-  ];
+  ], []);
 
-  // Focus mode options
-  const focusModeOptions = [
+  const focusModeOptions = useMemo(() => [
     { value: 'all', label: 'All Relationships' },
     { value: 'direct', label: 'Direct Relationships' }
-  ];
+  ], []);
 
   // Create header controls
   const headerControls = (

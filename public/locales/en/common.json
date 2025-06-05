@@ -230,5 +230,7 @@
     "back": "Back",
     "next": "Next",
     "previous": "Previous"
-  }
+  },
+  "profile": "Profile",
+  "signOut": "Sign Out"
 }

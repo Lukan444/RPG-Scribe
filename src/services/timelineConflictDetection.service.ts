@@ -30,6 +30,10 @@ export interface ConflictDetectionOptions {
   overlapThreshold?: number;
   /** Include low severity conflicts */
   includeLowSeverity?: boolean;
+  /** Only check real-world timeline conflicts (sessions/campaigns) */
+  realWorldConflictsOnly?: boolean;
+  /** Enable hierarchical timeline logic - separate real-world from in-game */
+  enableHierarchicalDetection?: boolean;
 }
 
 /**
@@ -49,30 +53,52 @@ export class TimelineConflictDetectionService {
   }
 
   /**
-   * Detect conflicts in timeline events
+   * Detect conflicts in timeline events with hierarchical logic
    */
   public detectConflicts(
     events: TimelineEventData[],
     options: ConflictDetectionOptions = {}
   ): TimelineConflict[] {
     const conflicts: TimelineConflict[] = [];
-    
+
     const {
       checkOverlaps = true,
       checkLogical = true,
       checkCharacters = true,
       checkLocations = true,
       overlapThreshold = 30, // 30 minutes
-      includeLowSeverity = true
+      includeLowSeverity = true,
+      realWorldConflictsOnly = false,
+      enableHierarchicalDetection = true
     } = options;
 
     // Sort events by time for efficient processing
-    const sortedEvents = [...events].sort((a, b) => 
+    const sortedEvents = [...events].sort((a, b) =>
       a.realWorldTime.getTime() - b.realWorldTime.getTime()
     );
 
+    // Separate real-world and in-game events for hierarchical detection
+    const realWorldEvents = sortedEvents.filter(event =>
+      event.timeline === 'real-world' || event.entityType === 'session'
+    );
+    const inGameEvents = sortedEvents.filter(event =>
+      event.timeline === 'in-game' || event.entityType !== 'session'
+    );
+
     if (checkOverlaps) {
-      conflicts.push(...this.detectTemporalOverlaps(sortedEvents, overlapThreshold));
+      if (enableHierarchicalDetection) {
+        // Only check real-world overlaps (sessions/campaigns should not overlap)
+        conflicts.push(...this.detectTemporalOverlaps(realWorldEvents, overlapThreshold, 'real-world'));
+
+        // For in-game events, only check if explicitly requested
+        if (!realWorldConflictsOnly) {
+          // In-game events can overlap, so use more lenient detection
+          conflicts.push(...this.detectTemporalOverlaps(inGameEvents, overlapThreshold * 2, 'in-game'));
+        }
+      } else {
+        // Traditional overlap detection for all events
+        conflicts.push(...this.detectTemporalOverlaps(sortedEvents, overlapThreshold));
+      }
     }
 
     if (checkLogical) {
@@ -88,8 +114,8 @@ export class TimelineConflictDetectionService {
     }
 
     // Filter by severity if needed
-    const filteredConflicts = includeLowSeverity 
-      ? conflicts 
+    const filteredConflicts = includeLowSeverity
+      ? conflicts
       : conflicts.filter(c => c.severity !== 'low');
 
     return this.deduplicateConflicts(filteredConflicts);
@@ -100,7 +126,8 @@ export class TimelineConflictDetectionService {
    */
   private detectTemporalOverlaps(
     events: TimelineEventData[],
-    thresholdMinutes: number
+    thresholdMinutes: number,
+    timelineType?: 'real-world' | 'in-game'
   ): TimelineConflict[] {
     const conflicts: TimelineConflict[] = [];
     const threshold = thresholdMinutes * 60 * 1000; // Convert to milliseconds
@@ -111,7 +138,7 @@ export class TimelineConflictDetectionService {
         const event2 = events[j];
 
         // Check real-world time overlap
-        const realWorldOverlap = this.checkTimeOverlap(
+        const realWorldOverlap: boolean = this.checkTimeOverlap(
           event1.realWorldTime,
           event1.realWorldTime, // Assuming point events for now
           event2.realWorldTime,
@@ -120,7 +147,7 @@ export class TimelineConflictDetectionService {
         );
 
         // Check in-game time overlap
-        const inGameOverlap = this.checkTimeOverlap(
+        const inGameOverlap: boolean = this.checkTimeOverlap(
           event1.inGameTime,
           event1.inGameTime,
           event2.inGameTime,
@@ -128,23 +155,28 @@ export class TimelineConflictDetectionService {
           threshold
         );
 
-        if (realWorldOverlap || inGameOverlap) {
+        // Determine if this is a valid conflict based on timeline type
+        const shouldReportConflict = this.shouldReportOverlapConflict(
+          event1, event2, realWorldOverlap, inGameOverlap, timelineType
+        );
+
+        if (shouldReportConflict) {
+          const conflictType = timelineType === 'real-world' ? 'Real-World Timeline' :
+                              timelineType === 'in-game' ? 'In-Game Timeline' : 'Timeline';
+
           conflicts.push({
             id: `overlap-${event1.id}-${event2.id}`,
             type: 'overlap',
-            severity: this.calculateOverlapSeverity(event1, event2, threshold),
-            title: 'Timeline Overlap Detected',
+            severity: this.calculateOverlapSeverity(event1, event2, threshold, timelineType),
+            title: `${conflictType} Overlap Detected`,
             description: `Events "${event1.title}" and "${event2.title}" occur at overlapping times`,
             events: [event1.id, event2.id],
-            suggestions: [
-              'Adjust event timing to avoid overlap',
-              'Verify if events can occur simultaneously',
-              'Split overlapping event into multiple parts'
-            ],
+            suggestions: this.getOverlapSuggestions(event1, event2, timelineType),
             autoResolvable: false,
             metadata: {
               realWorldOverlap,
               inGameOverlap,
+              timelineType,
               timeDifference: Math.abs(event2.realWorldTime.getTime() - event1.realWorldTime.getTime())
             }
           });
@@ -343,34 +375,161 @@ export class TimelineConflictDetectionService {
   }
 
   /**
-   * Check if two time ranges overlap
+   * Convert any date-like value to a proper Date object
    */
-  private checkTimeOverlap(
-    start1: Date,
-    end1: Date,
-    start2: Date,
-    end2: Date,
-    threshold: number
-  ): boolean {
-    const s1 = start1.getTime();
-    const e1 = end1.getTime();
-    const s2 = start2.getTime();
-    const e2 = end2.getTime();
+  private ensureDate(dateValue: any): Date {
+    if (!dateValue) {
+      return new Date();
+    }
 
-    // Check for overlap with threshold
-    return (s1 <= e2 + threshold) && (s2 <= e1 + threshold);
+    // Already a Date object
+    if (dateValue instanceof Date) {
+      return dateValue;
+    }
+
+    // Firestore Timestamp object
+    if (dateValue && typeof dateValue === 'object' && dateValue.seconds) {
+      return new Date(dateValue.seconds * 1000);
+    }
+
+    // Firestore Timestamp with toDate method
+    if (dateValue && typeof dateValue.toDate === 'function') {
+      return dateValue.toDate();
+    }
+
+    // String or number
+    if (typeof dateValue === 'string' || typeof dateValue === 'number') {
+      return new Date(dateValue);
+    }
+
+    // Fallback to current date
+    console.warn('Unable to convert date value:', dateValue);
+    return new Date();
   }
 
   /**
-   * Calculate overlap severity
+   * Check if two time ranges overlap
+   */
+  private checkTimeOverlap(
+    start1: any,
+    end1: any,
+    start2: any,
+    end2: any,
+    threshold: number
+  ): boolean {
+    try {
+      // Ensure all values are proper Date objects
+      const s1Date = this.ensureDate(start1);
+      const e1Date = this.ensureDate(end1);
+      const s2Date = this.ensureDate(start2);
+      const e2Date = this.ensureDate(end2);
+
+      const s1 = s1Date.getTime();
+      const e1 = e1Date.getTime();
+      const s2 = s2Date.getTime();
+      const e2 = e2Date.getTime();
+
+      // Check for overlap with threshold
+      return (s1 <= e2 + threshold) && (s2 <= e1 + threshold);
+    } catch (error) {
+      console.error('Error in checkTimeOverlap:', error, { start1, end1, start2, end2 });
+      return false;
+    }
+  }
+
+  /**
+   * Determine if overlap should be reported as conflict based on timeline type
+   */
+  private shouldReportOverlapConflict(
+    event1: TimelineEventData,
+    event2: TimelineEventData,
+    realWorldOverlap: boolean,
+    inGameOverlap: boolean,
+    timelineType?: 'real-world' | 'in-game'
+  ): boolean {
+    // For real-world timeline (sessions/campaigns), overlaps are always conflicts
+    if (timelineType === 'real-world') {
+      return realWorldOverlap;
+    }
+
+    // For in-game timeline, be more lenient - only report severe overlaps
+    if (timelineType === 'in-game') {
+      // Allow parallel in-game events unless they involve the same characters/locations
+      const hasSharedParticipants = event1.participants?.some(p =>
+        event2.participants?.includes(p)
+      );
+      const hasSharedLocations = event1.locations?.some(l =>
+        event2.locations?.includes(l)
+      );
+
+      // Only report conflict if events share participants or locations
+      return Boolean(inGameOverlap && (hasSharedParticipants || hasSharedLocations));
+    }
+
+    // Default behavior for mixed timelines
+    return Boolean(realWorldOverlap) || Boolean(inGameOverlap);
+  }
+
+  /**
+   * Get appropriate suggestions based on timeline type
+   */
+  private getOverlapSuggestions(
+    event1: TimelineEventData,
+    event2: TimelineEventData,
+    timelineType?: 'real-world' | 'in-game'
+  ): string[] {
+    if (timelineType === 'real-world') {
+      return [
+        'Adjust session timing to avoid overlap',
+        'Verify session scheduling is correct',
+        'Consider splitting long sessions'
+      ];
+    }
+
+    if (timelineType === 'in-game') {
+      return [
+        'Verify if events can occur simultaneously',
+        'Check if characters can be in multiple places',
+        'Consider parallel storylines',
+        'Adjust event timing if needed'
+      ];
+    }
+
+    return [
+      'Adjust event timing to avoid overlap',
+      'Verify if events can occur simultaneously',
+      'Split overlapping event into multiple parts'
+    ];
+  }
+
+  /**
+   * Calculate overlap severity with timeline context
    */
   private calculateOverlapSeverity(
     event1: TimelineEventData,
     event2: TimelineEventData,
-    threshold: number
+    threshold: number,
+    timelineType?: 'real-world' | 'in-game'
   ): 'low' | 'medium' | 'high' | 'critical' {
     const timeDiff = Math.abs(event2.realWorldTime.getTime() - event1.realWorldTime.getTime());
-    
+
+    // Real-world overlaps are more severe
+    if (timelineType === 'real-world') {
+      if (timeDiff === 0) return 'critical';
+      if (timeDiff < threshold / 4) return 'high';
+      if (timeDiff < threshold / 2) return 'medium';
+      return 'low';
+    }
+
+    // In-game overlaps are less severe (parallel events are common)
+    if (timelineType === 'in-game') {
+      if (timeDiff === 0) return 'high'; // Not critical for in-game
+      if (timeDiff < threshold / 2) return 'medium';
+      if (timeDiff < threshold) return 'low';
+      return 'low';
+    }
+
+    // Default severity calculation
     if (timeDiff === 0) return 'critical';
     if (timeDiff < threshold / 2) return 'high';
     if (timeDiff < threshold) return 'medium';

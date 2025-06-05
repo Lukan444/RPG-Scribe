@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, memo, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
@@ -29,6 +29,7 @@ import { EntityType } from '../../models/EntityType';
 import RelationshipCountBadge from '../../components/relationships/badges/RelationshipCountBadge';
 import EntityCountTooltip from '../../components/common/EntityCountTooltip';
 import { useRPGWorld } from '../../contexts/RPGWorldContext';
+import { RPGWorldCarousel } from '../../components/dashboard/RPGWorldCarousel';
 
 import { auth } from '../../firebase/config';
 import { CharacterService } from '../../services/character.service';
@@ -65,8 +66,9 @@ function getLastUpdatedDate(entities: any[]): Date | null {
 
 /**
  * StatCard component that displays entity counts and relationship badges
+ * Memoized for performance optimization
  */
-function StatCard({
+const StatCard = memo(function StatCard({
   title,
   value,
   icon,
@@ -89,11 +91,18 @@ function StatCard({
   relationshipCount?: number;
   recentEntities?: Array<{ id: string; name: string; createdAt: Date; type?: string }>;
 }) {
-  const handleClick = () => {
+  const handleClick = useCallback(() => {
     if (onClick) {
       onClick();
     }
-  };
+  }, [onClick]);
+
+  const handleKeyDown = useCallback((event: React.KeyboardEvent) => {
+    if (onClick && (event.key === 'Enter' || event.key === ' ')) {
+      event.preventDefault();
+      onClick();
+    }
+  }, [onClick]);
 
   // Parse the value to a number for the tooltip
   const countValue = parseInt(value) || 0;
@@ -103,12 +112,16 @@ function StatCard({
       withBorder
       p="md"
       radius="md"
+      role={onClick ? "button" : "article"}
+      tabIndex={onClick ? 0 : -1}
+      aria-label={`${title}: ${value} items${onClick ? '. Click to view details.' : ''}`}
       style={{
         cursor: onClick ? 'pointer' : 'default',
         transition: 'transform 0.2s, box-shadow 0.2s',
         height: '100%'
       }}
       onClick={handleClick}
+      onKeyDown={handleKeyDown}
     >
       <Stack gap="xs">
         <Group justify="space-between" align="center">
@@ -140,7 +153,7 @@ function StatCard({
             <RelationshipCountBadge
               entityId="dashboard"
               entityType={entityType}
-              count={countValue}
+              count={relationshipCount}
               variant="light"
               size="md"
               interactive={false}
@@ -151,7 +164,7 @@ function StatCard({
       </Stack>
     </Paper>
   );
-}
+});
 
 function Dashboard() {
   const navigate = useNavigate();
@@ -160,6 +173,7 @@ function Dashboard() {
   const { t } = useTranslation(['ui', 'common']);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [worlds, setWorlds] = useState<any[]>([]);
 
   // Entity stats with additional metadata
   interface EntityStats {
@@ -239,6 +253,9 @@ function Dashboard() {
           campaignService.getCampaignsByUser(auth.currentUser?.uid || ''),
           worldService.getAccessibleWorlds(auth.currentUser?.uid || '')
         ]);
+
+        // Store worlds data for the carousel
+        setWorlds(worlds);
 
         // Process character data
         const pcCount = characters.filter((c: any) => c.characterType === 'PC' || c.isPlayerCharacter).length;
@@ -537,6 +554,7 @@ function Dashboard() {
       <Tabs defaultValue="all">
         <Tabs.List>
           <Tabs.Tab value="all">{t('dashboard.tabs.all')}</Tabs.Tab>
+          <Tabs.Tab value="worlds">RPG Worlds</Tabs.Tab>
           <Tabs.Tab value="characters">{t('dashboard.tabs.characters')}</Tabs.Tab>
           <Tabs.Tab value="world">{t('dashboard.tabs.world')}</Tabs.Tab>
           <Tabs.Tab value="narrative">{t('dashboard.tabs.narrative')}</Tabs.Tab>
@@ -549,12 +567,29 @@ function Dashboard() {
             </Center>
           ) : (
             <>
+              {/* RPG World Carousel - Primary focal point */}
+              <Stack gap="lg" mb="xl">
+                <div>
+                  <Text size="xl" fw={600}>RPG Worlds</Text>
+                  <Text size="sm" c="dimmed">
+                    Explore your RPG worlds and their hierarchical entity structure
+                  </Text>
+                </div>
+                <RPGWorldCarousel
+                  worlds={worlds}
+                  loading={loading}
+                  onViewWorld={(worldId) => navigate(`/rpg-worlds/${worldId}`)}
+                  onEditWorld={(worldId) => navigate(`/rpg-worlds/${worldId}/edit`)}
+                  entityStats={totalStats}
+                />
+              </Stack>
+
               <SimpleGrid cols={{ base: 1, sm: 2, md: 3, lg: 5 }} spacing="md">
                 {/* Characters & NPCs Group */}
                 <StatCard
                   title={t('dashboard.entities.characters')}
                   value={totalStats.characters.count.toString()}
-                  icon={<IconUsers style={{ width: '1.5rem', height: '1.5rem' }} />}
+                  icon={<IconUsers style={{ width: 24, height: 24 }} />}
                   color="blue"
                   entityType={EntityType.CHARACTER}
                   typeBreakdown={totalStats.characters.typeBreakdown}
@@ -572,7 +607,7 @@ function Dashboard() {
                 <StatCard
                   title={t('dashboard.entities.factions')}
                   value={totalStats.factions.count.toString()}
-                  icon={<IconUsersGroup style={{ width: '1.5rem', height: '1.5rem' }} />}
+                  icon={<IconUsersGroup style={{ width: 24, height: 24 }} />}
                   color="blue"
                   entityType={EntityType.FACTION}
                   lastUpdated={totalStats.factions.lastUpdated}
@@ -591,7 +626,7 @@ function Dashboard() {
                 <StatCard
                   title={t('dashboard.entities.locations')}
                   value={totalStats.locations.count.toString()}
-                  icon={<IconMapPin style={{ width: '1.5rem', height: '1.5rem' }} />}
+                  icon={<IconMapPin style={{ width: 24, height: 24 }} />}
                   color="green"
                   entityType={EntityType.LOCATION}
                   lastUpdated={totalStats.locations.lastUpdated}
@@ -608,7 +643,7 @@ function Dashboard() {
                 <StatCard
                   title={t('dashboard.entities.items')}
                   value={totalStats.items.count.toString()}
-                  icon={<IconSword style={{ width: '1.5rem', height: '1.5rem' }} />}
+                  icon={<IconSword style={{ width: 24, height: 24 }} />}
                   color="green"
                   entityType={EntityType.ITEM}
                   lastUpdated={totalStats.items.lastUpdated}
@@ -625,7 +660,7 @@ function Dashboard() {
                 <StatCard
                   title={t('dashboard.entities.events')}
                   value={totalStats.events.count.toString()}
-                  icon={<IconCalendarEvent style={{ width: '1.5rem', height: '1.5rem' }} />}
+                  icon={<IconCalendarEvent style={{ width: 24, height: 24 }} />}
                   color="violet"
                   entityType={EntityType.EVENT}
                   lastUpdated={totalStats.events.lastUpdated}
@@ -646,7 +681,7 @@ function Dashboard() {
                 <StatCard
                   title={t('dashboard.entities.sessions')}
                   value={totalStats.sessions.count.toString()}
-                  icon={<IconNotebook style={{ width: '1.5rem', height: '1.5rem' }} />}
+                  icon={<IconNotebook style={{ width: 24, height: 24 }} />}
                   color="violet"
                   entityType={EntityType.SESSION}
                   lastUpdated={totalStats.sessions.lastUpdated}
@@ -663,7 +698,7 @@ function Dashboard() {
                 <StatCard
                   title={t('dashboard.entities.storyArcs')}
                   value={totalStats.storyArcs.count.toString()}
-                  icon={<IconTimeline style={{ width: '1.5rem', height: '1.5rem' }} />}
+                  icon={<IconTimeline style={{ width: 24, height: 24 }} />}
                   color="violet"
                   entityType={EntityType.STORY_ARC}
                   lastUpdated={totalStats.storyArcs.lastUpdated}
@@ -680,7 +715,7 @@ function Dashboard() {
                 <StatCard
                   title={t('dashboard.entities.notes')}
                   value={totalStats.notes.count.toString()}
-                  icon={<IconBookmark style={{ width: '1.5rem', height: '1.5rem' }} />}
+                  icon={<IconBookmark style={{ width: 24, height: 24 }} />}
                   color="violet"
                   entityType={EntityType.NOTE}
                   lastUpdated={totalStats.notes.lastUpdated}
@@ -699,7 +734,7 @@ function Dashboard() {
                 <StatCard
                   title={t('dashboard.entities.campaigns')}
                   value={totalStats.campaigns.count.toString()}
-                  icon={<IconMap style={{ width: '1.5rem', height: '1.5rem' }} />}
+                  icon={<IconMap style={{ width: 24, height: 24 }} />}
                   color="orange"
                   entityType={EntityType.CAMPAIGN}
                   lastUpdated={totalStats.campaigns.lastUpdated}
@@ -716,7 +751,7 @@ function Dashboard() {
                 <StatCard
                   title={t('dashboard.entities.worlds')}
                   value={totalStats.worlds.count.toString()}
-                  icon={<IconWorld style={{ width: '1.5rem', height: '1.5rem' }} />}
+                  icon={<IconWorld style={{ width: 24, height: 24 }} />}
                   color="cyan"
                   entityType={EntityType.RPG_WORLD}
                   lastUpdated={totalStats.worlds.lastUpdated}
@@ -735,6 +770,25 @@ function Dashboard() {
           )}
         </Tabs.Panel>
 
+        <Tabs.Panel value="worlds" pt="md">
+          <Stack gap="lg">
+            <div>
+              <Text size="xl" fw={600}>RPG Worlds</Text>
+              <Text size="sm" c="dimmed">
+                Explore your RPG worlds and their hierarchical entity structure
+              </Text>
+            </div>
+
+            <RPGWorldCarousel
+              worlds={worlds}
+              loading={loading}
+              onViewWorld={(worldId) => navigate(`/rpg-worlds/${worldId}`)}
+              onEditWorld={(worldId) => navigate(`/rpg-worlds/${worldId}/edit`)}
+              entityStats={totalStats}
+            />
+          </Stack>
+        </Tabs.Panel>
+
         <Tabs.Panel value="characters" pt="md">
           {loading ? (
             <Center p="xl">
@@ -745,7 +799,7 @@ function Dashboard() {
               <StatCard
                 title={t('dashboard.entities.characters')}
                 value={totalStats.characters.count.toString()}
-                icon={<IconUsers style={{ width: '1.5rem', height: '1.5rem' }} />}
+                icon={<IconUsers style={{ width: 24, height: 24 }} />}
                 color="blue"
                 entityType={EntityType.CHARACTER}
                 typeBreakdown={totalStats.characters.typeBreakdown}
@@ -763,7 +817,7 @@ function Dashboard() {
               <StatCard
                 title={t('dashboard.entities.factions')}
                 value={totalStats.factions.count.toString()}
-                icon={<IconUsersGroup style={{ width: '1.5rem', height: '1.5rem' }} />}
+                icon={<IconUsersGroup style={{ width: 24, height: 24 }} />}
                 color="blue"
                 entityType={EntityType.FACTION}
                 lastUpdated={totalStats.factions.lastUpdated}
@@ -791,7 +845,7 @@ function Dashboard() {
               <StatCard
                 title={t('dashboard.entities.locations')}
                 value={totalStats.locations.count.toString()}
-                icon={<IconMapPin style={{ width: '1.5rem', height: '1.5rem' }} />}
+                icon={<IconMapPin style={{ width: 24, height: 24 }} />}
                 color="green"
                 entityType={EntityType.LOCATION}
                 lastUpdated={totalStats.locations.lastUpdated}
@@ -808,7 +862,7 @@ function Dashboard() {
               <StatCard
                 title={t('dashboard.entities.items')}
                 value={totalStats.items.count.toString()}
-                icon={<IconSword style={{ width: '1.5rem', height: '1.5rem' }} />}
+                icon={<IconSword style={{ width: 24, height: 24 }} />}
                 color="green"
                 entityType={EntityType.ITEM}
                 lastUpdated={totalStats.items.lastUpdated}
@@ -837,7 +891,7 @@ function Dashboard() {
                 <StatCard
                   title={t('dashboard.entities.events')}
                   value={totalStats.events.count.toString()}
-                  icon={<IconCalendarEvent style={{ width: '1.5rem', height: '1.5rem' }} />}
+                  icon={<IconCalendarEvent style={{ width: 24, height: 24 }} />}
                   color="violet"
                   entityType={EntityType.EVENT}
                   lastUpdated={totalStats.events.lastUpdated}
@@ -854,7 +908,7 @@ function Dashboard() {
                 <StatCard
                   title={t('dashboard.entities.sessions')}
                   value={totalStats.sessions.count.toString()}
-                  icon={<IconNotebook style={{ width: '1.5rem', height: '1.5rem' }} />}
+                  icon={<IconNotebook style={{ width: 24, height: 24 }} />}
                   color="violet"
                   entityType={EntityType.SESSION}
                   lastUpdated={totalStats.sessions.lastUpdated}
@@ -873,7 +927,7 @@ function Dashboard() {
                 <StatCard
                   title={t('dashboard.entities.storyArcs')}
                   value={totalStats.storyArcs.count.toString()}
-                  icon={<IconTimeline style={{ width: '1.5rem', height: '1.5rem' }} />}
+                  icon={<IconTimeline style={{ width: 24, height: 24 }} />}
                   color="violet"
                   entityType={EntityType.STORY_ARC}
                   lastUpdated={totalStats.storyArcs.lastUpdated}
@@ -890,7 +944,7 @@ function Dashboard() {
                 <StatCard
                   title={t('dashboard.entities.notes')}
                   value={totalStats.notes.count.toString()}
-                  icon={<IconBookmark style={{ width: '1.5rem', height: '1.5rem' }} />}
+                  icon={<IconBookmark style={{ width: 24, height: 24 }} />}
                   color="violet"
                   entityType={EntityType.NOTE}
                   lastUpdated={totalStats.notes.lastUpdated}

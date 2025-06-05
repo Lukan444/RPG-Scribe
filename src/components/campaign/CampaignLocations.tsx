@@ -146,7 +146,8 @@ export function CampaignLocations({
   };
 
   // Handle view location
-  const handleViewLocation = (locationId: string) => {
+  const handleViewLocation = (location: any) => {
+    const locationId = location.id;
     if (onViewLocation) {
       onViewLocation(locationId);
     } else if (worldId) {
@@ -157,7 +158,8 @@ export function CampaignLocations({
   };
 
   // Handle edit location
-  const handleEditLocation = (locationId: string) => {
+  const handleEditLocation = (location: any) => {
+    const locationId = location.id;
     if (onEditLocation) {
       onEditLocation(locationId);
     } else if (worldId) {
@@ -168,13 +170,11 @@ export function CampaignLocations({
   };
 
   // Handle delete location
-  const handleDeleteLocation = (locationId: string) => {
+  const handleDeleteLocation = (location: any) => {
+    const locationId = location.id;
     if (onDeleteLocation) {
       onDeleteLocation(locationId);
     } else {
-      // Find the location by ID
-      const location = locations.find(l => l.id === locationId);
-
       if (location) {
         // Show confirmation dialog
         modals.openConfirmModal({

@@ -42,5 +42,10 @@
     "subscription": "Suscripción",
     "deleteAccount": "Eliminar Cuenta",
     "exportData": "Exportar Datos"
+  },
+  "tables": {
+    "filters": {
+      "search": "Buscar..."
+    }
   }
 }
