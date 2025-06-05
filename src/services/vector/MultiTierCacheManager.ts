@@ -17,6 +17,7 @@ interface CacheEntry<T> {
   accessCount: number;
   lastAccessed: number;
   size: number;
+  ttl: number; // Time-to-live in milliseconds for this specific entry
 }
 
 /**
@@ -89,8 +90,8 @@ class MemoryCacheTier<T> extends CacheTier<T> {
       return null;
     }
 
-    // Check if expired
-    if (Date.now() - entry.timestamp > this.config.ttlMs) {
+    // Check if expired using the entry's specific TTL
+    if (Date.now() - entry.timestamp > entry.ttl) {
       await this.delete(key);
       this.updateStats(false);
       return null;
@@ -123,7 +124,8 @@ class MemoryCacheTier<T> extends CacheTier<T> {
       timestamp: Date.now(),
       accessCount: 1,
       lastAccessed: Date.now(),
-      size: this.estimateSize(value)
+      size: this.estimateSize(value),
+      ttl: effectiveTtl
     };
 
     this.cache.set(key, entry);
@@ -215,8 +217,8 @@ class LocalStorageCacheTier<T> extends CacheTier<T> {
 
       const entry: CacheEntry<T> = JSON.parse(stored);
       
-      // Check if expired
-      if (Date.now() - entry.timestamp > this.config.ttlMs) {
+      // Check if expired using the entry's specific TTL
+      if (Date.now() - entry.timestamp > entry.ttl) {
         await this.delete(key);
         this.updateStats(false);
         return null;
@@ -238,12 +240,15 @@ class LocalStorageCacheTier<T> extends CacheTier<T> {
 
   async set(key: string, value: T, ttl?: number): Promise<void> {
     try {
+      const effectiveTtl = ttl || this.config.ttlMs;
+
       const entry: CacheEntry<T> = {
         data: value,
         timestamp: Date.now(),
         accessCount: 1,
         lastAccessed: Date.now(),
-        size: this.estimateSize(value)
+        size: this.estimateSize(value),
+        ttl: effectiveTtl
       };
 
       // Check size limit
@@ -260,12 +265,14 @@ class LocalStorageCacheTier<T> extends CacheTier<T> {
       if (error instanceof Error && error.name === 'QuotaExceededError') {
         await this.evictLeastRecentlyUsed();
         try {
+          const effectiveTtl = ttl || this.config.ttlMs;
           localStorage.setItem(this.keyPrefix + key, JSON.stringify({
             data: value,
             timestamp: Date.now(),
             accessCount: 1,
             lastAccessed: Date.now(),
-            size: this.estimateSize(value)
+            size: this.estimateSize(value),
+            ttl: effectiveTtl
           }));
         } catch {
           this.logger.error('Failed to set cache entry after eviction');

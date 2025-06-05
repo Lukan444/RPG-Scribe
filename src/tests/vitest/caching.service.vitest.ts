@@ -1,16 +1,22 @@
 /**
  * CachingService test suite using Vitest
  */
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { CachingService } from '../../services/caching.service';
 
 describe('CachingService', () => {
   // Test service
   let cachingService: CachingService;
 
-  // Set up test service
+  // Set up test service and fake timers
   beforeEach(() => {
+    vi.useFakeTimers();
     cachingService = new CachingService(1000); // 1 second TTL for testing
+  });
+
+  // Clean up fake timers after each test
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   // Test set and get methods
@@ -45,9 +51,8 @@ describe('CachingService', () => {
       // Verify cache entry exists
       expect(cachingService.get(key)).toEqual(data);
 
-      // Manually expire the entry by setting its expiration time to the past
-      const entry = (cachingService as any).cache.get(key);
-      entry.expiresAt = Date.now() - 1000; // 1 second in the past
+      // Advance time beyond the TTL (1000ms + buffer)
+      vi.advanceTimersByTime(1100);
 
       // Verify cache entry is expired
       expect(cachingService.get(key)).toBeNull();
@@ -62,9 +67,8 @@ describe('CachingService', () => {
       // Verify cache entry exists
       expect(cachingService.get(key)).toEqual(data);
 
-      // Manually expire the entry by setting its expiration time to the past
-      const entry = (cachingService as any).cache.get(key);
-      entry.expiresAt = Date.now() - 1000; // 1 second in the past
+      // Advance time beyond the custom TTL (500ms + buffer)
+      vi.advanceTimersByTime(600);
 
       // Verify cache entry is expired
       expect(cachingService.get(key)).toBeNull();
@@ -77,9 +81,8 @@ describe('CachingService', () => {
       // Verify second cache entry exists
       expect(cachingService.get(key2)).toEqual(data2);
 
-      // Manually expire the second entry
-      const entry2 = (cachingService as any).cache.get(key2);
-      entry2.expiresAt = Date.now() - 1000; // 1 second in the past
+      // Advance time beyond the default TTL (1000ms + buffer)
+      vi.advanceTimersByTime(1100);
 
       // Verify second cache entry is expired
       expect(cachingService.get(key2)).toBeNull();
@@ -116,9 +119,8 @@ describe('CachingService', () => {
       // Verify cache entry exists
       expect(cachingService.has(key)).toBe(true);
 
-      // Manually expire the entry by setting its expiration time to the past
-      const entry = (cachingService as any).cache.get(key);
-      entry.expiresAt = Date.now() - 1000; // 1 second in the past
+      // Advance time beyond the TTL (1000ms + buffer)
+      vi.advanceTimersByTime(1100);
 
       // Verify cache entry is expired
       expect(cachingService.has(key)).toBe(false);
@@ -169,7 +171,7 @@ describe('CachingService', () => {
 
   // Test clearExpired method
   describe('clearExpired', () => {
-    it('should clear only expired cache entries', async () => {
+    it('should clear only expired cache entries', () => {
       // Set cache entries with different TTLs
       cachingService.set('key1', 'value1', 500); // Expires after 500ms
       cachingService.set('key2', 'value2', 2000); // Expires after 2000ms
@@ -178,8 +180,8 @@ describe('CachingService', () => {
       expect(cachingService.get('key1')).toBe('value1');
       expect(cachingService.get('key2')).toBe('value2');
 
-      // Wait for first entry to expire
-      await new Promise(resolve => setTimeout(resolve, 600));
+      // Advance time to expire first entry but not second (600ms)
+      vi.advanceTimersByTime(600);
 
       // Clear expired entries
       cachingService.clearExpired();
@@ -232,9 +234,8 @@ describe('CachingService', () => {
       expect(fetchFn).toHaveBeenCalledTimes(1);
       expect(value2).toBe('fetched-value');
 
-      // Manually expire the entry by setting its expiration time to the past
-      const entry = (cachingService as any).cache.get('test-key');
-      entry.expiresAt = Date.now() - 1000; // 1 second in the past
+      // Advance time beyond the TTL to expire the entry (1000ms + buffer)
+      vi.advanceTimersByTime(1100);
 
       // Get or set cache entry after expiration (should fetch again)
       const value3 = await cachingService.getOrSet('test-key', fetchFn);
