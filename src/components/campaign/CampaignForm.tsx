@@ -36,7 +36,9 @@ import {
 import { Campaign, CampaignCreationParams, CampaignUpdateParams, CampaignStatus, CampaignPrivacy } from '../../models/Campaign';
 import { RPGWorld } from '../../models/RPGWorld';
 import { RPGWorldService } from '../../services/rpgWorld.service';
+import { UserService } from '../../services/user.service';
 import { useAuth } from '../../contexts/AuthContext';
+import { QueryDocumentSnapshot, DocumentData, where, orderBy } from 'firebase/firestore';
 
 // Campaign status options
 const CAMPAIGN_STATUS_OPTIONS = [
@@ -119,9 +121,12 @@ export function CampaignForm({
   const [worlds, setWorlds] = useState<RPGWorld[]>([]);
   const [selectedWorld, setSelectedWorld] = useState<RPGWorld | null>(null);
   const [availableUsers, setAvailableUsers] = useState<User[]>([]);
+  const [usersLoading, setUsersLoading] = useState<boolean>(false);
+  const [usersError, setUsersError] = useState<string | null>(null);
 
   // Services
   const rpgWorldService = new RPGWorldService();
+  const userService = new UserService();
 
   // Fetch RPG Worlds
   useEffect(() => {
@@ -157,26 +162,44 @@ export function CampaignForm({
 
   // Fetch available users
   useEffect(() => {
-    // TODO: Implement user fetching from Firebase Auth
-    // For now, just use a mock list
-    setAvailableUsers([
-      {
-        id: currentUser?.uid || 'current-user',
-        displayName: currentUser?.displayName || 'Current User',
-        email: currentUser?.email || 'user@example.com',
-        photoURL: currentUser?.photoURL || undefined
-      },
-      {
-        id: 'user1',
-        displayName: 'John Doe',
-        email: 'john@example.com'
-      },
-      {
-        id: 'user2',
-        displayName: 'Jane Smith',
-        email: 'jane@example.com'
+    const loadUsers = async () => {
+      if (!currentUser) return;
+
+      setUsersLoading(true);
+      setUsersError(null);
+
+      try {
+        const pageSize = 50;
+        let lastDoc: QueryDocumentSnapshot<DocumentData> | null = null;
+        let users: User[] = [];
+
+        do {
+          const result = await userService.query(
+            [where('role', 'in', ['gamemaster', 'player']), orderBy('name', 'asc')],
+            pageSize,
+            lastDoc || undefined
+          );
+          users = users.concat(
+            result.data.map(u => ({
+              id: u.id,
+              displayName: (u as any).name || u.email,
+              email: u.email,
+              photoURL: u.photoURL || undefined
+            }))
+          );
+          lastDoc = result.lastDoc;
+        } while (lastDoc);
+
+        setAvailableUsers(users);
+      } catch (err) {
+        console.error('Error fetching users:', err);
+        setUsersError('Failed to load users');
+      } finally {
+        setUsersLoading(false);
       }
-    ]);
+    };
+
+    loadUsers();
   }, [currentUser]);
 
   // Form validation and state
@@ -423,26 +446,40 @@ export function CampaignForm({
                   <Text fw={500} size="sm" mb="xs">Game Masters</Text>
                   <MultiSelect
                     data={userOptions}
-                    placeholder="Select game masters"
+                    placeholder={usersLoading ? 'Loading users...' : 'Select game masters'}
                     searchable
+                    disabled={usersLoading || !!usersError}
+                    error={usersError}
                     {...form.getInputProps('gmIds')}
                   />
                   <Text size="xs" c="dimmed" mt="xs">
                     Game masters have full control over the campaign
                   </Text>
+                  {usersError && (
+                    <Text size="xs" c="red" mt="xs">
+                      {usersError}
+                    </Text>
+                  )}
                 </Box>
 
                 <Box>
                   <Text fw={500} size="sm" mb="xs">Players</Text>
                   <MultiSelect
                     data={userOptions}
-                    placeholder="Select players"
+                    placeholder={usersLoading ? 'Loading users...' : 'Select players'}
                     searchable
+                    disabled={usersLoading || !!usersError}
+                    error={usersError}
                     {...form.getInputProps('playerIds')}
                   />
                   <Text size="xs" c="dimmed" mt="xs">
                     Players can view the campaign and participate in sessions
                   </Text>
+                  {usersError && (
+                    <Text size="xs" c="red" mt="xs">
+                      {usersError}
+                    </Text>
+                  )}
                 </Box>
               </Stack>
             </Tabs.Panel>
