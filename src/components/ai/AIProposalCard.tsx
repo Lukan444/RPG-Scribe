@@ -126,6 +126,10 @@ export function AIProposalCard({
         </Badge>
       </Group>
 
+      <Text size="xs" c="dimmed" mb="sm">
+        Submitted by {proposal.submittedBy} on {proposal.submittedAt.toLocaleString()}
+      </Text>
+
       <Text size="sm" c="dimmed" mb="md">
         AI Confidence: {formatConfidence(proposal.aiConfidence)}
       </Text>
