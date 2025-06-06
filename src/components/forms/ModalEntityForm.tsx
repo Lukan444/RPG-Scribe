@@ -15,6 +15,7 @@ import {
 import { useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
 import { useTranslation } from 'react-i18next';
+import { useAuth } from '../../contexts/AuthContext';
 import {
   IconX,
   IconDeviceFloppy,
@@ -91,14 +92,16 @@ const FormContent: React.FC<FormContentProps> = ({
             )}
 
             {/* Tab fields will be rendered here */}
-            {tab.fields.map((field) => (
-              <div key={field.id}>
-                {/* Field components will be implemented in next steps */}
-                <Text size="sm" c="dimmed">
-                  Field: {field.label} ({field.type})
-                </Text>
-              </div>
-            ))}
+            {tab.fields
+              .filter(field => !field.conditional || field.conditional(form.values, context))
+              .map((field) => (
+                <div key={field.id}>
+                  {/* Field components will be implemented in next steps */}
+                  <Text size="sm" c="dimmed">
+                    Field: {field.label} ({field.type})
+                  </Text>
+                </div>
+              ))}
           </Stack>
         </Tabs.Panel>
       ))}
@@ -118,15 +121,20 @@ export const ModalEntityForm = <T extends BaseEntity = BaseEntity>({
   onError,
   initialValues = {},
   mode = entityId ? FormMode.EDIT : FormMode.CREATE,
-  config: customConfig
+  config: customConfig,
+  userRole
 }: ModalEntityFormProps<T>) => {
   // Translation hook
   const { t } = useTranslation(['ui', 'entities', 'common']);
+  const { user } = useAuth();
 
   // State management
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<string>('');
   const [isDirty, setIsDirty] = useState(false);
+
+  // Resolve the role early so hooks can reference it
+  const role = userRole || user?.role || 'user';
 
   // Get form configuration
   const config = useMemo(() => {
@@ -168,14 +176,14 @@ export const ModalEntityForm = <T extends BaseEntity = BaseEntity>({
   useEffect(() => {
     if (config.tabs.length > 0 && !activeTab) {
       const firstVisibleTab = config.tabs
-        .filter(tab => !tab.conditional || tab.conditional(form.values))
+        .filter(tab => !tab.conditional || tab.conditional(form.values, formContext))
         .sort((a, b) => a.order - b.order)[0];
 
       if (firstVisibleTab) {
         setActiveTab(firstVisibleTab.id);
       }
     }
-  }, [config.tabs, activeTab, form.values]);
+  }, [config.tabs, activeTab, form.values, role]);
 
   // Track form dirty state
   useEffect(() => {
@@ -196,8 +204,9 @@ export const ModalEntityForm = <T extends BaseEntity = BaseEntity>({
       Object.entries(form.errors).map(([key, value]) => [key, String(value)])
     ),
     isSubmitting: loading,
-    isDirty
-  }), [entityType, mode, worldId, campaignId, form.values, form.errors, loading, isDirty]);
+    isDirty,
+    userRole: role,
+  }), [entityType, mode, worldId, campaignId, form.values, form.errors, loading, isDirty, role]);
 
   // Handle form submission
   const handleSubmit = async (action: FormAction) => {
