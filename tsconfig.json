@@ -21,6 +21,7 @@
     "jsx": "react-jsx",
     "downlevelIteration": true,
     "baseUrl": ".",
+    "types": ["vitest/globals", "@testing-library/jest-dom"],
     "paths": {
       "reactflow": ["node_modules/reactflow"],
       "reactflow/*": ["node_modules/reactflow/*"],
@@ -29,12 +30,15 @@
     }
   },
   "include": [
-    "src"
+    "src",
+    "src/**/*.test.ts",
+    "src/**/*.test.tsx"
   ],
   "exclude": [
     "node_modules"
   ],
   "files": [
-    "src/tests/vitest/testing-library-jest-dom.d.ts"
+    "src/tests/vitest/testing-library-jest-dom.d.ts",
+    "src/tests/vitest/vitest-globals.d.ts"
   ]
 }
