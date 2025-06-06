@@ -112,8 +112,7 @@ describe('Error Handling Utilities', () => {
       expect(result).toBeNull();
     });
 
-    // Skip this test for now due to timeout issues
-    it.skip('should retry up to maxRetries times', async () => {
+    it('should retry up to maxRetries times', async () => {
       const error = new AppError('Test', ErrorType.EXTERNAL_SERVICE);
       const retryError = new AppError('Retry failed', ErrorType.EXTERNAL_SERVICE);
       const retryFn = jest.fn()
@@ -135,8 +134,7 @@ describe('Error Handling Utilities', () => {
       expect(result).toBe('success');
     });
 
-    // Skip this test for now due to timeout issues
-    it.skip('should give up after maxRetries', async () => {
+    it('should give up after maxRetries', async () => {
       const error = new AppError('Test', ErrorType.EXTERNAL_SERVICE);
       const retryError = new AppError('Retry failed', ErrorType.EXTERNAL_SERVICE);
       const retryFn = jest.fn()

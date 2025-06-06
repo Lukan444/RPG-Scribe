@@ -4,6 +4,20 @@
  * This file contains utilities for testing Cloud Functions.
  */
 
+// Mock Firebase admin initialization
+jest.mock('firebase-admin', () => {
+  return {
+    initializeApp: jest.fn(),
+    firestore: jest.fn().mockReturnValue({
+      collection: jest.fn().mockReturnThis(),
+      doc: jest.fn().mockReturnThis(),
+      get: jest.fn(),
+      set: jest.fn(),
+      update: jest.fn()
+    })
+  };
+});
+
 // Add a simple test to avoid the "Your test suite must contain at least one test" error
 describe('Test Utilities', () => {
   it('should export test utilities', () => {
