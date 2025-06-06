@@ -8,17 +8,12 @@ import { Logger } from '../../../utils/logging';
 
 // Mock the GoogleAuth class
 vi.mock('google-auth-library', () => {
-  return {
-    GoogleAuth: vi.fn().mockImplementation(() => {
-      return {
-        getClient: vi.fn().mockResolvedValue({
-          getAccessToken: vi.fn().mockResolvedValue({
-            token: 'mock-access-token'
-          })
-        })
-      };
-    })
-  };
+  const getClient = vi.fn().mockResolvedValue({
+    getAccessToken: vi.fn().mockResolvedValue({ token: 'mock-access-token' })
+  });
+  function GoogleAuth(this: any) {}
+  GoogleAuth.prototype.getClient = getClient;
+  return { GoogleAuth };
 });
 
 // Mock the Logger class

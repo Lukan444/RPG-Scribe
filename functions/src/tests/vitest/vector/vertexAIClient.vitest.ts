@@ -6,9 +6,9 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { VertexAIClient } from '../../../vector/vertexAIClient';
 import { Logger } from '../../../utils/logging';
 import { ServiceAccountManager } from '../../../auth/service-account-manager';
-import { SecurityUtils, SecurityConfig } from '../../../auth/security-utils';
+import { SecurityUtils, SecurityConfig } from '../../../auth/security-utils.ts';
 import * as functions from 'firebase-functions';
-import { VertexAIConfig } from '../../../config/environment-config';
+import { VertexAIConfig } from '../../../config/environment-config.ts';
 
 // Mock the PredictionServiceClient
 vi.mock('@google-cloud/aiplatform', () => {
@@ -46,7 +46,7 @@ vi.mock('../../../auth/service-account-manager', () => {
 });
 
 // Mock the CircuitBreaker
-vi.mock('../../../utils/circuit-breaker', () => {
+vi.mock('../../../utils/circuit-breaker.ts', () => {
   return {
     CircuitBreaker: vi.fn().mockImplementation(() => {
       return {
@@ -57,7 +57,7 @@ vi.mock('../../../utils/circuit-breaker', () => {
 });
 
 // Mock the SecurityUtils
-vi.mock('../../../auth/security-utils', () => {
+vi.mock('../../../auth/security-utils.ts', () => {
   return {
     SecurityUtils: vi.fn().mockImplementation(() => {
       return {
@@ -103,7 +103,7 @@ vi.mock('../../../utils/logging', () => {
 });
 
 // Mock the environment-config
-vi.mock('../../../config/environment-config', () => {
+vi.mock('../../../config/environment-config.ts', () => {
   return {
     getEnvironmentConfig: vi.fn().mockReturnValue({
       name: 'test',
@@ -145,7 +145,7 @@ vi.mock('../../../config/environment-config', () => {
 });
 
 // Mock the CostTracker
-vi.mock('../../../monitoring/cost-tracker', () => {
+vi.mock('../../../monitoring/cost-tracker.ts', () => {
   return {
     CostTracker: vi.fn().mockImplementation(() => {
       return {
@@ -182,7 +182,7 @@ describe('VertexAIClient', () => {
       const client = new VertexAIClient();
 
       // Check that getEnvironmentConfig was called
-      const getEnvironmentConfig = require('../../../config/environment-config').getEnvironmentConfig;
+      const getEnvironmentConfig = require('../../../config/environment-config.ts').getEnvironmentConfig;
       expect(getEnvironmentConfig).toHaveBeenCalled();
 
       // Check that the client was initialized with the environment config
@@ -216,7 +216,7 @@ describe('VertexAIClient', () => {
       const client = new VertexAIClient();
 
       // Check that SecurityUtils was initialized with the environment security config
-      const SecurityUtils = require('../../../auth/security-utils').SecurityUtils;
+      const SecurityUtils = require('../../../auth/security-utils.ts').SecurityUtils;
       expect(SecurityUtils).toHaveBeenCalledWith(
         expect.objectContaining({
           allowedOrigins: ['https://test.com'],
@@ -239,7 +239,7 @@ describe('VertexAIClient', () => {
       const client = new VertexAIClient(undefined, mockLogger, customSecurityConfig);
 
       // Check that SecurityUtils was initialized with the custom security config
-      const SecurityUtils = require('../../../auth/security-utils').SecurityUtils;
+      const SecurityUtils = require('../../../auth/security-utils.ts').SecurityUtils;
       expect(SecurityUtils).toHaveBeenCalledWith(
         customSecurityConfig,
         expect.anything()
@@ -260,7 +260,7 @@ describe('VertexAIClient', () => {
       vertexAIClient.validateRequest(mockContext, 'test-user');
 
       // Check that SecurityUtils.validateRequest was called
-      const SecurityUtils = require('../../../auth/security-utils').SecurityUtils;
+      const SecurityUtils = require('../../../auth/security-utils.ts').SecurityUtils;
       expect(SecurityUtils.prototype.validateRequest).toHaveBeenCalledWith(mockContext, 'test-user');
     });
   });
@@ -278,7 +278,7 @@ describe('VertexAIClient', () => {
       expect(ServiceAccountManager.prototype.getAccessToken).toHaveBeenCalled();
 
       // Check that the CircuitBreaker.execute was called
-      const circuitBreakerMock = require('../../../utils/circuit-breaker').CircuitBreaker;
+      const circuitBreakerMock = require('../../../utils/circuit-breaker.ts').CircuitBreaker;
       expect(circuitBreakerMock.prototype.execute).toHaveBeenCalled();
 
       // Check that the PredictionServiceClient.predict was called with the right parameters
@@ -361,7 +361,7 @@ describe('VertexAIClient', () => {
 
       expect(mockLogger.debug).toHaveBeenCalledWith('Generating embedding', expect.any(Object));
       expect(ServiceAccountManager.prototype.getAccessToken).toHaveBeenCalled();
-      const circuitBreakerMock = require('../../../utils/circuit-breaker').CircuitBreaker;
+      const circuitBreakerMock = require('../../../utils/circuit-breaker.ts').CircuitBreaker;
       expect(circuitBreakerMock.prototype.execute).toHaveBeenCalled();
     });
   });
@@ -371,8 +371,8 @@ describe('VertexAIClient', () => {
       await vertexAIClient.generateEmbedding('test text', 'test-model', undefined, 'test-user');
 
       // Check that the CostTracker.trackApiCall was called
-      const CostTracker = require('../../../monitoring/cost-tracker').CostTracker;
-      const ApiCallType = require('../../../monitoring/cost-tracker').ApiCallType;
+      const CostTracker = require('../../../monitoring/cost-tracker.ts').CostTracker;
+      const ApiCallType = require('../../../monitoring/cost-tracker.ts').ApiCallType;
 
       expect(CostTracker.prototype.trackApiCall).toHaveBeenCalledWith(
         ApiCallType.TEXT_EMBEDDING,
@@ -389,8 +389,8 @@ describe('VertexAIClient', () => {
       await vertexAIClient.generateEmbeddingsBatch(['text1', 'text2'], 'test-model', undefined, 'test-user');
 
       // Check that the CostTracker.trackApiCall was called
-      const CostTracker = require('../../../monitoring/cost-tracker').CostTracker;
-      const ApiCallType = require('../../../monitoring/cost-tracker').ApiCallType;
+      const CostTracker = require('../../../monitoring/cost-tracker.ts').CostTracker;
+      const ApiCallType = require('../../../monitoring/cost-tracker.ts').ApiCallType;
 
       expect(CostTracker.prototype.trackApiCall).toHaveBeenCalledWith(
         ApiCallType.TEXT_EMBEDDING,
@@ -447,7 +447,7 @@ describe('VertexAIClient', () => {
       expect(ServiceAccountManager.prototype.getAccessToken).toHaveBeenCalled();
 
       // Check that the CircuitBreaker.execute was called
-      const circuitBreakerMock = require('../../../utils/circuit-breaker').CircuitBreaker;
+      const circuitBreakerMock = require('../../../utils/circuit-breaker.ts').CircuitBreaker;
       expect(circuitBreakerMock.prototype.execute).toHaveBeenCalled();
 
       // Check that the PredictionServiceClient.predict was called with the right parameters
