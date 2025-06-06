@@ -370,14 +370,14 @@ This file tracks the progress of implementing the navigation and entity relation
   - Ensured consistent styling across all entity types
 
 ### 4. Visual Representation of Relationships (Estimated Effort: 12-15 hours)
-- [ ] **Create RelationshipPreview Component**
-  - [ ] Implement `src/components/relationships/RelationshipPreview.tsx`
-  - [ ] Use Mantine's `Paper`, `Text`, `Group`, and `Avatar` components
-  - [ ] Add support for showing related entities with proper styling
-  - [ ] Create visual indicators for relationship types using `Badge` and `ThemeIcon`
-  - [ ] Implement loading states with `Skeleton` component
-  - [ ] Add empty states with call-to-action buttons
-  - [ ] Ensure proper error handling and fallbacks
+- [x] **Create RelationshipPreview Component**
+  - [x] Implement `src/components/relationships/RelationshipPreview.tsx`
+  - [x] Use Mantine's `Paper`, `Text`, `Group`, and `Avatar` components
+  - [x] Add support for showing related entities with proper styling
+  - [x] Create visual indicators for relationship types using `Badge` and `ThemeIcon`
+  - [x] Implement loading states with `Skeleton` component
+  - [x] Add empty states with call-to-action buttons
+  - [x] Ensure proper error handling and fallbacks
 
   *Implementation Plan:*
   - Create a reusable component that displays a preview of relationships for an entity
@@ -390,15 +390,15 @@ This file tracks the progress of implementing the navigation and entity relation
   - Implement proper TypeScript interfaces for component props
   - Add comprehensive JSDoc comments for better code documentation
 
-- [ ] **Develop MiniRelationshipWeb Component**
-  - [ ] Create compact visualization component
-  - [ ] Integrate D3.js for graph rendering with proper TypeScript typings
-  - [ ] Implement force-directed graph layout for relationship visualization
-  - [ ] Add interactive elements (hover, click) with tooltips
-  - [ ] Create zoom and pan functionality for larger graphs
-  - [ ] Ensure responsive behavior for different screen sizes
-  - [ ] Optimize performance for large relationship networks
-  - [ ] Add accessibility features for keyboard navigation
+- [x] **Develop MiniRelationshipWeb Component**
+  - [x] Create compact visualization component
+  - [x] Integrate D3.js for graph rendering with proper TypeScript typings
+  - [x] Implement force-directed graph layout for relationship visualization
+  - [x] Add interactive elements (hover, click) with tooltips
+  - [x] Create zoom and pan functionality for larger graphs
+  - [x] Ensure responsive behavior for different screen sizes
+  - [x] Optimize performance for large relationship networks
+  - [x] Add accessibility features for keyboard navigation
 
   *Implementation Plan:*
   - Create a new component in `src/components/relationships/visualizations/MiniRelationshipWeb.tsx`
@@ -414,9 +414,9 @@ This file tracks the progress of implementing the navigation and entity relation
   - Add comprehensive documentation and usage examples
 
 - [ ] **Enhance Entity Detail Pages**
-  - [ ] Add relationship section to all entity detail pages
-  - [ ] Use Mantine's `Tabs` component for different relationship views
-  - [ ] Implement `Card` components for relationship items
+  - [x] Add relationship section to all entity detail pages
+  - [x] Use Mantine's `Tabs` component for different relationship views
+  - [x] Implement `Card` components for relationship items
   - [ ] Add actions for managing relationships using `ActionIcon` and `Menu`
   - [ ] Create consistent UI across all entity types
   - [ ] Add filtering and sorting options for relationships

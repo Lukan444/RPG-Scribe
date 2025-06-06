@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import {
   Container,
@@ -42,6 +42,8 @@ import {
   IconRelationManyToMany,
   IconNotes
 } from '@tabler/icons-react';
+import RelationshipPreview from '../relationships/RelationshipPreview';
+import MiniRelationshipWeb from '../relationships/visualizations/MiniRelationshipWeb';
 import { modals } from '@mantine/modals';
 import { useTranslation } from 'react-i18next';
 
@@ -63,6 +65,24 @@ const CharacterPage: React.FC = () => {
   const [relationships, setRelationships] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState<string | null>('overview');
   const [isOwner, setIsOwner] = useState<boolean>(false);
+
+  const graphNodes = useMemo(() => {
+    const map: Record<string, any> = {};
+    if (character) {
+      map[character.id] = { id: character.id, name: character.name };
+    }
+    relationships.forEach((rel) => {
+      map[rel.source.id] = { id: rel.source.id, name: rel.source.name };
+      map[rel.target.id] = { id: rel.target.id, name: rel.target.name };
+    });
+    return Object.values(map);
+  }, [relationships, character]);
+
+  const graphLinks = useMemo(
+    () =>
+      relationships.map((rel) => ({ source: rel.source.id, target: rel.target.id })),
+    [relationships]
+  );
 
   // Services
   const campaignService = new CampaignService();
@@ -401,49 +421,10 @@ const CharacterPage: React.FC = () => {
             )}
           </Group>
 
-          {relationships.length > 0 ? (
-            <SimpleGrid cols={2} spacing="md">
-              {relationships.map((relationship) => (
-                <Card key={relationship.id} shadow="sm" padding="lg" radius="md" withBorder>
-                  <Group justify="space-between" mb="md">
-                    <Badge color="blue">{relationship.type}</Badge>
-                    <Badge color="gray">{relationship.subtype}</Badge>
-                  </Group>
-
-                  <Group>
-                    <Avatar
-                      src={relationship.source.id === characterId ? relationship.target.imageURL : relationship.source.imageURL}
-                      radius="xl"
-                    />
-                    <div>
-                      <Text fw={500}>
-                        {relationship.source.id === characterId ? relationship.target.name : relationship.source.name}
-                      </Text>
-                      <Text size="xs" color="dimmed">
-                        {relationship.source.id === characterId ? relationship.target.type : relationship.source.type}
-                      </Text>
-                    </div>
-                  </Group>
-
-                  {relationship.properties && Object.keys(relationship.properties).length > 0 && (
-                    <List size="sm" mt="md">
-                      {Object.entries(relationship.properties).map(([key, value]) => (
-                        <List.Item key={key}>
-                          <Text size="sm">
-                            <b>{key}:</b> {value?.toString()}
-                          </Text>
-                        </List.Item>
-                      ))}
-                    </List>
-                  )}
-                </Card>
-              ))}
-            </SimpleGrid>
-          ) : (
-            <Text color="dimmed" ta="center" py="xl">
-              No relationships found
-            </Text>
-          )}
+          <Stack gap="md">
+            <MiniRelationshipWeb nodes={graphNodes} links={graphLinks} width={400} height={300} />
+            <RelationshipPreview relationships={relationships} entityId={characterId || ''} />
+          </Stack>
         </Tabs.Panel>
 
         <Tabs.Panel value="notes" pt="xl">
