@@ -133,6 +133,9 @@ export const ModalEntityForm = <T extends BaseEntity = BaseEntity>({
   const [activeTab, setActiveTab] = useState<string>('');
   const [isDirty, setIsDirty] = useState(false);
 
+  // Resolve the role early so hooks can reference it
+  const role = userRole || user?.role || 'user';
+
   // Get form configuration
   const config = useMemo(() => {
     const baseConfig = getEntityFormConfig(entityType);
@@ -191,7 +194,6 @@ export const ModalEntityForm = <T extends BaseEntity = BaseEntity>({
   }, [form.values, initialValues]);
 
   // Form context for child components
-  const role = userRole || user?.role || 'user';
   const formContext: FormContext = useMemo(() => ({
     entityType,
     mode,
