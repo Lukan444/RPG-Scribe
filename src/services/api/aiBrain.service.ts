@@ -196,6 +196,8 @@ export class AIBrainService {
           campaignId,
           entityId,
           entityType,
+          submittedBy: 'ai-system',
+          submittedAt: new Date(),
           proposalType: ProposalType.UPDATE,
           status: ProposalStatus.PENDING,
           changes: [
