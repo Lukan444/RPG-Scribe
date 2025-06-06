@@ -600,8 +600,6 @@ export function DualTimelineProvider({ children, config }: DualTimelineProviderP
     toggleSync
   };
 
-
-
   // Memoize context value to prevent provider re-instantiation
   const contextValue = useMemo((): DualTimelineContextValue => ({
     state,
