@@ -13,7 +13,8 @@ import {
   FormTab,
   FormField,
   FormFieldType,
-  FormFieldValidation
+  FormFieldValidation,
+  FormContext
 } from '../types/forms';
 
 // Validation rules commonly used across forms
@@ -78,10 +79,8 @@ const commonFields: Record<string, Omit<FormField, 'id'>> = {
     placeholder: 'Enter secret information visible only to GMs',
     rows: 3,
     validation: commonValidations.description,
-    conditional: (values: any) => {
-      // TODO: Add user context to conditional logic
-      // For now, always show GM fields
-      return true;
+    conditional: (_values: any, context?: FormContext) => {
+      return context?.userRole === 'gamemaster' || context?.userRole === 'admin';
     }
   }
 };
@@ -259,10 +258,8 @@ const factionFormConfig: EntityFormConfig = {
       icon: React.createElement(IconEyeOff, { size: 16 }),
       description: 'Secret information visible only to Game Masters',
       order: 5,
-      conditional: (values: any) => {
-        // TODO: Add user context to conditional logic
-        // For now, always show GM fields
-        return true;
+      conditional: (_values: any, context?: FormContext) => {
+        return context?.userRole === 'gamemaster' || context?.userRole === 'admin';
       },
       fields: [
         {

@@ -63,7 +63,7 @@ export interface FormField {
   description?: string;
   defaultValue?: any;
   validation?: FormFieldValidation;
-  conditional?: (values: any) => boolean;
+  conditional?: (values: any, context?: FormContext) => boolean;
   options?: FormFieldOption[];
   entityType?: EntityType;
   multiple?: boolean;
@@ -102,7 +102,7 @@ export interface FormTab {
   icon?: ReactNode;
   description?: string;
   fields: FormField[];
-  conditional?: (values: any, user?: any) => boolean;
+  conditional?: (values: any, context?: FormContext) => boolean;
   order: number;
 }
 
@@ -133,6 +133,7 @@ export interface ModalEntityFormProps<T extends BaseEntity = BaseEntity> {
   initialValues?: Partial<T>;
   mode?: FormMode;
   config?: Partial<EntityFormConfig>;
+  userRole?: 'admin' | 'gamemaster' | 'player' | 'user';
 }
 
 // Form submission data
@@ -182,6 +183,7 @@ export interface FormContext {
   errors: Record<string, string>;
   isSubmitting: boolean;
   isDirty: boolean;
+  userRole?: 'admin' | 'gamemaster' | 'player' | 'user';
 }
 
 // User role for conditional field rendering
