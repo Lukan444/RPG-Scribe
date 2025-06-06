@@ -47,13 +47,6 @@ function timelineReducer(state: TimelineState, action: TimelineAction): Timeline
       return { ...state, error: action.payload, loading: false };
     
     case 'SET_EVENTS':
-      console.log('🔧 TimelineContext Reducer - SET_EVENTS:', {
-        actionType: action.type,
-        payloadLength: action.payload?.length || 0,
-        payloadSample: action.payload?.slice(0, 2).map(e => ({ id: e.id, title: e.title })) || [],
-        currentStateEventsLength: state.events.length,
-        loading: state.loading
-      });
       return {
         ...state,
         events: action.payload,
@@ -119,34 +112,30 @@ const TimelineContext = createContext<UseTimelineReturn | null>(null);
 interface TimelineProviderProps {
   children: React.ReactNode;
   initialConfig?: Partial<TimelineConfig>;
+  timelineService?: TimelineService;
 }
 
 /**
  * Timeline Provider Component
  */
-export function TimelineProvider({ children, initialConfig }: TimelineProviderProps) {
+export function TimelineProvider({ children, initialConfig, timelineService: injectedService }: TimelineProviderProps) {
   const [state, dispatch] = useReducer(timelineReducer, {
     ...initialState,
     config: { ...initialState.config, ...initialConfig }
   });
 
-  // Add provider instance logging to debug context mismatch
-  const providerInstanceId = useMemo(() => Math.random().toString(36).substr(2, 9), []);
-  console.log('🏭 TimelineProvider instance:', {
-    providerInstanceId,
-    initialConfig,
-    stateEventsCount: state.events.length,
-    stateLoading: state.loading,
-    dispatchFunction: typeof dispatch
-  });
+  // Initialize timeline service instance when config changes
 
   // Timeline service instance
   const timelineService = useMemo(() => {
+    if (injectedService) {
+      return injectedService;
+    }
     if (state.config.worldId) {
       return new TimelineService(state.config.worldId, state.config.campaignId || 'default');
     }
     return null;
-  }, [state.config.worldId, state.config.campaignId]);
+  }, [injectedService, state.config.worldId, state.config.campaignId]);
 
   /**
    * Transform RPG events to timeline items
@@ -308,10 +297,7 @@ export function TimelineProvider({ children, initialConfig }: TimelineProviderPr
    * Load timeline events
    */
   const loadEvents = useCallback(async () => {
-    console.log('🔄 TimelineContext.loadEvents called with config:', {
-      worldId: state.config.worldId,
-      campaignId: state.config.campaignId
-    });
+    // Load events from Firestore using current config
 
     if (!state.config.worldId || !state.config.campaignId) {
       console.error('❌ Missing required config:', { worldId: state.config.worldId, campaignId: state.config.campaignId });
@@ -323,7 +309,6 @@ export function TimelineProvider({ children, initialConfig }: TimelineProviderPr
     try {
       dispatch({ type: 'SET_LOADING', payload: true });
       dispatch({ type: 'SET_ERROR', payload: null });
-      console.log('⏳ Loading events from Firebase...');
 
       // Load events directly from Firebase events collection
       const { collection, getDocs, query, where, orderBy } = await import('firebase/firestore');
@@ -336,15 +321,12 @@ export function TimelineProvider({ children, initialConfig }: TimelineProviderPr
         orderBy('date', 'asc')
       );
 
-      console.log('🔍 Executing Firebase query for campaignId:', state.config.campaignId);
       const querySnapshot = await getDocs(q);
-      console.log('📊 Firebase query returned', querySnapshot.size, 'documents');
 
       // Convert Firestore events to RPG timeline events
       const events: RPGTimelineEvent[] = [];
       querySnapshot.forEach((doc) => {
         const eventData = doc.data();
-        console.log('📄 Processing event document:', doc.id, eventData);
 
         // Convert Firestore timestamp to Date
         let startDate = new Date();
@@ -381,14 +363,7 @@ export function TimelineProvider({ children, initialConfig }: TimelineProviderPr
         events.push(event);
       });
 
-      console.log(`📅 Loaded ${events.length} timeline events for campaign ${state.config.campaignId}`);
-      console.log('🚀 About to dispatch SET_EVENTS with events:', {
-        eventsLength: events.length,
-        eventsPreview: events.slice(0, 2).map(e => ({ id: e.id, title: e.title })),
-        dispatchFunction: typeof dispatch
-      });
       dispatch({ type: 'SET_EVENTS', payload: events });
-      console.log('✅ SET_EVENTS dispatch completed');
       dispatch({ type: 'SET_LOADING', payload: false });
     } catch (error) {
       console.error('Error loading timeline events:', error);
@@ -401,58 +376,92 @@ export function TimelineProvider({ children, initialConfig }: TimelineProviderPr
    * Create new event
    */
   const createEvent = useCallback(async (eventData: Omit<RPGTimelineEvent, 'id' | 'createdAt' | 'updatedAt' | 'createdBy'>) => {
+    if (!timelineService) {
+      throw new Error('Timeline service not initialized');
+    }
+
     const newEvent: RPGTimelineEvent = {
       ...eventData,
       id: `event-${Date.now()}`,
       createdAt: new Date(),
       updatedAt: new Date(),
-      createdBy: 'current-user' // TODO: Get from auth context
+      createdBy: 'current-user'
     };
 
+    const previousEvents = state.events;
     dispatch({ type: 'ADD_EVENT', payload: newEvent });
 
-    // TODO: Persist to backend
     try {
-      // await timelineService.createEvent(newEvent);
+      const entryId = await timelineService.createTimelineEntry({
+        entryType: TimelineEntryType.EVENT,
+        associatedEntityId: newEvent.entityId || '',
+        associatedEntityType: newEvent.entityType || EntityType.EVENT,
+        title: newEvent.title,
+        position: { inGameTimestamp: newEvent.startDate },
+        dualTimestamp: { inGameTime: newEvent.startDate },
+        summary: newEvent.description,
+        importance: newEvent.importance,
+        participants: newEvent.participants,
+        locationId: newEvent.location,
+        isSecret: !newEvent.playerVisible
+      });
+
+      dispatch({ type: 'UPDATE_EVENT', payload: { id: newEvent.id, updates: { id: entryId } } });
     } catch (error) {
       console.error('Error creating event:', error);
-      // Rollback optimistic update
-      dispatch({ type: 'DELETE_EVENT', payload: newEvent.id });
+      dispatch({ type: 'SET_EVENTS', payload: previousEvents });
       throw error;
     }
-  }, []);
+  }, [timelineService, state.events]);
 
   /**
    * Update existing event
    */
   const updateEvent = useCallback(async (id: string, updates: Partial<RPGTimelineEvent>) => {
+    if (!timelineService) {
+      throw new Error('Timeline service not initialized');
+    }
+
+    const previousEvents = state.events;
     dispatch({ type: 'UPDATE_EVENT', payload: { id, updates } });
 
-    // TODO: Persist to backend
     try {
-      // await timelineService.updateEvent(id, updates);
+      await timelineService.updateTimelineEntry(id, {
+        title: updates.title,
+        position: updates.startDate ? { inGameTimestamp: updates.startDate } : undefined,
+        dualTimestamp: updates.startDate ? { inGameTime: updates.startDate } : undefined,
+        summary: updates.description,
+        importance: updates.importance,
+        participants: updates.participants,
+        locationId: updates.location,
+        isSecret: updates.playerVisible !== undefined ? !updates.playerVisible : undefined
+      });
     } catch (error) {
       console.error('Error updating event:', error);
-      // TODO: Rollback optimistic update
+      dispatch({ type: 'SET_EVENTS', payload: previousEvents });
       throw error;
     }
-  }, []);
+  }, [timelineService, state.events]);
 
   /**
    * Delete event
    */
   const deleteEvent = useCallback(async (id: string) => {
+    if (!timelineService) {
+      throw new Error('Timeline service not initialized');
+    }
+
+    const previousEvents = state.events;
     dispatch({ type: 'DELETE_EVENT', payload: id });
 
-    // TODO: Persist to backend
     try {
-      // await timelineService.deleteEvent(id);
+      await timelineService.deleteTimelineEntry(id);
     } catch (error) {
       console.error('Error deleting event:', error);
-      // TODO: Rollback optimistic update
+      dispatch({ type: 'SET_EVENTS', payload: previousEvents });
       throw error;
     }
-  }, []);
+  }, [timelineService, state.events]);
 
   /**
    * Other actions
@@ -479,11 +488,6 @@ export function TimelineProvider({ children, initialConfig }: TimelineProviderPr
 
   // Compute derived state using useMemo to prevent infinite loops
   const derivedState = useMemo(() => {
-    console.log('🔄 TimelineContext computing derived state:', {
-      eventsCount: state.events.length,
-      filterBy: state.config.filterBy,
-      groupBy: state.config.groupBy
-    });
 
     const filteredEvents = state.config.filterBy
       ? filterEvents(state.events, state.config.filterBy)
