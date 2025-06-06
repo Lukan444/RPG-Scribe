@@ -57,6 +57,8 @@ export interface AIProposal {
   campaignId: string;
   entityId?: string;
   entityType?: EntityType;
+  submittedBy: string;
+  submittedAt: Date;
   proposalType: ProposalType;
   status: ProposalStatus;
   changes: ChangeField[];
@@ -77,11 +79,13 @@ export interface AIProposalCreationParams {
   campaignId: string;
   entityId?: string;
   entityType?: EntityType;
+  submittedBy: string;
   proposalType: ProposalType;
   changes: ChangeField[];
   relationshipChanges?: RelationshipChange[];
   aiConfidence: number;
   aiReasoning: string;
+  submittedAt?: Date;
 }
 
 /**

@@ -9,7 +9,6 @@ import {
   query,
   where,
   orderBy,
-  limit,
   serverTimestamp,
   Timestamp
 } from 'firebase/firestore';
@@ -42,33 +41,14 @@ export class AIBrainService {
    */
   async getProposalsForCampaign(campaignId: string): Promise<AIProposal[]> {
     try {
-      // In a real implementation, this would fetch proposals from Firestore
-      // For now, we'll return mock data
-
-      const mockProposals: AIProposal[] = [
-        {
-          id: '1',
-          campaignId,
-          entityId: 'character-1',
-          entityType: EntityType.CHARACTER,
-          proposalType: ProposalType.UPDATE,
-          status: ProposalStatus.PENDING,
-          changes: [
-            {
-              fieldName: 'description',
-              oldValue: 'A wizard',
-              newValue: 'A powerful wizard with a long white beard and a staff. Known for his wisdom and magical abilities.',
-              confidence: 0.85,
-              reasoning: 'The current description is very brief. Adding more details about appearance and abilities provides more context for the character.'
-            }
-          ],
-          createdAt: new Date(),
-          aiConfidence: 0.85,
-          aiReasoning: 'This character has minimal description. Adding these details will make the character more three-dimensional.'
-        }
-      ];
-
-      return mockProposals;
+      const proposalsRef = collection(db, 'proposals');
+      const q = query(
+        proposalsRef,
+        where('campaignId', '==', campaignId),
+        orderBy('submittedAt', 'desc')
+      );
+      const snapshot = await getDocs(q);
+      return snapshot.docs.map(doc => this.formatProposal({ id: doc.id, ...doc.data() }));
     } catch (error) {
       console.error('Error getting AI proposals:', error);
       throw error;
@@ -88,33 +68,16 @@ export class AIBrainService {
     entityType: EntityType
   ): Promise<AIProposal[]> {
     try {
-      // In a real implementation, this would fetch proposals from Firestore
-      // For now, we'll return mock data
-
-      const mockProposals: AIProposal[] = [
-        {
-          id: '1',
-          campaignId,
-          entityId,
-          entityType,
-          proposalType: ProposalType.UPDATE,
-          status: ProposalStatus.PENDING,
-          changes: [
-            {
-              fieldName: 'description',
-              oldValue: 'A wizard',
-              newValue: 'A powerful wizard with a long white beard and a staff. Known for his wisdom and magical abilities.',
-              confidence: 0.85,
-              reasoning: 'The current description is very brief. Adding more details about appearance and abilities provides more context for the character.'
-            }
-          ],
-          createdAt: new Date(),
-          aiConfidence: 0.85,
-          aiReasoning: 'This character has minimal description. Adding these details will make the character more three-dimensional.'
-        }
-      ];
-
-      return mockProposals;
+      const proposalsRef = collection(db, 'proposals');
+      const q = query(
+        proposalsRef,
+        where('campaignId', '==', campaignId),
+        where('entityId', '==', entityId),
+        where('entityType', '==', entityType),
+        orderBy('submittedAt', 'desc')
+      );
+      const snapshot = await getDocs(q);
+      return snapshot.docs.map(doc => this.formatProposal({ id: doc.id, ...doc.data() }));
     } catch (error) {
       console.error('Error getting AI proposals for entity:', error);
       throw error;
@@ -128,17 +91,18 @@ export class AIBrainService {
    */
   async createProposal(proposal: AIProposalCreationParams): Promise<AIProposal> {
     try {
-      // In a real implementation, this would create a proposal in Firestore
-      // For now, we'll return mock data
-
-      const mockProposal: AIProposal = {
-        id: Math.random().toString(36).substring(2, 9),
+      const proposalsRef = collection(db, 'proposals');
+      const newProposal = {
         ...proposal,
         status: ProposalStatus.PENDING,
-        createdAt: new Date()
+        submittedBy: proposal.submittedBy,
+        submittedAt: proposal.submittedAt ? proposal.submittedAt : serverTimestamp(),
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
       };
+      const docRef = await addDoc(proposalsRef, newProposal);
 
-      return mockProposal;
+      return this.formatProposal({ id: docRef.id, ...newProposal });
     } catch (error) {
       console.error('Error creating AI proposal:', error);
       throw error;
@@ -153,37 +117,56 @@ export class AIBrainService {
    */
   async updateProposal(id: string, updates: AIProposalUpdateParams): Promise<AIProposal> {
     try {
-      // In a real implementation, this would update a proposal in Firestore
-      // For now, we'll return mock data
-
-      const mockProposal: AIProposal = {
-        id,
-        campaignId: '1',
-        entityId: 'character-1',
-        entityType: EntityType.CHARACTER,
-        proposalType: ProposalType.UPDATE,
-        status: updates.status || ProposalStatus.PENDING,
-        changes: [
-          {
-            fieldName: 'description',
-            oldValue: 'A wizard',
-            newValue: 'A powerful wizard with a long white beard and a staff. Known for his wisdom and magical abilities.',
-            confidence: 0.85,
-            reasoning: 'The current description is very brief. Adding more details about appearance and abilities provides more context for the character.'
-          }
-        ],
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        reviewedAt: updates.status ? new Date() : undefined,
-        reviewedBy: updates.reviewedBy,
-        userFeedback: updates.userFeedback,
-        aiConfidence: 0.85,
-        aiReasoning: 'This character has minimal description. Adding these details will make the character more three-dimensional.'
+      const proposalRef = doc(db, 'proposals', id);
+      const updateData: any = {
+        ...updates,
+        updatedAt: serverTimestamp()
       };
 
-      return mockProposal;
+      if (updates.status && updates.status !== ProposalStatus.PENDING) {
+        updateData.reviewedAt = serverTimestamp();
+      }
+
+      await updateDoc(proposalRef, updateData);
+
+      const updatedSnap = await getDoc(proposalRef);
+      if (!updatedSnap.exists()) {
+        throw new Error('Proposal not found after update');
+      }
+
+      return this.formatProposal({ id: updatedSnap.id, ...updatedSnap.data() });
     } catch (error) {
       console.error('Error updating AI proposal:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get a proposal by ID
+   * @param id Proposal ID
+   */
+  async getProposalById(id: string): Promise<AIProposal | null> {
+    try {
+      const proposalRef = doc(db, 'proposals', id);
+      const snap = await getDoc(proposalRef);
+      if (!snap.exists()) return null;
+      return this.formatProposal({ id: snap.id, ...snap.data() });
+    } catch (error) {
+      console.error('Error getting proposal:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Delete a proposal
+   * @param id Proposal ID
+   */
+  async deleteProposal(id: string): Promise<void> {
+    try {
+      const proposalRef = doc(db, 'proposals', id);
+      await deleteDoc(proposalRef);
+    } catch (error) {
+      console.error('Error deleting AI proposal:', error);
       throw error;
     }
   }
@@ -353,6 +336,20 @@ export class AIBrainService {
       console.error('Error adding message to AI conversation:', error);
       throw error;
     }
+  }
+
+  /**
+   * Format proposal data from Firestore
+   * @param data Raw Firestore data
+   */
+  private formatProposal(data: any): AIProposal {
+    return {
+      ...data,
+      createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate() : data.createdAt,
+      updatedAt: data.updatedAt instanceof Timestamp ? data.updatedAt.toDate() : data.updatedAt,
+      reviewedAt: data.reviewedAt instanceof Timestamp ? data.reviewedAt.toDate() : data.reviewedAt,
+      submittedAt: data.submittedAt instanceof Timestamp ? data.submittedAt.toDate() : data.submittedAt
+    } as AIProposal;
   }
 }
 

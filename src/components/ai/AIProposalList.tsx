@@ -16,6 +16,7 @@ import { IconFilter, IconRefresh, IconBrain } from '@tabler/icons-react';
 import { AIProposalCard } from './AIProposalCard';
 import { AIProposal, ProposalStatus, ProposalType, ChangeField, RelationshipChange } from '../../models/AIProposal';
 import { EntityType } from '../../models/Relationship';
+import { aiBrainService } from '../../services/api/aiBrain.service';
 
 /**
  * AI Proposal List props
@@ -53,99 +54,18 @@ export function AIProposalList({
       try {
         setLoading(true);
         setError(null);
-        
-        // In a real implementation, this would call an API to fetch proposals
-        // For now, we'll create mock data
-        
-        // Mock proposals
-        const mockProposals: AIProposal[] = [
-          {
-            id: '1',
-            campaignId: campaignId || '1',
-            entityId: entityId || 'character-1',
-            entityType: entityType || EntityType.CHARACTER,
-            proposalType: ProposalType.UPDATE,
-            status: ProposalStatus.PENDING,
-            changes: [
-              {
-                fieldName: 'description',
-                oldValue: 'A wizard',
-                newValue: 'A powerful wizard with a long white beard and a staff. Known for his wisdom and magical abilities.',
-                confidence: 0.85,
-                reasoning: 'The current description is very brief. Adding more details about appearance and abilities provides more context for the character.'
-              },
-              {
-                fieldName: 'background',
-                oldValue: '',
-                newValue: 'Studied magic from a young age under the tutelage of Saruman. Traveled extensively throughout Middle-earth.',
-                confidence: 0.75,
-                reasoning: 'Adding background information helps establish the character\'s history and connections to the world.'
-              }
-            ],
-            createdAt: new Date(),
-            aiConfidence: 0.8,
-            aiReasoning: 'This character has minimal description and background information. Adding these details will make the character more three-dimensional and provide hooks for storytelling.'
-          },
-          {
-            id: '2',
-            campaignId: campaignId || '1',
-            entityId: entityId || 'location-1',
-            entityType: EntityType.LOCATION,
-            proposalType: ProposalType.UPDATE,
-            status: ProposalStatus.APPROVED,
-            changes: [
-              {
-                fieldName: 'description',
-                oldValue: 'A dark land',
-                newValue: 'A dark, volcanic land surrounded by mountains. The air is thick with ash and the ground is barren.',
-                confidence: 0.9,
-                reasoning: 'The current description is very brief. Adding more sensory details creates a more vivid picture of the location.'
-              }
-            ],
-            relationshipChanges: [
-              {
-                sourceEntityId: 'location-1',
-                sourceEntityType: EntityType.LOCATION,
-                targetEntityId: 'character-3',
-                targetEntityType: EntityType.CHARACTER,
-                relationshipType: 'CONTAINS',
-                action: 'ADD',
-                confidence: 0.7,
-                reasoning: 'Based on the campaign narrative, this character is currently located in this area.'
-              }
-            ],
-            createdAt: new Date(Date.now() - 86400000), // 1 day ago
-            reviewedAt: new Date(),
-            reviewedBy: 'user-1',
-            aiConfidence: 0.85,
-            aiReasoning: 'This location lacks descriptive details and established relationships with characters who are known to be there.'
-          },
-          {
-            id: '3',
-            campaignId: campaignId || '1',
-            entityId: entityId || 'item-1',
-            entityType: EntityType.ITEM,
-            proposalType: ProposalType.UPDATE,
-            status: ProposalStatus.REJECTED,
-            changes: [
-              {
-                fieldName: 'description',
-                oldValue: 'A powerful ring',
-                newValue: 'A simple gold ring that grants invisibility to the wearer but corrupts their soul over time.',
-                confidence: 0.95,
-                reasoning: 'The current description doesn\'t mention the ring\'s powers or drawbacks, which are essential to its role in the story.'
-              }
-            ],
-            createdAt: new Date(Date.now() - 172800000), // 2 days ago
-            reviewedAt: new Date(Date.now() - 86400000), // 1 day ago
-            reviewedBy: 'user-1',
-            aiConfidence: 0.9,
-            aiReasoning: 'This item lacks information about its magical properties and effects on the user, which are crucial for gameplay and storytelling.',
-            userFeedback: 'I prefer to keep the description vague for now as players haven\'t discovered its properties yet.'
-          }
-        ];
-        
-        setProposals(mockProposals);
+        let data: AIProposal[] = [];
+        if (entityId && entityType) {
+          data = await aiBrainService.getProposalsForEntity(
+            campaignId || '',
+            entityId,
+            entityType
+          );
+        } else if (campaignId) {
+          data = await aiBrainService.getProposalsForCampaign(campaignId);
+        }
+
+        setProposals(data);
       } catch (err) {
         console.error('Error loading proposals:', err);
         setError('Failed to load AI proposals');
@@ -158,71 +78,40 @@ export function AIProposalList({
   }, [campaignId, entityId, entityType]);
   
   // Handle approve proposal
-  const handleApproveProposal = (proposalId: string, feedback?: string) => {
-    // In a real implementation, this would call an API to approve the proposal
-    console.log(`Approve proposal ${proposalId}`, feedback);
-    
-    // Update local state
-    setProposals(prev => 
-      prev.map(proposal => 
-        proposal.id === proposalId
-          ? {
-              ...proposal,
-              status: ProposalStatus.APPROVED,
-              reviewedAt: new Date(),
-              reviewedBy: 'user-1',
-              userFeedback: feedback
-            }
-          : proposal
-      )
-    );
+  const handleApproveProposal = async (proposalId: string, feedback?: string) => {
+    try {
+      const updated = await aiBrainService.updateProposal(proposalId, {
+        status: ProposalStatus.APPROVED,
+        reviewedBy: 'gm-1',
+        userFeedback: feedback
+      });
+      setProposals(prev => prev.map(p => (p.id === proposalId ? updated : p)));
+    } catch (err) {
+      console.error('Error approving proposal:', err);
+    }
   };
   
   // Handle reject proposal
-  const handleRejectProposal = (proposalId: string, feedback?: string) => {
-    // In a real implementation, this would call an API to reject the proposal
-    console.log(`Reject proposal ${proposalId}`, feedback);
-    
-    // Update local state
-    setProposals(prev => 
-      prev.map(proposal => 
-        proposal.id === proposalId
-          ? {
-              ...proposal,
-              status: ProposalStatus.REJECTED,
-              reviewedAt: new Date(),
-              reviewedBy: 'user-1',
-              userFeedback: feedback
-            }
-          : proposal
-      )
-    );
+  const handleRejectProposal = async (proposalId: string, feedback?: string) => {
+    try {
+      const updated = await aiBrainService.updateProposal(proposalId, {
+        status: ProposalStatus.REJECTED,
+        reviewedBy: 'gm-1',
+        userFeedback: feedback
+      });
+      setProposals(prev => prev.map(p => (p.id === proposalId ? updated : p)));
+    } catch (err) {
+      console.error('Error rejecting proposal:', err);
+    }
   };
   
   // Handle modify proposal
   const handleModifyProposal = (
-    proposalId: string, 
-    changes: ChangeField[], 
+    proposalId: string,
+    changes: ChangeField[],
     relationshipChanges?: RelationshipChange[]
   ) => {
-    // In a real implementation, this would call an API to modify the proposal
     console.log(`Modify proposal ${proposalId}`, changes, relationshipChanges);
-    
-    // Update local state
-    setProposals(prev => 
-      prev.map(proposal => 
-        proposal.id === proposalId
-          ? {
-              ...proposal,
-              status: ProposalStatus.MODIFIED,
-              changes,
-              relationshipChanges: relationshipChanges || proposal.relationshipChanges,
-              reviewedAt: new Date(),
-              reviewedBy: 'user-1'
-            }
-          : proposal
-      )
-    );
   };
   
   // Filter proposals
