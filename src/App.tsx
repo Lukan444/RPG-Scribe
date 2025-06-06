@@ -369,7 +369,9 @@ function App() {
             <Route path="events/:id" element={
               <ErrorBoundary>
                 <Suspense fallback={<LoadingFallback />}>
-                  <EventDetailPage />
+                  <RPGWorldContextWrapper>
+                    <EventDetailPage />
+                  </RPGWorldContextWrapper>
                 </Suspense>
               </ErrorBoundary>
             } />
@@ -791,7 +793,9 @@ function App() {
               <Route path=":worldId/events/:id" element={
                 <ErrorBoundary>
                   <Suspense fallback={<LoadingFallback />}>
-                    <EventDetailPage />
+                    <RPGWorldContextWrapper>
+                      <EventDetailPage />
+                    </RPGWorldContextWrapper>
                   </Suspense>
                 </ErrorBoundary>
               } />

@@ -183,7 +183,32 @@
       "noResults": "No results found",
       "searchIn": "Search in {{entityType}}",
       "advancedSearch": "Advanced Search",
-      "clearSearch": "Clear Search"
+      "clearSearch": "Clear Search",
+      "aiSearch": {
+        "placeholder": "Ask AI: 'Find characters related to dragons' or 'Show me tavern locations'...",
+        "placeholderShort": "Ask AI to search...",
+        "searchResults": "Search Results",
+        "suggestions": "Suggestions",
+        "noResults": "No results found",
+        "noResultsDescription": "Try a different search term or use natural language queries like \"characters in taverns\" or \"magical weapons\"",
+        "badges": {
+          "exact": "Exact",
+          "aiMatch": "AI Match",
+          "keyword": "Keyword"
+        },
+        "tooltips": {
+          "openSearch": "Press Cmd+K to search",
+          "aiPowered": "AI-powered semantic match",
+          "confidence": "Confidence: {{percent}}%",
+          "connectedEntities": "Connected entities"
+        },
+        "accessibility": {
+          "searchInput": "AI search input",
+          "searchOverlay": "AI search overlay",
+          "searchResult": "Search result for {{name}}",
+          "closeSearch": "Close search overlay"
+        }
+      }
     },
     "pagination": {
       "page": "Page",

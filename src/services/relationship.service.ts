@@ -97,22 +97,12 @@ export class RelationshipService extends EnhancedFirestoreService<Relationship> 
    * @param campaignId Campaign ID
    */
   private constructor(worldId: string, campaignId: string) {
-    // Handle default instance specially to avoid invalid Firestore paths
-    if (worldId === 'default' && campaignId === 'default') {
-      // Use a valid path that won't cause errors but won't return real data
-      super('relationships', {
-        defaultCountCacheTTL: 10 * 60 * 1000, // 10 minutes
-        countThreshold: 3 // Recalculate after 3 changes
-      });
-    } else {
-      // Ensure we don't have empty segments in the path
-      const sanitizedWorldId = worldId || 'unknown';
-      const sanitizedCampaignId = campaignId || 'unknown';
-      super(`rpgworlds/${sanitizedWorldId}/campaigns/${sanitizedCampaignId}/relationships`, {
-        defaultCountCacheTTL: 10 * 60 * 1000, // 10 minutes
-        countThreshold: 3 // Recalculate after 3 changes
-      });
-    }
+    // All relationships are stored in the top-level 'relationships' collection
+    // with worldId and campaignId as fields, not in nested subcollections
+    super('relationships', {
+      defaultCountCacheTTL: 10 * 60 * 1000, // 10 minutes
+      countThreshold: 3 // Recalculate after 3 changes
+    });
 
     this.worldId = worldId;
     this.campaignId = campaignId;
@@ -359,6 +349,8 @@ export class RelationshipService extends EnhancedFirestoreService<Relationship> 
     try {
       // Get relationships where entity is source
       const sourceConstraints: QueryConstraint[] = [
+        where('worldId', '==', this.worldId),
+        where('campaignId', '==', this.campaignId),
         where('sourceId', '==', entityId),
         where('sourceType', '==', entityType)
       ];
@@ -370,6 +362,8 @@ export class RelationshipService extends EnhancedFirestoreService<Relationship> 
 
       // Get relationships where entity is target
       const targetConstraints: QueryConstraint[] = [
+        where('worldId', '==', this.worldId),
+        where('campaignId', '==', this.campaignId),
         where('targetId', '==', entityId),
         where('targetType', '==', entityType)
       ];
@@ -412,6 +406,8 @@ export class RelationshipService extends EnhancedFirestoreService<Relationship> 
 
     try {
       const sourceConstraints: QueryConstraint[] = [
+        where('worldId', '==', this.worldId),
+        where('campaignId', '==', this.campaignId),
         where('sourceId', '==', entityId),
         where('sourceType', '==', entityType)
       ];
@@ -423,6 +419,8 @@ export class RelationshipService extends EnhancedFirestoreService<Relationship> 
       );
 
       const targetConstraints: QueryConstraint[] = [
+        where('worldId', '==', this.worldId),
+        where('campaignId', '==', this.campaignId),
         where('targetId', '==', entityId),
         where('targetType', '==', entityType)
       ];

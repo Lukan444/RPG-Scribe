@@ -162,8 +162,23 @@ export function EntityCountTooltip({
               // Format creation date
               let createdText = t('tooltips.createdUnknownDate');
               try {
-                if (entity && entity.createdAt && !isNaN(entity.createdAt.getTime())) {
-                  createdText = formatDistanceToNow(entity.createdAt, { addSuffix: true });
+                if (entity && entity.createdAt) {
+                  // Handle Firebase Timestamp objects
+                  let dateObj: Date;
+                  if (typeof (entity.createdAt as any).toDate === 'function') {
+                    // Firebase Timestamp
+                    dateObj = (entity.createdAt as any).toDate();
+                  } else if (entity.createdAt instanceof Date) {
+                    // Already a Date object
+                    dateObj = entity.createdAt;
+                  } else {
+                    // Try to parse as date string or number
+                    dateObj = new Date(entity.createdAt as any);
+                  }
+
+                  if (!isNaN(dateObj.getTime())) {
+                    createdText = formatDistanceToNow(dateObj, { addSuffix: true });
+                  }
                 }
               } catch (error) {
                 console.error('Invalid date value in EntityCountTooltip:', error);

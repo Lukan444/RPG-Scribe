@@ -113,6 +113,13 @@ export function EntityCard({
 
   // Get path based on entity type
   const getEntityPath = (type: EntityType): string => {
+    // Use world-scoped route if worldId is available
+    if (worldId) {
+      const typeLower = type.toLowerCase();
+      return `/rpg-worlds/${worldId}/${typeLower}s/${id}`;
+    }
+
+    // Fallback to simple route
     const typeLower = type.toLowerCase();
     return `/${typeLower}s/${id}`;
   };

@@ -262,7 +262,32 @@
       "noResults": "Nie znaleziono wyników",
       "searchIn": "Szukaj w {{entityType}}",
       "advancedSearch": "Wyszukiwanie zaawansowane",
-      "clearSearch": "Wyczyść wyszukiwanie"
+      "clearSearch": "Wyczyść wyszukiwanie",
+      "aiSearch": {
+        "placeholder": "Zapytaj AI: 'Znajdź postacie związane ze smokami' lub 'Pokaż mi lokacje tawern'...",
+        "placeholderShort": "Zapytaj AI o wyszukiwanie...",
+        "searchResults": "Wyniki wyszukiwania",
+        "suggestions": "Sugestie",
+        "noResults": "Nie znaleziono wyników",
+        "noResultsDescription": "Spróbuj innego terminu wyszukiwania lub użyj zapytań w języku naturalnym jak \"postacie w tawernach\" lub \"magiczne bronie\"",
+        "badges": {
+          "exact": "Dokładne",
+          "aiMatch": "Dopasowanie AI",
+          "keyword": "Słowo kluczowe"
+        },
+        "tooltips": {
+          "openSearch": "Naciśnij Cmd+K aby wyszukać",
+          "aiPowered": "Semantyczne dopasowanie AI",
+          "confidence": "Pewność: {{percent}}%",
+          "connectedEntities": "Powiązane elementy"
+        },
+        "accessibility": {
+          "searchInput": "Pole wyszukiwania AI",
+          "searchOverlay": "Nakładka wyszukiwania AI",
+          "searchResult": "Wynik wyszukiwania dla {{name}}",
+          "closeSearch": "Zamknij nakładkę wyszukiwania"
+        }
+      }
     },
     "pagination": {
       "page": "Strona",

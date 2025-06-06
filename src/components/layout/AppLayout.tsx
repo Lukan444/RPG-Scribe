@@ -6,6 +6,7 @@ import { IconChevronLeft, IconChevronRight } from '@tabler/icons-react';
 import { SafeAppShell } from '../common/SafeAppShell';
 import SimpleNavbar from './SimpleNavbar';
 import UserMenu from './UserMenu';
+import { AIGlobalSearchBar } from '../search/AIGlobalSearchBar';
 import { Outlet } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
@@ -52,8 +53,8 @@ export function AppLayout() {
       }}
     >
       <SafeAppShell.Header>
-        <Group h="100%" px="md" justify="space-between">
-          <Group>
+        <Group h="100%" px="md" justify="space-between" gap="md">
+          <Group gap="md">
             <Burger
               opened={mobileOpened}
               onClick={toggleMobile}
@@ -61,7 +62,7 @@ export function AppLayout() {
               size="sm"
               color={theme.colors.gray[5]}
             />
-            <Group>
+            <Group gap="xs">
               <Image
                 src="/logo.png"
                 alt="RPG Scribe Logo"
@@ -72,8 +73,21 @@ export function AppLayout() {
                   maxWidth: '100%'
                 }}
               />
+              <Title
+                order={3}
+                visibleFrom="sm"
+                style={{
+                  color: theme.white,
+                  fontSize: 'clamp(1rem, 1.5vw, 1.25rem)'
+                }}
+              >
+                RPG Scribe
+              </Title>
             </Group>
           </Group>
+
+          {/* AI Global Search Bar */}
+          <AIGlobalSearchBar />
 
           <UserMenu />
         </Group>

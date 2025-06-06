@@ -66,7 +66,7 @@ import { ItemType } from '../../models/ItemType';
  * Displays detailed information about a story arc
  */
 export function StoryArcDetailPage() {
-  const { id = '', worldId = '', campaignId = 'default-campaign' } = useParams<{ id: string; worldId: string; campaignId?: string }>();
+  const { id = '', worldId, campaignId = 'default-campaign' } = useParams<{ id: string; worldId?: string; campaignId?: string }>();
   const navigate = useNavigate();
   const { currentUser } = useAuth();
 
@@ -89,31 +89,38 @@ export function StoryArcDetailPage() {
   // Load story arc data
   useEffect(() => {
     const fetchData = async () => {
-      if (!id || !worldId) {
-        setError('Missing story arc ID or world ID');
+      if (!id) {
+        setError('Missing story arc ID');
         setLoading(false);
         return;
       }
 
       try {
-        // Get world name
-        const rpgWorldService = new RPGWorldService();
-        const world = await rpgWorldService.getById(worldId);
-        setWorldName(world?.name || 'Unknown World');
+        // Use provided worldId or fallback to default
+        const effectiveWorldId = worldId || 'default-world';
+
+        // Get world name if worldId is provided
+        if (worldId) {
+          const rpgWorldService = new RPGWorldService();
+          const world = await rpgWorldService.getById(worldId);
+          setWorldName(world?.name || 'Unknown World');
+        } else {
+          setWorldName('Global Story Arcs');
+        }
 
         // Get story arc details
-        const storyArcService = StoryArcService.getInstance(worldId, campaignId);
+        const storyArcService = StoryArcService.getInstance(effectiveWorldId, campaignId);
         const storyArcData = await storyArcService.getById(id);
 
         if (storyArcData) {
           setStoryArc(storyArcData);
 
           // Load related entities
-          const characterService = CharacterService.getInstance(worldId, campaignId);
-          const locationService = LocationService.getInstance(worldId, campaignId);
-          const itemService = ItemService.getInstance(worldId, campaignId);
-          const factionService = FactionService.getInstance(worldId, campaignId);
-          const sessionService = SessionService.getInstance(worldId, campaignId);
+          const characterService = CharacterService.getInstance(effectiveWorldId, campaignId);
+          const locationService = LocationService.getInstance(effectiveWorldId, campaignId);
+          const itemService = ItemService.getInstance(effectiveWorldId, campaignId);
+          const factionService = FactionService.getInstance(effectiveWorldId, campaignId);
+          const sessionService = SessionService.getInstance(effectiveWorldId, campaignId);
 
           // Load parent arc if exists
           if (storyArcData.parentArcId) {
@@ -255,7 +262,8 @@ export function StoryArcDetailPage() {
   const handleDeleteStoryArc = async () => {
     if (window.confirm('Are you sure you want to delete this story arc?')) {
       try {
-        const storyArcService = StoryArcService.getInstance(worldId, campaignId);
+        const effectiveWorldId = worldId || 'default-world';
+        const storyArcService = StoryArcService.getInstance(effectiveWorldId, campaignId);
         await storyArcService.delete(id);
 
         notifications.show({

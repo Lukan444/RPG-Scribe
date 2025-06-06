@@ -40,7 +40,7 @@ import { EntityType } from '../../models/EntityType';
  * Displays detailed information about a note
  */
 export function NoteDetailPage(): JSX.Element {
-  const { id, worldId } = useParams<{ id: string; worldId: string }>();
+  const { id, worldId } = useParams<{ id: string; worldId?: string }>();
   const navigate = useNavigate();
   const { currentUser } = useAuth();
 
@@ -53,8 +53,8 @@ export function NoteDetailPage(): JSX.Element {
   // Fetch note data
   useEffect(() => {
     const fetchData = async (): Promise<void> => {
-      if (!id || !worldId) {
-        setError('Invalid note or world ID');
+      if (!id) {
+        setError('Invalid note ID');
         setLoading(false);
         return;
       }
@@ -63,13 +63,20 @@ export function NoteDetailPage(): JSX.Element {
       setError(null);
 
       try {
-        // Get world name
-        const rpgWorldService = new RPGWorldService();
-        const world = await rpgWorldService.getById(worldId);
-        setWorldName(world?.name || 'Unknown World');
+        // Use provided worldId or fallback to default
+        const effectiveWorldId = worldId || 'default-world';
+
+        // Get world name if worldId is provided
+        if (worldId) {
+          const rpgWorldService = new RPGWorldService();
+          const world = await rpgWorldService.getById(worldId);
+          setWorldName(world?.name || 'Unknown World');
+        } else {
+          setWorldName('Global Notes');
+        }
 
         // Get note
-        const noteService = NoteService.getInstance(worldId, 'default-campaign');
+        const noteService = NoteService.getInstance(effectiveWorldId, 'default-campaign');
         const fetchedNote = await noteService.getById(id);
         
         if (fetchedNote) {
@@ -155,7 +162,8 @@ export function NoteDetailPage(): JSX.Element {
   };
 
   // Format note type
-  const formatNoteType = (noteType: string): string => {
+  const formatNoteType = (noteType: string | undefined): string => {
+    if (!noteType) return 'Note';
     return noteType.charAt(0) + noteType.slice(1).toLowerCase();
   };
 

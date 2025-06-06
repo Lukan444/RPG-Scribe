@@ -46,7 +46,7 @@ import { ModelEntityType } from '../../models/ModelEntityType';
  * Displays detailed information about a session
  */
 export function SessionDetailPage() {
-  const { id = '', worldId = '' } = useParams<{ id: string; worldId: string }>();
+  const { id = '', worldId } = useParams<{ id: string; worldId?: string }>();
   const navigate = useNavigate();
   const { currentUser } = useAuth();
 
@@ -60,20 +60,27 @@ export function SessionDetailPage() {
   // Load session data
   useEffect(() => {
     const fetchData = async () => {
-      if (!id || !worldId) {
-        setError('Missing session ID or world ID');
+      if (!id) {
+        setError('Missing session ID');
         setLoading(false);
         return;
       }
 
       try {
-        // Get world name
-        const rpgWorldService = new RPGWorldService();
-        const world = await rpgWorldService.getById(worldId);
-        setWorldName(world?.name || 'Unknown World');
+        // Use provided worldId or fallback to default
+        const effectiveWorldId = worldId || 'default-world';
+
+        // Get world name if worldId is provided
+        if (worldId) {
+          const rpgWorldService = new RPGWorldService();
+          const world = await rpgWorldService.getById(worldId);
+          setWorldName(world?.name || 'Unknown World');
+        } else {
+          setWorldName('Global Sessions');
+        }
 
         // Get session details
-        const sessionService = SessionService.getInstance(worldId, 'default-campaign');
+        const sessionService = SessionService.getInstance(effectiveWorldId, 'default-campaign');
         const sessionData = await sessionService.getById(id);
 
         if (sessionData) {
@@ -106,7 +113,8 @@ export function SessionDetailPage() {
   const handleDeleteSession = async () => {
     if (window.confirm('Are you sure you want to delete this session?')) {
       try {
-        const sessionService = SessionService.getInstance(worldId, 'default-campaign');
+        const effectiveWorldId = worldId || 'default-world';
+        const sessionService = SessionService.getInstance(effectiveWorldId, 'default-campaign');
         await sessionService.delete(id);
 
         notifications.show({

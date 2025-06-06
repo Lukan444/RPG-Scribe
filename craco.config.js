@@ -33,7 +33,51 @@ module.exports = {
       } else {
         console.log("ESLintWebpackPlugin not found by constructor name 'ESLintWebpackPlugin' or by inclusion of 'ESLint'.");
       }
-      
+
+      // Add Node.js polyfills for browser compatibility
+      webpackConfig.resolve = {
+        ...webpackConfig.resolve,
+        fallback: {
+          "buffer": require.resolve("buffer/"),
+          "stream": require.resolve("stream-browserify"),
+          "util": require.resolve("util/"),
+          "url": require.resolve("url/"),
+          "https": require.resolve("https-browserify"),
+          "http": require.resolve("stream-http"),
+          "crypto": require.resolve("crypto-browserify"),
+          "path": require.resolve("path-browserify"),
+          "fs": false,
+          "net": false,
+          "tls": false,
+          "child_process": false,
+          "worker_threads": false,
+          "zlib": require.resolve("browserify-zlib"),
+          "querystring": require.resolve("querystring-es3"),
+          "os": require.resolve("os-browserify/browser"),
+          "assert": require.resolve("assert/"),
+          "constants": require.resolve("constants-browserify"),
+          "domain": require.resolve("domain-browser"),
+          "events": require.resolve("events/"),
+          "punycode": require.resolve("punycode/"),
+          "process": require.resolve("process"),
+          "string_decoder": require.resolve("string_decoder/"),
+          "sys": require.resolve("util/"),
+          "timers": require.resolve("timers-browserify"),
+          "tty": require.resolve("tty-browserify"),
+          "vm": require.resolve("vm-browserify")
+        }
+      };
+
+      // Add plugins for polyfills
+      const webpack = require('webpack');
+      webpackConfig.plugins = [
+        ...webpackConfig.plugins,
+        new webpack.ProvidePlugin({
+          Buffer: ['buffer', 'Buffer'],
+          process: 'process',
+        }),
+      ];
+
       // Optimize chunk splitting for Mantine
       // webpackConfig.optimization = {
       //   ...webpackConfig.optimization,

@@ -1,0 +1,165 @@
+/**
+ * Search Component Animations
+ * 
+ * CSS animations for the AI Global Search Bar and related components.
+ * Provides smooth transitions and visual feedback for better UX.
+ */
+
+/* Fade in animation for backdrop */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Slide in animation for search modal */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+}
+
+/* Pulse animation for AI brain icon */
+@keyframes brainPulse {
+  0%, 100% {
+    transform: scale(1);
+    filter: drop-shadow(0 1px 2px rgba(124, 58, 237, 0.3));
+  }
+  50% {
+    transform: scale(1.05);
+    filter: drop-shadow(0 2px 4px rgba(124, 58, 237, 0.5));
+  }
+}
+
+/* Shimmer effect for loading states */
+@keyframes shimmer {
+  0% {
+    background-position: -200px 0;
+  }
+  100% {
+    background-position: calc(200px + 100%) 0;
+  }
+}
+
+/* Glow effect for AI badges */
+@keyframes aiGlow {
+  0%, 100% {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  }
+  50% {
+    box-shadow: 0 4px 8px rgba(124, 58, 237, 0.4);
+  }
+}
+
+/* Search result item hover animation */
+@keyframes resultHover {
+  from {
+    transform: translateY(0);
+    box-shadow: none;
+  }
+  to {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  }
+}
+
+/* Confidence bar fill animation */
+@keyframes confidenceFill {
+  from {
+    width: 0%;
+  }
+  to {
+    width: var(--confidence-width);
+  }
+}
+
+/* Brain icon hover effect */
+.brain-icon-hover:hover {
+  animation: brainPulse 0.6s ease-in-out;
+}
+
+/* AI badge hover effect */
+.ai-badge-hover:hover {
+  animation: aiGlow 0.8s ease-in-out;
+}
+
+/* Search input focus glow */
+.search-input-focus:focus {
+  animation: none; /* Handled by CSS transitions */
+}
+
+/* Loading shimmer effect */
+.loading-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.1) 0%,
+    rgba(255, 255, 255, 0.2) 50%,
+    rgba(255, 255, 255, 0.1) 100%
+  );
+  background-size: 200px 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* Smooth transitions for all interactive elements */
+.search-interactive {
+  transition: all 0.2s ease;
+}
+
+/* Enhanced focus states for accessibility */
+.search-focus-visible:focus-visible {
+  outline: 2px solid rgba(124, 58, 237, 0.8);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Mobile responsive animations */
+@media (max-width: 768px) {
+  @keyframes slideIn {
+    from {
+      opacity: 0;
+      transform: translateX(-50%) translateY(-10px) scale(0.98);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0) scale(1);
+    }
+  }
+  
+  /* Reduce motion for mobile performance */
+  .search-interactive {
+    transition: all 0.15s ease;
+  }
+}
+
+/* Reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  
+  .search-interactive {
+    transition: none;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .search-input-focus:focus {
+    border-color: #ffffff !important;
+    box-shadow: 0 0 0 3px #ffffff !important;
+  }
+  
+  .search-focus-visible:focus-visible {
+    outline-color: #ffffff !important;
+  }
+}
