@@ -39,6 +39,14 @@ jobs:
       env:
         NODE_ENV: test
 
+    - name: Run Functions Vitest tests
+      run: |
+        cd functions
+        npm ci --legacy-peer-deps
+        npm run vitest
+      env:
+        NODE_ENV: test
+
     - name: Test coverage
       run: npm run test:coverage
       continue-on-error: true
