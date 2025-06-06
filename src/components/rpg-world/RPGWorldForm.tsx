@@ -15,6 +15,7 @@ import {
   Text,
   Divider,
   FileInput,
+  Progress,
   SegmentedControl,
   Tooltip,
   Tabs,
@@ -30,6 +31,7 @@ import {
   IconInfoCircle
 } from '@tabler/icons-react';
 import { RPGWorldCreationParams, RPGWorldUpdateParams, RPGWorldPrivacy } from '../../models/RPGWorld';
+import { uploadImage } from '../../services/storage.service';
 
 // Game systems options
 const GAME_SYSTEMS = [
@@ -103,6 +105,9 @@ export function RPGWorldForm({
   // State for image uploads
   const [worldImageFile, setWorldImageFile] = useState<File | null>(null);
   const [worldMapFile, setWorldMapFile] = useState<File | null>(null);
+  const [imageUploadProgress, setImageUploadProgress] = useState<number>(0);
+  const [mapUploadProgress, setMapUploadProgress] = useState<number>(0);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<string | null>('basic');
 
   // Form validation and state
@@ -162,22 +167,27 @@ export function RPGWorldForm({
   // Handle form submission
   const handleSubmit = form.onSubmit(async (values) => {
     try {
-      // Validate form data before submission
       const errors = form.validate();
       if (errors.hasErrors) {
-        return; // Don't proceed if there are validation errors
+        return;
       }
 
-      // TODO: Handle image upload to storage and get URL
-      // For now, just pass the existing imageURL
-      // In a future implementation, we would upload the images to Firebase Storage
-      // and update the values.imageURL and values.worldMapURL with the download URLs
+      setUploadError(null);
 
-      // Submit the form data
+      if (worldImageFile) {
+        const path = `worlds/${Date.now()}_${worldImageFile.name}`;
+        values.imageURL = await uploadImage(worldImageFile, path, setImageUploadProgress);
+      }
+
+      if (worldMapFile) {
+        const path = `worlds/${Date.now()}_${worldMapFile.name}`;
+        values.worldMapURL = await uploadImage(worldMapFile, path, setMapUploadProgress);
+      }
+
       onSubmit(values);
     } catch (error) {
       console.error('Error in form submission:', error);
-      // You could add additional error handling here if needed
+      setUploadError('Failed to upload images');
     }
   });
 
@@ -281,6 +291,9 @@ export function RPGWorldForm({
                   onChange={setWorldImageFile}
                   description="This image will be displayed as the cover for your world"
                 />
+                {imageUploadProgress > 0 && (
+                  <Progress value={imageUploadProgress} size="xs" />
+                )}
 
                 <FileInput
                   label="World Map"
@@ -291,6 +304,10 @@ export function RPGWorldForm({
                   onChange={setWorldMapFile}
                   description="A map of your world that players can explore"
                 />
+                {mapUploadProgress > 0 && (
+                  <Progress value={mapUploadProgress} size="xs" />
+                )}
+                {uploadError && <Text c="red" size="sm">{uploadError}</Text>}
               </Stack>
             </Tabs.Panel>
 
