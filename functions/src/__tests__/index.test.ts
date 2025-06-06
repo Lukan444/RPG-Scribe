@@ -4,26 +4,27 @@
  * This file contains tests for the Cloud Functions.
  */
 
+import { describe, it, beforeAll, beforeEach, afterAll, vi } from 'vitest';
 import { mockLogger, resetAllMocks, testEnv } from './test-utils';
 
 // Mock Firebase Admin
-jest.mock('firebase-admin', () => {
+vi.mock('firebase-admin', () => {
   return {
-    initializeApp: jest.fn(),
-    firestore: jest.fn().mockReturnValue({
-      collection: jest.fn().mockReturnValue({
-        doc: jest.fn().mockReturnValue({
-          get: jest.fn().mockResolvedValue({
+    initializeApp: vi.fn(),
+    firestore: vi.fn().mockReturnValue({
+      collection: vi.fn().mockReturnValue({
+        doc: vi.fn().mockReturnValue({
+          get: vi.fn().mockResolvedValue({
             exists: true,
             data: () => ({
               name: 'Test Entity',
               description: 'Test Description'
             })
           }),
-          update: jest.fn().mockResolvedValue({})
+          update: vi.fn().mockResolvedValue({})
         }),
-        where: jest.fn().mockReturnThis(),
-        get: jest.fn().mockResolvedValue({
+        where: vi.fn().mockReturnThis(),
+        get: vi.fn().mockResolvedValue({
           docs: [
             {
               id: 'doc1',
@@ -40,16 +41,16 @@ jest.mock('firebase-admin', () => {
 });
 
 // Mock the syncEntity and syncEntitiesBatch functions
-jest.mock('../vector/entitySync', () => {
+vi.mock('../vector/entitySync', () => {
   return {
-    syncEntity: jest.fn().mockResolvedValue({
+    syncEntity: vi.fn().mockResolvedValue({
       entityId: 'test-entity',
       entityType: 'CHARACTER',
       success: true,
       embeddingId: 'test-uuid',
       timestamp: Date.now()
     }),
-    syncEntitiesBatch: jest.fn().mockResolvedValue([
+    syncEntitiesBatch: vi.fn().mockResolvedValue([
       {
         entityId: 'entity1',
         entityType: 'CHARACTER',
@@ -62,11 +63,11 @@ jest.mock('../vector/entitySync', () => {
 });
 
 // Mock the VertexAIClient
-jest.mock('../vector/vertexAIClient', () => {
+vi.mock('../vector/vertexAIClient', () => {
   return {
-    VertexAIClient: jest.fn().mockImplementation(() => {
+    VertexAIClient: vi.fn().mockImplementation(() => {
       return {
-        generateEmbedding: jest.fn().mockResolvedValue({
+        generateEmbedding: vi.fn().mockResolvedValue({
           embedding: Array(768).fill(0.1),
           dimension: 768
         })
@@ -76,16 +77,16 @@ jest.mock('../vector/vertexAIClient', () => {
 });
 
 // Mock the Logger
-jest.mock('../utils/logging', () => {
+vi.mock('../utils/logging', () => {
   return {
-    Logger: jest.fn().mockImplementation(() => mockLogger)
+    Logger: vi.fn().mockImplementation(() => mockLogger)
   };
 });
 
 // Mock the config
-jest.mock('../vector/config', () => {
+vi.mock('../vector/config', () => {
   return {
-    getCurrentConfig: jest.fn().mockReturnValue({
+    getCurrentConfig: vi.fn().mockReturnValue({
       environment: 'development',
       projectId: 'test-project',
       location: 'us-central1',
@@ -109,7 +110,7 @@ describe('Cloud Functions', () => {
   beforeEach(() => {
     resetAllMocks();
     // Clear the module cache to ensure fresh imports
-    jest.resetModules();
+    vi.resetModules();
     // We'll import the functions when we need them
     // require('../index');
   });

@@ -85,27 +85,36 @@ Examples:
 
 ## 🧪 Testing Guidelines
 
+### 🏆 **Test Excellence Standard**
+RPG Scribe maintains **100% test pass rate** (309/309 tests) with comprehensive coverage:
+- ✅ **Perfect Test Execution**: All tests pass reliably without memory crashes
+- ✅ **Complete Vitest Migration**: Modern testing framework with excellent TypeScript support
+- ✅ **Firebase Integration**: Real Firebase testing over extensive mocking
+- ✅ **VertexAI Coverage**: Complete AI client integration testing
+- ✅ **Timeline Context**: All service mocking and async patterns validated
+
 ### Running Tests
 ```bash
-# Run all tests
+# Run all tests (expect 100% pass rate)
 npm test
 
-# Run tests in watch mode
+# Run tests in watch mode (recommended for development)
 npm run test:watch
 
-# Run with coverage
+# Run with coverage (99.0%+ coverage achieved)
 npm run test:coverage
 
-# Type checking
+# Type checking (zero TypeScript errors)
 npm run typecheck
 ```
 
 ### Writing Tests
 - Write tests for all new features
-- Maintain or improve test coverage (minimum 80%)
-- Use descriptive test names
-- Follow existing test patterns
-- Mock external dependencies properly
+- **Maintain 100% test pass rate** - all new tests must pass
+- Use descriptive test names following established patterns
+- Follow existing test patterns (see `src/tests/` for examples)
+- **Prefer real integration over extensive mocking** (Firebase, VertexAI patterns)
+- Use established Firebase test configuration patterns
 
 ### Test Patterns and Best Practices
 

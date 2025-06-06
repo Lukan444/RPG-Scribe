@@ -4,24 +4,25 @@
  * This file contains tests for the logging utilities.
  */
 
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Logger, LogLevel } from '../../utils/logging';
 import * as functions from 'firebase-functions';
 
 // Mock firebase-functions logger
-jest.mock('firebase-functions', () => {
+vi.mock('firebase-functions', () => {
   return {
     logger: {
-      debug: jest.fn(),
-      info: jest.fn(),
-      warn: jest.fn(),
-      error: jest.fn()
+      debug: vi.fn(),
+      info: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn()
     }
   };
 });
 
 describe('Logging Utilities', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('Logger', () => {

@@ -4,16 +4,19 @@
  * This file contains utilities for testing Cloud Functions.
  */
 
+import { describe, it, expect, vi } from 'vitest';
+import functionsTest from 'firebase-functions-test';
+
 // Mock Firebase admin initialization
-jest.mock('firebase-admin', () => {
+vi.mock('firebase-admin', () => {
   return {
-    initializeApp: jest.fn(),
-    firestore: jest.fn().mockReturnValue({
-      collection: jest.fn().mockReturnThis(),
-      doc: jest.fn().mockReturnThis(),
-      get: jest.fn(),
-      set: jest.fn(),
-      update: jest.fn()
+    initializeApp: vi.fn(),
+    firestore: vi.fn().mockReturnValue({
+      collection: vi.fn().mockReturnThis(),
+      doc: vi.fn().mockReturnThis(),
+      get: vi.fn(),
+      set: vi.fn(),
+      update: vi.fn()
     })
   };
 });
@@ -26,8 +29,6 @@ describe('Test Utilities', () => {
     expect(createMockVertexAIClient).toBeDefined();
   });
 });
-
-import functionsTest from 'firebase-functions-test';
 
 // Initialize the firebase-functions-test SDK
 export const testEnv = functionsTest();
@@ -56,12 +57,12 @@ export function createDocumentSnapshot(id: string, data: any) {
  * Create a mock logger
  */
 export const mockLogger = {
-  debug: jest.fn(),
-  info: jest.fn(),
-  warn: jest.fn(),
-  error: jest.fn(),
-  child: jest.fn().mockReturnThis(),
-  getOperationId: jest.fn().mockReturnValue('test-operation-id')
+  debug: vi.fn(),
+  info: vi.fn(),
+  warn: vi.fn(),
+  error: vi.fn(),
+  child: vi.fn().mockReturnThis(),
+  getOperationId: vi.fn().mockReturnValue('test-operation-id')
 };
 
 /**
@@ -75,10 +76,10 @@ export function cleanup() {
  * Create a mock Firestore database
  */
 export function createMockFirestore() {
-  const mockUpdate = jest.fn().mockResolvedValue({});
-  const mockDoc = jest.fn().mockReturnValue({
+  const mockUpdate = vi.fn().mockResolvedValue({});
+  const mockDoc = vi.fn().mockReturnValue({
     update: mockUpdate,
-    get: jest.fn().mockResolvedValue({
+    get: vi.fn().mockResolvedValue({
       exists: true,
       data: () => ({
         name: 'Test Entity',
@@ -87,7 +88,7 @@ export function createMockFirestore() {
       })
     })
   });
-  const mockCollection = jest.fn().mockReturnValue({
+  const mockCollection = vi.fn().mockReturnValue({
     doc: mockDoc
   });
 
@@ -104,11 +105,11 @@ export function createMockFirestore() {
  */
 export function createMockVertexAIClient() {
   return {
-    generateEmbedding: jest.fn().mockResolvedValue({
+    generateEmbedding: vi.fn().mockResolvedValue({
       embedding: Array(768).fill(0.1),
       dimension: 768
     }),
-    generateEmbeddingsBatch: jest.fn().mockResolvedValue([
+    generateEmbeddingsBatch: vi.fn().mockResolvedValue([
       {
         embedding: Array(768).fill(0.1),
         dimension: 768
@@ -125,7 +126,7 @@ export function createMockVertexAIClient() {
  * Reset all mocks
  */
 export function resetAllMocks() {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
   mockLogger.debug.mockClear();
   mockLogger.info.mockClear();
   mockLogger.warn.mockClear();

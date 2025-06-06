@@ -574,10 +574,10 @@ export function DualTimelineProvider({ children, config }: DualTimelineProviderP
     updateConfig({ syncOptions: newSyncOptions });
   }, [config.syncOptions, updateConfig]);
 
-  // Load events when component mounts
+  // Load events when component mounts or config changes
   useEffect(() => {
     loadEvents();
-  }, [loadEvents]);
+  }, [config.worldId, config.campaignId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Create actions object
   const actions: DualTimelineActions = {

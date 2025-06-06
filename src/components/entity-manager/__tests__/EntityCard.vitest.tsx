@@ -44,8 +44,8 @@ describe('EntityCard Component', () => {
     // Check if the title is rendered correctly
     expect(screen.getByText('Character')).toBeInTheDocument();
 
-    // Check if the description contains the entity type
-    expect(screen.getByText(/Manage your character entities/i)).toBeInTheDocument();
+    // Check if the description contains the entity type (translated text)
+    expect(screen.getByText('Manage character entities including creation, editing, and viewing details.')).toBeInTheDocument();
   });
 
   it('displays relationship count badge when showRelationshipBadge is true', () => {
@@ -70,7 +70,7 @@ describe('EntityCard Component', () => {
   it('renders View All and Create New buttons', () => {
     renderWithMantine(<EntityCard {...defaultProps} />);
 
-    // Check if the buttons are rendered
+    // Check if the buttons are rendered (translated text)
     expect(screen.getByText('View All')).toBeInTheDocument();
     expect(screen.getByText('Create New')).toBeInTheDocument();
   });
@@ -78,7 +78,7 @@ describe('EntityCard Component', () => {
   it('uses the correct color for the entity type', () => {
     renderWithMantine(<EntityCard {...defaultProps} />);
 
-    // Get the buttons
+    // Get the buttons (translated text)
     const viewAllButton = screen.getByText('View All');
     const createNewButton = screen.getByText('Create New');
 
@@ -118,7 +118,7 @@ describe('EntityCard Component', () => {
     // Check if the title is rendered correctly for the new entity type
     expect(screen.getByText('Location')).toBeInTheDocument();
 
-    // Check if the description contains the new entity type
-    expect(screen.getByText(/Manage your location entities/i)).toBeInTheDocument();
+    // Check if the description contains the new entity type (translated text)
+    expect(screen.getByText('Manage location entities including creation, editing, and viewing details.')).toBeInTheDocument();
   });
 });

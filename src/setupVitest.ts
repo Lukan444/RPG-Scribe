@@ -253,8 +253,10 @@ vi.mock('firebase/auth', () => {
 
   const mockAuth = {
     currentUser: mockUser,
-    onAuthStateChanged: vi.fn(callback => {
-      callback(mockUser);
+    onAuthStateChanged: vi.fn().mockImplementation(callback => {
+      if (typeof callback === 'function') {
+        callback(mockUser);
+      }
       return vi.fn(); // Unsubscribe function
     }),
     signInWithEmailAndPassword: vi.fn().mockResolvedValue({
@@ -287,6 +289,7 @@ vi.mock('firebase/auth', () => {
     sendPasswordResetEmail: mockAuth.sendPasswordResetEmail,
     confirmPasswordReset: mockAuth.confirmPasswordReset,
     setPersistence: mockAuth.setPersistence,
+    getRedirectResult: vi.fn().mockResolvedValue(null),
     browserLocalPersistence: 'local',
     GoogleAuthProvider: vi.fn(() => ({ addScope: vi.fn() })),
     FacebookAuthProvider: vi.fn(() => ({})),
@@ -599,8 +602,10 @@ vi.mock('../firebase/config', () => {
   // Mock auth object
   const mockAuth = {
     currentUser: mockUser,
-    onAuthStateChanged: vi.fn(callback => {
-      callback(mockUser);
+    onAuthStateChanged: vi.fn().mockImplementation(callback => {
+      if (typeof callback === 'function') {
+        callback(mockUser);
+      }
       return vi.fn(); // Unsubscribe function
     }),
     signInWithEmailAndPassword: vi.fn().mockResolvedValue({

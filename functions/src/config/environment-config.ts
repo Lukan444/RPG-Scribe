@@ -105,6 +105,41 @@ export interface EnvironmentConfig {
  * Default configurations for different environments
  */
 const defaultConfigs: Record<string, EnvironmentConfig> = {
+  test: {
+    name: "test",
+    vertexAI: {
+      environment: "test",
+      projectId: "test-project",
+      location: "test-location",
+      indexEndpoint: "test-endpoint",
+      embeddingModel: "test-model",
+      namespace: "test",
+      apiEndpoint: "test-api-endpoint",
+      maxRetries: 1,
+      timeoutMs: 5000
+    },
+    security: {
+      allowedIPs: [],
+      allowedOrigins: ["https://test.com", "https://test2.com"],
+      enableRateLimiting: true,
+      maxRequestsPerMinute: 42,
+      enableSecurityLogging: false
+    },
+    cost: {
+      dailyBudget: 1,
+      alertThresholdPercent: 90,
+      enableUsageTracking: false,
+      enableCostAllocationByUser: false,
+      enableCostAllocationByWorld: false
+    },
+    featureFlags: {
+      enableVertexAI: true,
+      enableVectorSearch: false,
+      enableRelationshipInference: false,
+      enableContentGeneration: false,
+      enableSessionAnalysis: false
+    }
+  },
   development: {
     name: "development",
     vertexAI: {

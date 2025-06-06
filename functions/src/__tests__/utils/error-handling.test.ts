@@ -4,6 +4,7 @@
  * This file contains tests for the error handling utilities.
  */
 
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AppError, ErrorType, isRetryableError, handleError } from '../../utils/error-handling';
 import { mockLogger, resetAllMocks } from '../test-utils';
 
@@ -91,7 +92,7 @@ describe('Error Handling Utilities', () => {
 
     it('should retry retryable errors', async () => {
       const error = new AppError('Test', ErrorType.EXTERNAL_SERVICE);
-      const retryFn = jest.fn().mockResolvedValue('success');
+      const retryFn = vi.fn().mockResolvedValue('success');
 
       const result = await handleError(error, mockLogger as any, 'test context', retryFn);
 
@@ -103,7 +104,7 @@ describe('Error Handling Utilities', () => {
 
     it('should not retry non-retryable errors', async () => {
       const error = new AppError('Test', ErrorType.VALIDATION);
-      const retryFn = jest.fn().mockResolvedValue('success');
+      const retryFn = vi.fn().mockResolvedValue('success');
 
       const result = await handleError(error, mockLogger as any, 'test context', retryFn);
 
@@ -115,7 +116,7 @@ describe('Error Handling Utilities', () => {
     it('should retry up to maxRetries times', async () => {
       const error = new AppError('Test', ErrorType.EXTERNAL_SERVICE);
       const retryError = new AppError('Retry failed', ErrorType.EXTERNAL_SERVICE);
-      const retryFn = jest.fn()
+      const retryFn = vi.fn()
         .mockRejectedValueOnce(retryError)
         .mockRejectedValueOnce(retryError)
         .mockResolvedValue('success');
@@ -137,7 +138,7 @@ describe('Error Handling Utilities', () => {
     it('should give up after maxRetries', async () => {
       const error = new AppError('Test', ErrorType.EXTERNAL_SERVICE);
       const retryError = new AppError('Retry failed', ErrorType.EXTERNAL_SERVICE);
-      const retryFn = jest.fn()
+      const retryFn = vi.fn()
         .mockRejectedValue(retryError);
 
       const result = await handleError(

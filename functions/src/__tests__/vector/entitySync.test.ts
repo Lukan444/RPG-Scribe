@@ -4,22 +4,23 @@
  * This file contains tests for the entity synchronization functions.
  */
 
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { syncEntity, syncEntitiesBatch, getSyncStatus } from '../../vector/entitySync';
 import { EntityType } from '../../vector/types';
 import { mockLogger, createMockFirestore, createMockVertexAIClient, resetAllMocks } from '../test-utils';
 import { AppError } from '../../utils/error-handling';
 
 // Mock UUID
-jest.mock('uuid', () => ({
-  v4: jest.fn().mockReturnValue('test-uuid')
+vi.mock('uuid', () => ({
+  v4: vi.fn().mockReturnValue('test-uuid')
 }));
 
 // Mock Firebase Admin
-jest.mock('firebase-admin', () => {
+vi.mock('firebase-admin', () => {
   return {
     firestore: {
       FieldValue: {
-        serverTimestamp: jest.fn().mockReturnValue('server-timestamp')
+        serverTimestamp: vi.fn().mockReturnValue('server-timestamp')
       }
     }
   };
@@ -157,7 +158,7 @@ describe('Entity Synchronization', () => {
     it('should handle embedding generation errors', async () => {
       const mockDb = createMockFirestore();
       const mockVertexClient = {
-        generateEmbedding: jest.fn().mockRejectedValue(new Error('Embedding generation failed'))
+        generateEmbedding: vi.fn().mockRejectedValue(new Error('Embedding generation failed'))
       };
 
       const entityId = 'test-entity';
@@ -223,7 +224,7 @@ describe('Entity Synchronization', () => {
     it('should handle errors for individual entities', async () => {
       const mockDb = createMockFirestore();
       const mockVertexClient = {
-        generateEmbedding: jest.fn()
+        generateEmbedding: vi.fn()
           .mockResolvedValueOnce({
             embedding: Array(768).fill(0.1),
             dimension: 768
@@ -268,7 +269,7 @@ describe('Entity Synchronization', () => {
       const entityType = EntityType.CHARACTER;
 
       // Mock the document data
-      mockDb.mockDoc().get = jest.fn().mockResolvedValue({
+      mockDb.mockDoc().get = vi.fn().mockResolvedValue({
         exists: true,
         data: () => ({
           vectorStatus: 'COMPLETED',
@@ -302,7 +303,7 @@ describe('Entity Synchronization', () => {
       const entityType = EntityType.CHARACTER;
 
       // Mock the document data
-      mockDb.mockDoc().get = jest.fn().mockResolvedValue({
+      mockDb.mockDoc().get = vi.fn().mockResolvedValue({
         exists: false
       });
 

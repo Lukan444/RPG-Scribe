@@ -254,7 +254,10 @@ class TestItemService extends FirestoreService<TestItem> {
   async runTransaction<T>(callback: (transaction: any) => Promise<T>): Promise<T> {
     // Create a mock transaction object
     const mockTransaction = {
-      get: vi.fn().mockResolvedValue({ data: () => ({}) }),
+      get: vi.fn().mockResolvedValue({
+        exists: () => true,
+        data: () => ({ counter: 0 })
+      }),
       set: vi.fn(),
       update: vi.fn(),
       delete: vi.fn()

@@ -10,11 +10,13 @@ import { render, RenderOptions } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import { MantineProvider } from '@mantine/core';
 import { ModalsProvider } from '@mantine/modals';
+import { I18nextProvider } from 'react-i18next';
 import { AuthProvider } from '../../contexts/AuthContext';
 import { RPGWorldProvider } from '../../contexts/RPGWorldContext';
 import { ActivityLogProvider } from '../../contexts/ActivityLogContext';
 import userEvent from '@testing-library/user-event';
 import { vi } from 'vitest';
+import testI18n from './test-i18n';
 
 /**
  * Custom render function that wraps components with all necessary providers
@@ -28,19 +30,21 @@ export function renderWithProviders(
 ) {
   const AllTheProviders = ({ children }: { children: React.ReactNode }) => {
     return (
-      <MantineProvider env="test">
-        <ModalsProvider>
-          <BrowserRouter>
-            <AuthProvider>
-              <ActivityLogProvider>
-                <RPGWorldProvider>
-                  {children}
-                </RPGWorldProvider>
-              </ActivityLogProvider>
-            </AuthProvider>
-          </BrowserRouter>
-        </ModalsProvider>
-      </MantineProvider>
+      <I18nextProvider i18n={testI18n}>
+        <MantineProvider env="test">
+          <ModalsProvider>
+            <BrowserRouter>
+              <AuthProvider>
+                <ActivityLogProvider>
+                  <RPGWorldProvider>
+                    {children}
+                  </RPGWorldProvider>
+                </ActivityLogProvider>
+              </AuthProvider>
+            </BrowserRouter>
+          </ModalsProvider>
+        </MantineProvider>
+      </I18nextProvider>
     );
   };
 
@@ -114,11 +118,11 @@ export function renderWithSpecificProviders(
 }
 
 /**
- * Simplified render function that only wraps with MantineProvider
+ * Simplified render function that wraps with MantineProvider and I18nextProvider
  * Uses env="test" to disable transitions and portals for easier testing
  * @param ui Component to render
  * @param options Render options
- * @returns Rendered component with MantineProvider
+ * @returns Rendered component with MantineProvider and I18nextProvider
  */
 export function renderWithMantine(
   ui: ReactElement,
@@ -126,9 +130,11 @@ export function renderWithMantine(
 ) {
   return render(ui, {
     wrapper: ({ children }) => (
-      <MantineProvider env="test">
-        {children}
-      </MantineProvider>
+      <I18nextProvider i18n={testI18n}>
+        <MantineProvider env="test">
+          {children}
+        </MantineProvider>
+      </I18nextProvider>
     ),
     ...options,
   });

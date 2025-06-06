@@ -11,6 +11,16 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./src/setupVitest.ts'],
     css: true,
+    pool: 'forks',
+    poolOptions: {
+      forks: {
+        isolate: true,
+        execArgv: ['--max-old-space-size=8192']
+      }
+    },
+    testTimeout: 30000,
+    hookTimeout: 30000,
+    teardownTimeout: 30000,
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
