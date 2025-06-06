@@ -47,7 +47,8 @@ describe('TimelineContext integration', () => {
       });
     };
 
-    renderWithMantine(<TestComponent action={action} />, { wrapper: getWrapper(mockService) });
+    const Wrapper = getWrapper(mockService);
+    renderWithMantine(<Wrapper><TestComponent action={action} /></Wrapper>);
     await flushPromises();
 
     expect(mockService.createTimelineEntry).toHaveBeenCalled();
@@ -75,7 +76,8 @@ describe('TimelineContext integration', () => {
       } catch {}
     };
 
-    renderWithMantine(<TestComponent action={action} />, { wrapper: getWrapper(mockService) });
+    const Wrapper = getWrapper(mockService);
+    renderWithMantine(<Wrapper><TestComponent action={action} /></Wrapper>);
     await flushPromises();
 
     expect(document.querySelector('[data-testid="count"]')?.textContent).toBe('0');
@@ -105,7 +107,8 @@ describe('TimelineContext integration', () => {
       } catch {}
     };
 
-    renderWithMantine(<TestComponent action={action} />, { wrapper: getWrapper(mockService) });
+    const Wrapper = getWrapper(mockService);
+    renderWithMantine(<Wrapper><TestComponent action={action} /></Wrapper>);
     await flushPromises();
 
     expect(mockService.updateTimelineEntry).toHaveBeenCalled();
@@ -135,7 +138,8 @@ describe('TimelineContext integration', () => {
       } catch {}
     };
 
-    renderWithMantine(<TestComponent action={action} />, { wrapper: getWrapper(mockService) });
+    const Wrapper = getWrapper(mockService);
+    renderWithMantine(<Wrapper><TestComponent action={action} /></Wrapper>);
     await flushPromises();
 
     expect(mockService.deleteTimelineEntry).toHaveBeenCalled();

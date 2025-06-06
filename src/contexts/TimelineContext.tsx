@@ -12,6 +12,7 @@ import {
 } from '../types/timeline.types';
 import { TimelineService } from '../services/timeline.service';
 import { EntityType } from '../models/EntityType';
+import { TimelineEntryType } from '../constants/timelineConstants';
 
 /**
  * Initial Timeline State
