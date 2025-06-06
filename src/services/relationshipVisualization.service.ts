@@ -1,4 +1,6 @@
 import { RelationshipQueryService } from './relationshipQuery.service';
+import { EntityType } from '../models/EntityType';
+import { EntityServiceFactory } from './EntityServiceFactory';
 
 /**
  * Node data for visualization
@@ -43,6 +45,7 @@ export interface VisualizationGraph {
  */
 export class RelationshipVisualizationService {
   private queryService: RelationshipQueryService;
+  private campaignId: string;
   
   // Type-specific colors and sizes
   private nodeColors: Record<string, string> = {
@@ -84,6 +87,7 @@ export class RelationshipVisualizationService {
    */
   constructor(campaignId: string) {
     this.queryService = new RelationshipQueryService(campaignId);
+    this.campaignId = campaignId;
   }
 
   /**
@@ -103,12 +107,15 @@ export class RelationshipVisualizationService {
         entityTypes
       );
       
-      // Transform nodes with visualization properties
-      const nodes: VisualizationNode[] = graphData.nodes.map(node => ({
-        ...node,
-        color: this.getNodeColor(node.type),
-        size: this.getNodeSize(node.type)
-      }));
+      // Transform nodes with visualization properties and fetch display names
+      const nodes: VisualizationNode[] = await Promise.all(
+        graphData.nodes.map(async node => ({
+          ...node,
+          label: await this.getEntityName(node.id, node.type),
+          color: this.getNodeColor(node.type),
+          size: this.getNodeSize(node.type)
+        }))
+      );
       
       // Transform edges with visualization properties
       const edges: VisualizationEdge[] = graphData.edges.map((edge, index) => ({
@@ -148,7 +155,7 @@ export class RelationshipVisualizationService {
       nodes.push({
         id: entityId,
         type: entityType,
-        label: entityId, // We'll need to fetch actual name later
+        label: await this.getEntityName(entityId, entityType),
         color: this.getNodeColor(entityType),
         size: this.getNodeSize(entityType) * 1.5, // Make central node larger
         x: 0,
@@ -180,7 +187,10 @@ export class RelationshipVisualizationService {
               nodes.push({
                 id: related.entityId,
                 type: related.entityType,
-                label: related.entityId, // We'll need to fetch actual name later
+                label: await this.getEntityName(
+                  related.entityId,
+                  related.entityType
+                ),
                 color: this.getNodeColor(related.entityType),
                 size: this.getNodeSize(related.entityType)
               });
@@ -258,5 +268,29 @@ export class RelationshipVisualizationService {
    */
   private getEdgeLabel(type: string, subtype: string): string {
     return subtype;
+  }
+
+  /**
+   * Fetch the display name for an entity
+   * @param id Entity ID
+   * @param type Entity type
+   * @returns Display name or ID if not found
+   */
+  private async getEntityName(id: string, type: string): Promise<string> {
+    try {
+      const entityType = (type as unknown) as EntityType;
+      const service = EntityServiceFactory.getInstance().getService<any>(
+        entityType,
+        '',
+        this.campaignId
+      );
+      const entity = await service.getById(id);
+      if (entity && (entity as any).name) {
+        return (entity as any).name as string;
+      }
+    } catch (err) {
+      console.warn(`Failed to fetch name for ${type} ${id}:`, err);
+    }
+    return id;
   }
 }
