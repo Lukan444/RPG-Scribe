@@ -15,6 +15,7 @@ import {
   Text,
   Divider,
   FileInput,
+  Progress,
   SegmentedControl,
   Tooltip,
   Tabs,
@@ -37,6 +38,7 @@ import { Campaign, CampaignCreationParams, CampaignUpdateParams, CampaignStatus,
 import { RPGWorld } from '../../models/RPGWorld';
 import { RPGWorldService } from '../../services/rpgWorld.service';
 import { useAuth } from '../../contexts/AuthContext';
+import { uploadImage } from '../../services/storage.service';
 
 // Campaign status options
 const CAMPAIGN_STATUS_OPTIONS = [
@@ -116,6 +118,9 @@ export function CampaignForm({
   const [activeTab, setActiveTab] = useState<string | null>('basic');
   const [campaignImageFile, setCampaignImageFile] = useState<File | null>(null);
   const [campaignBannerFile, setCampaignBannerFile] = useState<File | null>(null);
+  const [imageUploadProgress, setImageUploadProgress] = useState<number>(0);
+  const [bannerUploadProgress, setBannerUploadProgress] = useState<number>(0);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const [worlds, setWorlds] = useState<RPGWorld[]>([]);
   const [selectedWorld, setSelectedWorld] = useState<RPGWorld | null>(null);
   const [availableUsers, setAvailableUsers] = useState<User[]>([]);
@@ -242,9 +247,24 @@ export function CampaignForm({
 
   // Handle form submission
   const handleSubmit = form.onSubmit(async (values) => {
-    // TODO: Handle image upload to storage and get URL
-    // For now, just pass the existing imageURL and bannerURL
-    onSubmit(values);
+    setUploadError(null);
+
+    try {
+      if (campaignImageFile) {
+        const path = `campaigns/${currentUser?.uid}/${Date.now()}_${campaignImageFile.name}`;
+        values.imageURL = await uploadImage(campaignImageFile, path, setImageUploadProgress);
+      }
+
+      if (campaignBannerFile) {
+        const path = `campaigns/${currentUser?.uid}/${Date.now()}_${campaignBannerFile.name}`;
+        values.bannerURL = await uploadImage(campaignBannerFile, path, setBannerUploadProgress);
+      }
+
+      onSubmit(values);
+    } catch (error) {
+      console.error('Error uploading images:', error);
+      setUploadError('Failed to upload images');
+    }
   });
 
   // Get world options for select
@@ -374,6 +394,9 @@ export function CampaignForm({
                   onChange={setCampaignImageFile}
                   description="This image will be displayed as the cover for your campaign"
                 />
+                {imageUploadProgress > 0 && (
+                  <Progress value={imageUploadProgress} size="xs" />
+                )}
 
                 <FileInput
                   label="Campaign Banner"
@@ -384,6 +407,12 @@ export function CampaignForm({
                   onChange={setCampaignBannerFile}
                   description="This image will be displayed at the top of your campaign page"
                 />
+                {bannerUploadProgress > 0 && (
+                  <Progress value={bannerUploadProgress} size="xs" />
+                )}
+                {uploadError && (
+                  <Text c="red" size="sm">{uploadError}</Text>
+                )}
               </Stack>
             </Tabs.Panel>
 

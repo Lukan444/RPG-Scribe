@@ -2,6 +2,7 @@
 import { initializeApp } from "firebase/app";
 import { getAuth, setPersistence, browserLocalPersistence } from "firebase/auth";
 import { getFirestore, initializeFirestore, Firestore } from "firebase/firestore";
+import { getStorage } from "firebase/storage";
 
 // Check if we're in development mode
 const isDevelopment = process.env.NODE_ENV === 'development';
@@ -41,6 +42,8 @@ const auth = getAuth(app);
 // Initialize Firestore with proper TypeScript typing
 // Note: Modern cache API (persistentLocalCache) will be enabled when TypeScript types are fully supported
 const db: Firestore = getFirestore(app);
+// Initialize Firebase Storage
+const storage = getStorage(app);
 
 // If we're in development mode and don't have real credentials, show warning
 if (isDevelopment && !hasRealCredentials) {
@@ -73,4 +76,4 @@ try {
   console.warn('Authentication persistence already set');
 }
 
-export { app, auth, db };
+export { app, auth, db, storage };
