@@ -47,6 +47,36 @@ import { RelationshipType } from '../../models/Relationship';
 import { EntityType } from '../../models/EntityType';
 import { DocumentData, QueryDocumentSnapshot } from 'firebase/firestore';
 
+export function filterMindMapElements(
+  nodes: Node[],
+  edges: Edge[],
+  nodeTypeFilter: string[],
+  edgeTypeFilter: string[],
+  searchQuery: string
+) {
+  let filteredNodes = nodeTypeFilter.length > 0
+    ? nodes.filter((node: Node) => nodeTypeFilter.includes(node.data.type))
+    : [...nodes];
+
+  if (searchQuery.trim()) {
+    const q = searchQuery.toLowerCase();
+    filteredNodes = filteredNodes.filter((node: Node) =>
+      String(node.data.label).toLowerCase().includes(q)
+    );
+  }
+
+  let filteredEdges = edgeTypeFilter.length > 0
+    ? edges.filter((edge: Edge) => edgeTypeFilter.includes(edge.data.type))
+    : [...edges];
+
+  const nodeIds = new Set(filteredNodes.map(n => n.id));
+  filteredEdges = filteredEdges.filter(
+    (edge: Edge) => nodeIds.has(edge.source) && nodeIds.has(edge.target)
+  );
+
+  return { nodes: filteredNodes, edges: filteredEdges };
+}
+
 // Define data interfaces
 interface CharacterData extends DocumentData {
   id: string;
@@ -106,6 +136,8 @@ export function MindMapVisualization({
   // State for nodes and edges
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const [displayedNodes, setDisplayedNodes] = useState<Node[]>([]);
+  const [displayedEdges, setDisplayedEdges] = useState<Edge[]>([]);
 
   // State for loading and error
   const [loading, setLoading] = useState(true);
@@ -147,7 +179,6 @@ export function MindMapVisualization({
   // Search filter
   const handleSearch = useCallback((query: string) => {
     setSearchQuery(query);
-    // TODO: Implement search functionality
   }, []);
 
   // Load mind map data
@@ -346,6 +377,8 @@ export function MindMapVisualization({
 
         setNodes(nodes);
         setEdges(edges);
+        setDisplayedNodes(nodes);
+        setDisplayedEdges(edges);
       } catch (err) {
         console.error('Error loading mind map data:', err);
         setError('Failed to load mind map data: ' + (err instanceof Error ? err.message : String(err)));
@@ -364,14 +397,19 @@ export function MindMapVisualization({
     navigate(`/${type}s/${node.id}`);
   }, [navigate]);
 
-  // Filter nodes and edges based on selected filters
-  const filteredNodes = nodeTypeFilter.length > 0
-    ? nodes.filter((node: Node) => nodeTypeFilter.includes(node.data.type))
-    : nodes;
+  // Recompute displayed nodes and edges when filters or search query change
+  useEffect(() => {
+    const { nodes: n, edges: e } = filterMindMapElements(
+      nodes,
+      edges,
+      nodeTypeFilter,
+      edgeTypeFilter,
+      searchQuery
+    );
+    setDisplayedNodes(n);
+    setDisplayedEdges(e);
+  }, [nodes, edges, nodeTypeFilter, edgeTypeFilter, searchQuery]);
 
-  const filteredEdges = edgeTypeFilter.length > 0
-    ? edges.filter((edge: Edge) => edgeTypeFilter.includes(edge.data.type))
-    : edges;
 
   // Use Mantine's useMediaQuery hook for responsive design
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
@@ -461,8 +499,8 @@ export function MindMapVisualization({
     >
       <Box h="100%" style={{ border: '1px solid var(--mantine-color-gray-3)', borderRadius: 'var(--mantine-radius-sm)' }}>
         <ReactFlow
-          nodes={filteredNodes}
-          edges={filteredEdges}
+          nodes={displayedNodes}
+          edges={displayedEdges}
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
           onNodeClick={handleNodeClick}
