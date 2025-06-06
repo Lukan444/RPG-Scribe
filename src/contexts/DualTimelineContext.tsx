@@ -225,7 +225,7 @@ export function DualTimelineProvider({ children, config }: DualTimelineProviderP
       const entries = await timelineService.getTimelineEntries({ sortBy: 'sequence', sortDirection: 'asc' });
 
       const loadedEvents: DualTimelineEvent[] = entries.map((entry) => {
-        const realTime = new Date(entry.dualTimestamp.realWorldTime);
+        const realTime = new Date(entry.dualTimestamp.realWorldTime || new Date());
         const inGameTime = new Date(entry.dualTimestamp.inGameTime || realTime);
         return {
           id: entry.id || '',
@@ -390,92 +390,8 @@ export function DualTimelineProvider({ children, config }: DualTimelineProviderP
     dispatch({ type: 'SYNC_TIMELINES', payload: event });
   }, []);
 
-  /**
-   * Detect conflicts in the timeline
-   */
-  const detectConflicts = useCallback(async () => {
-    try {
-      const overlapsReal = utils.detectEventOverlaps(state.events, 'real-world');
-      const overlapsGame = utils.detectEventOverlaps(state.events, 'in-game');
-      const chrono = utils.detectChronologicalIssues(state.events);
-      dispatch({ type: 'SET_CONFLICTS', payload: [...overlapsReal, ...overlapsGame, ...chrono] });
-    } catch (error) {
-      dispatch({ type: 'SET_ERROR', payload: error instanceof Error ? error.message : 'Failed to detect conflicts' });
-    }
-  }, [state.events, utils]);
-
-  /**
-   * Resolve a conflict
-   */
-  const resolveConflict = useCallback(async (conflictId: string, resolution: ConflictResolution) => {
-    try {
-      resolution.eventChanges.forEach(change => {
-        dispatch({ type: 'UPDATE_EVENT', payload: { id: change.eventId, updates: change.changes } });
-      });
-
-      const updatedConflicts = state.conflicts.map(conflict =>
-        conflict.id === conflictId ? { ...conflict, resolved: true } : conflict
-      );
-      dispatch({ type: 'SET_CONFLICTS', payload: updatedConflicts });
-    } catch (error) {
-      dispatch({ type: 'SET_ERROR', payload: error instanceof Error ? error.message : 'Failed to resolve conflict' });
-    }
-  }, [state.conflicts]);
-
-  /**
-   * Dismiss a conflict
-   */
-  const dismissConflict = useCallback((conflictId: string) => {
-    const updatedConflicts = state.conflicts.filter(conflict => conflict.id !== conflictId);
-    dispatch({ type: 'SET_CONFLICTS', payload: updatedConflicts });
-  }, [state.conflicts]);
-
-  /**
-   * Update configuration
-   */
-  const updateConfig = useCallback((updates: Partial<DualTimelineConfig>) => {
-    dispatch({ type: 'UPDATE_CONFIG', payload: updates });
-  }, []);
-
-  /**
-   * Toggle synchronization option
-   */
-  const toggleSync = useCallback((syncType: keyof typeof config.syncOptions) => {
-    const newSyncOptions = {
-      ...config.syncOptions,
-      [syncType]: !config.syncOptions[syncType]
-    };
-    updateConfig({ syncOptions: newSyncOptions });
-  }, [config.syncOptions, updateConfig]);
-
-  // Load events when component mounts
-  useEffect(() => {
-    loadEvents();
-  }, [loadEvents]);
-
-  // Create actions object
-  const actions: DualTimelineActions = {
-    loadEvents,
-    createEvent,
-    updateEvent,
-    deleteEvent,
-    createConnection,
-    deleteConnection,
-    selectEvent,
-    selectConnection,
-    clearSelection,
-    setTimeRange,
-    setZoomLevel,
-    syncTimelines,
-    detectConflicts,
-    resolveConflict,
-    dismissConflict,
-    updateConfig,
-    toggleSync
-  };
-
-  // Create utilities object (placeholder implementations)
-  const utils: DualTimelineUtils = {
+  // Create utilities object (moved before callbacks that use it)
+  const utils: DualTimelineUtils = useMemo(() => ({
     transformToRealWorldItems: (events) => events.map(event => ({
       id: event.id,
       title: event.title,
@@ -497,7 +413,7 @@ export function DualTimelineProvider({ children, config }: DualTimelineProviderP
       if (fromTimeline === toTimeline) {
         return fromTimeline === 'real-world' ? event.realWorldStartDate : event.inGameStartDate;
       }
-      return fromTimeline === 'real-world' 
+      return fromTimeline === 'real-world'
         ? timeConversionService.realToInGame(event.realWorldStartDate)
         : timeConversionService.inGameToReal(event.inGameStartDate);
     },
@@ -587,7 +503,7 @@ export function DualTimelineProvider({ children, config }: DualTimelineProviderP
       return conflicts;
     },
     findConnectedEvents: (eventId, events, connections) => {
-      const relatedConnections = connections.filter(conn => 
+      const relatedConnections = connections.filter(conn =>
         conn.fromEventId === eventId || conn.toEventId === eventId
       );
       const relatedEventIds = relatedConnections.flatMap(conn => [conn.fromEventId, conn.toEventId]);
@@ -598,7 +514,93 @@ export function DualTimelineProvider({ children, config }: DualTimelineProviderP
       const toEvent = events.find(e => e.id === connection.toEventId);
       return !!(fromEvent && toEvent);
     }
+  }), [timeConversionService]);
+
+  /**
+   * Detect conflicts in the timeline
+   */
+  const detectConflicts = useCallback(async () => {
+    try {
+      const overlapsReal = utils.detectEventOverlaps(state.events, 'real-world');
+      const overlapsGame = utils.detectEventOverlaps(state.events, 'in-game');
+      const chrono = utils.detectChronologicalIssues(state.events);
+      dispatch({ type: 'SET_CONFLICTS', payload: [...overlapsReal, ...overlapsGame, ...chrono] });
+    } catch (error) {
+      dispatch({ type: 'SET_ERROR', payload: error instanceof Error ? error.message : 'Failed to detect conflicts' });
+    }
+  }, [state.events, utils]);
+
+  /**
+   * Resolve a conflict
+   */
+  const resolveConflict = useCallback(async (conflictId: string, resolution: ConflictResolution) => {
+    try {
+      resolution.eventChanges.forEach(change => {
+        dispatch({ type: 'UPDATE_EVENT', payload: { id: change.eventId, updates: change.changes } });
+      });
+
+      const updatedConflicts = state.conflicts.map(conflict =>
+        conflict.id === conflictId ? { ...conflict, resolved: true } : conflict
+      );
+      dispatch({ type: 'SET_CONFLICTS', payload: updatedConflicts });
+    } catch (error) {
+      dispatch({ type: 'SET_ERROR', payload: error instanceof Error ? error.message : 'Failed to resolve conflict' });
+    }
+  }, [state.conflicts]);
+
+  /**
+   * Dismiss a conflict
+   */
+  const dismissConflict = useCallback((conflictId: string) => {
+    const updatedConflicts = state.conflicts.filter(conflict => conflict.id !== conflictId);
+    dispatch({ type: 'SET_CONFLICTS', payload: updatedConflicts });
+  }, [state.conflicts]);
+
+  /**
+   * Update configuration
+   */
+  const updateConfig = useCallback((updates: Partial<DualTimelineConfig>) => {
+    dispatch({ type: 'UPDATE_CONFIG', payload: updates });
+  }, []);
+
+  /**
+   * Toggle synchronization option
+   */
+  const toggleSync = useCallback((syncType: keyof typeof config.syncOptions) => {
+    const newSyncOptions = {
+      ...config.syncOptions,
+      [syncType]: !config.syncOptions[syncType]
+    };
+    updateConfig({ syncOptions: newSyncOptions });
+  }, [config.syncOptions, updateConfig]);
+
+  // Load events when component mounts
+  useEffect(() => {
+    loadEvents();
+  }, [loadEvents]);
+
+  // Create actions object
+  const actions: DualTimelineActions = {
+    loadEvents,
+    createEvent,
+    updateEvent,
+    deleteEvent,
+    createConnection,
+    deleteConnection,
+    selectEvent,
+    selectConnection,
+    clearSelection,
+    setTimeRange,
+    setZoomLevel,
+    syncTimelines,
+    detectConflicts,
+    resolveConflict,
+    dismissConflict,
+    updateConfig,
+    toggleSync
   };
+
+
 
   // Memoize context value to prevent provider re-instantiation
   const contextValue = useMemo((): DualTimelineContextValue => ({
