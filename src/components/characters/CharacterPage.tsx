@@ -18,7 +18,8 @@ import {
   SimpleGrid,
   List,
   useMantineTheme,
-  Paper
+  Paper,
+  Stack
 } from '@mantine/core';
 import { useAuth } from '../../contexts/AuthContext';
 import { CharacterService } from '../../services/character.service';

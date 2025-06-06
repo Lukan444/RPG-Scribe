@@ -40,7 +40,7 @@ vi.mock('react-force-graph-2d', () => {
   const React = require('react');
   return {
     __esModule: true,
-    default: React.forwardRef((props: any, ref) => {
+    default: React.forwardRef((props: any, ref: React.Ref<any>) => {
       React.useImperativeHandle(ref, () => ({
         zoom: zoomMock,
         centerAt: vi.fn(),
