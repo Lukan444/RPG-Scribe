@@ -18,6 +18,7 @@ import {
   TimelineSyncEvent
 } from '../types/dualTimeline.types';
 import { TimeConversionService, createDefaultTimeConversion } from '../services/timeConversion.service';
+import { TimelineService } from '../services/timeline.service';
 
 /**
  * Dual timeline action types
@@ -216,13 +217,51 @@ export function DualTimelineProvider({ children, config }: DualTimelineProviderP
   const loadEvents = useCallback(async () => {
     dispatch({ type: 'SET_LOADING', payload: true });
     try {
-      // TODO: Implement actual data loading from TimelineService
-      // For now, return empty array
-      dispatch({ type: 'SET_EVENTS', payload: [] });
+      if (!config.worldId || !config.campaignId) {
+        throw new Error('World ID and Campaign ID are required');
+      }
+
+      const timelineService = new TimelineService(config.worldId, config.campaignId);
+      const entries = await timelineService.getTimelineEntries({ sortBy: 'sequence', sortDirection: 'asc' });
+
+      const loadedEvents: DualTimelineEvent[] = entries.map((entry) => {
+        const realTime = new Date(entry.dualTimestamp.realWorldTime);
+        const inGameTime = new Date(entry.dualTimestamp.inGameTime || realTime);
+        return {
+          id: entry.id || '',
+          title: entry.title,
+          description: entry.summary,
+          startDate: inGameTime,
+          endDate: undefined,
+          importance: entry.importance || 5,
+          eventType: (entry.entryType as any) || 'custom',
+          entityId: entry.associatedEntityId,
+          entityType: entry.associatedEntityType as any,
+          worldId: config.worldId!,
+          campaignId: config.campaignId!,
+          tags: entry.tags || [],
+          participants: entry.participants,
+          location: entry.locationId,
+          gmNotes: undefined,
+          playerVisible: !(entry.isSecret ?? false),
+          createdAt: new Date(entry.createdAt || realTime),
+          updatedAt: new Date(entry.updatedAt || realTime),
+          createdBy: entry.createdBy || 'system',
+          realWorldStartDate: realTime,
+          realWorldEndDate: undefined,
+          inGameStartDate: inGameTime,
+          inGameEndDate: undefined,
+          connectionColor: undefined,
+          realWorldGroup: 'default',
+          inGameGroup: 'default',
+        } as DualTimelineEvent;
+      });
+
+      dispatch({ type: 'SET_EVENTS', payload: loadedEvents });
     } catch (error) {
       dispatch({ type: 'SET_ERROR', payload: error instanceof Error ? error.message : 'Failed to load events' });
     }
-  }, []);
+  }, [config.worldId, config.campaignId]);
 
   /**
    * Create a new event
@@ -356,25 +395,32 @@ export function DualTimelineProvider({ children, config }: DualTimelineProviderP
    */
   const detectConflicts = useCallback(async () => {
     try {
-      // TODO: Implement conflict detection logic
-      const conflicts: TimelineConflict[] = [];
-      dispatch({ type: 'SET_CONFLICTS', payload: conflicts });
+      const overlapsReal = utils.detectEventOverlaps(state.events, 'real-world');
+      const overlapsGame = utils.detectEventOverlaps(state.events, 'in-game');
+      const chrono = utils.detectChronologicalIssues(state.events);
+      dispatch({ type: 'SET_CONFLICTS', payload: [...overlapsReal, ...overlapsGame, ...chrono] });
     } catch (error) {
       dispatch({ type: 'SET_ERROR', payload: error instanceof Error ? error.message : 'Failed to detect conflicts' });
     }
-  }, []);
+  }, [state.events, utils]);
 
   /**
    * Resolve a conflict
    */
   const resolveConflict = useCallback(async (conflictId: string, resolution: ConflictResolution) => {
     try {
-      // TODO: Implement conflict resolution logic
-      console.log('Resolving conflict:', conflictId, resolution);
+      resolution.eventChanges.forEach(change => {
+        dispatch({ type: 'UPDATE_EVENT', payload: { id: change.eventId, updates: change.changes } });
+      });
+
+      const updatedConflicts = state.conflicts.map(conflict =>
+        conflict.id === conflictId ? { ...conflict, resolved: true } : conflict
+      );
+      dispatch({ type: 'SET_CONFLICTS', payload: updatedConflicts });
     } catch (error) {
       dispatch({ type: 'SET_ERROR', payload: error instanceof Error ? error.message : 'Failed to resolve conflict' });
     }
-  }, []);
+  }, [state.conflicts]);
 
   /**
    * Dismiss a conflict
@@ -455,14 +501,91 @@ export function DualTimelineProvider({ children, config }: DualTimelineProviderP
         ? timeConversionService.realToInGame(event.realWorldStartDate)
         : timeConversionService.inGameToReal(event.inGameStartDate);
     },
-    filterEvents: (events, filters) => events, // TODO: Implement filtering
+    filterEvents: (events, filters) => {
+      if (!filters) return events;
+      return events.filter(event => {
+        if (filters.eventTypes && !filters.eventTypes.includes(event.eventType)) {
+          return false;
+        }
+        if (filters.entities && event.entityId && !filters.entities.includes(event.entityId)) {
+          return false;
+        }
+        if (filters.tags && event.tags) {
+          const hasTag = filters.tags.some((t: string) => event.tags!.includes(t));
+          if (!hasTag) return false;
+        }
+        if (typeof filters.playerVisible === 'boolean' && event.playerVisible !== filters.playerVisible) {
+          return false;
+        }
+        if (filters.dateRange) {
+          const target = filters.timeline === 'real-world' ? event.realWorldStartDate : event.inGameStartDate;
+          if (target < filters.dateRange.start || target > filters.dateRange.end) {
+            return false;
+          }
+        }
+        return true;
+      });
+    },
     sortEvents: (events, timeline) => events.sort((a, b) => {
       const aTime = timeline === 'real-world' ? a.realWorldStartDate : a.inGameStartDate;
       const bTime = timeline === 'real-world' ? b.realWorldStartDate : b.inGameStartDate;
       return aTime.getTime() - bTime.getTime();
     }),
-    detectEventOverlaps: (events, timeline) => [], // TODO: Implement overlap detection
-    detectChronologicalIssues: (events) => [], // TODO: Implement chronological issue detection
+    detectEventOverlaps: (events, timeline) => {
+      const conflicts: TimelineConflict[] = [];
+      const sorted = [...events].sort((a, b) =>
+        (timeline === 'real-world' ? a.realWorldStartDate.getTime() : a.inGameStartDate.getTime()) -
+        (timeline === 'real-world' ? b.realWorldStartDate.getTime() : b.inGameStartDate.getTime())
+      );
+      for (let i = 0; i < sorted.length - 1; i++) {
+        const curr = sorted[i];
+        const currEnd = timeline === 'real-world'
+          ? curr.realWorldEndDate || curr.realWorldStartDate
+          : curr.inGameEndDate || curr.inGameStartDate;
+        for (let j = i + 1; j < sorted.length; j++) {
+          const next = sorted[j];
+          const nextStart = timeline === 'real-world' ? next.realWorldStartDate : next.inGameStartDate;
+          if (currEnd > nextStart) {
+            conflicts.push({
+              id: `overlap-${curr.id}-${next.id}-${timeline}`,
+              type: 'overlap',
+              severity: 'medium',
+              events: [curr.id, next.id],
+              timeline,
+              description: `Events "${curr.title}" and "${next.title}" overlap on ${timeline} timeline`,
+              suggestions: [],
+              autoResolvable: false,
+              resolved: false
+            });
+          } else {
+            break;
+          }
+        }
+      }
+      return conflicts;
+    },
+    detectChronologicalIssues: (events) => {
+      const conflicts: TimelineConflict[] = [];
+      const sorted = [...events].sort((a, b) => a.realWorldStartDate.getTime() - b.realWorldStartDate.getTime());
+      for (let i = 1; i < sorted.length; i++) {
+        const prev = sorted[i - 1];
+        const curr = sorted[i];
+        if (curr.inGameStartDate < prev.inGameStartDate) {
+          conflicts.push({
+            id: `chronological-${prev.id}-${curr.id}`,
+            type: 'chronological',
+            severity: 'low',
+            events: [prev.id, curr.id],
+            timeline: 'both',
+            description: `In-game time of "${curr.title}" occurs before "${prev.title}" but after in real-world order`,
+            suggestions: [],
+            autoResolvable: false,
+            resolved: false
+          });
+        }
+      }
+      return conflicts;
+    },
     findConnectedEvents: (eventId, events, connections) => {
       const relatedConnections = connections.filter(conn => 
         conn.fromEventId === eventId || conn.toEventId === eventId
