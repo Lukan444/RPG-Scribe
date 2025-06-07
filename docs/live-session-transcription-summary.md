@@ -9,8 +9,8 @@ The Live Session Transcription feature for RPG Scribe has been successfully impl
 - **Total Components Created**: 6 major components
 - **Total Services Implemented**: 4 core services  
 - **TypeScript Compilation**: ✅ Zero errors
-- **Test Coverage**: Comprehensive unit and integration tests
-- **Performance Target**: ✅ <3 second latency achieved
+- **Test Coverage**: Unit tests for core services and components; ongoing E2E/integration test development.
+- **Performance Target**: Latency dependent on chunk size, network, and AI service processing time. Striving for near real-time experience.
 - **Accessibility**: ✅ WCAG 2.1 AA compliant
 - **Mobile Support**: ✅ Responsive design with Mantine 8
 
@@ -27,17 +27,17 @@ The Live Session Transcription feature for RPG Scribe has been successfully impl
 ### Core Services
 1. **LiveTranscriptionService** - Orchestrates real-time transcription workflow
 2. **TranscriptionService** - Manages transcription data and persistence
-3. **VertexAISpeechService** - Primary speech recognition provider
-4. **OpenAIWhisperService** - Fallback speech recognition provider
+3. **VertexAISpeechService** - Primary speech recognition provider (via backend proxy)
+4. **OpenAIWhisperService** - Fallback speech recognition provider (via backend proxy), primarily for file-based/batch processing.
 
 ## 🚀 **Key Features Implemented**
 
 ### Real-time Transcription
 - ✅ Live audio capture with device selection
-- ✅ Real-time speech-to-text processing
-- ✅ Speaker diarization and identification
-- ✅ Confidence scoring and filtering
-- ✅ WebSocket streaming for low latency
+- ✅ Real-time speech-to-text processing via chunk-based streaming to backend proxies.
+- ✅ Speaker diarization and identification (dependent on AI provider capabilities).
+- ✅ Confidence scoring and filtering. (Note: Confidence scores from OpenAI Whisper are an estimation calculated within the application).
+- ✅ Enhanced error handling for live transcription, including retry mechanisms for transient errors with the primary AI service and clearer user notifications for persistent failures.
 
 ### AI Assistant Integration
 - ✅ Automatic entity extraction (Characters, Locations, Items, Events)
@@ -71,9 +71,10 @@ The Live Session Transcription feature for RPG Scribe has been successfully impl
 ## 🔧 **Technical Implementation Details**
 
 ### Speech Recognition Pipeline
-```
-Audio Input → AudioCapture → WebSocket → VertexAI/Whisper → TranscriptionService → UI Updates
-```
+The primary mechanism for live speech recognition involves:
+`Audio Input (Client) → AudioCapture (Client) → HTTPS POST (audio chunk) → Firebase Function Proxy (Backend) → Google Cloud Speech SDK (streamingRecognize to Vertex AI) → Results back to Client`
+A similar flow applies to OpenAI Whisper for file-based processing.
+The `TranscriptionWebSocketService` may be used for other real-time notifications but is not the primary audio transport for AI STT services.
 
 ### AI Processing Pipeline
 ```
@@ -82,7 +83,7 @@ Transcription → Entity Extraction → Timeline Suggestions → Approval Workfl
 
 ### Data Flow Architecture
 ```
-Live Session → Real-time Processing → Firebase Storage → UI Components → Player Collaboration
+Live Session → Real-time Processing (via Proxies) → Firebase Storage → UI Components → Player Collaboration
 ```
 
 ## 📁 **File Structure**
@@ -98,82 +99,89 @@ Live Session → Real-time Processing → Firebase Storage → UI Components →
 ### Services (`src/services/`)
 - `LiveTranscriptionService.ts` - Core transcription orchestration
 - `transcription.service.ts` - Data persistence and management
-- `speech/VertexAISpeechService.ts` - Primary speech recognition
-- `speech/OpenAIWhisperService.ts` - Fallback speech recognition
+- `speech/VertexAISpeechService.ts` - Primary speech recognition (interacts with Firebase Function proxy)
+- `speech/OpenAIWhisperService.ts` - Fallback speech recognition (interacts with Firebase Function proxy)
+
+### Firebase Functions (`functions/src/index.ts`)
+- `proxyVertexAISpeech` - Backend proxy for Vertex AI Speech-to-Text.
+- `proxyOpenAIWhisper` - Backend proxy for OpenAI Whisper.
+
 
 ### Models (`src/models/`)
 - `Transcription.ts` - Enhanced transcription data models
 - Supporting interfaces and types
 
-### Tests (`src/components/transcription/__tests__/`, `src/services/__tests__/`)
-- Comprehensive unit tests for all components
-- Integration tests for services
-- Mock implementations for external dependencies
+### Tests (`src/components/transcription/__tests__/`, `src/services/__tests__/`, `functions/src/__tests__/`)
+- Unit tests for core frontend services (`LiveTranscriptionService`, `VertexAISpeechService`, `OpenAIWhisperService`).
+- Unit tests for key frontend components (`AudioCapture`, `TranscriptViewer`).
+- Unit tests for backend Firebase Function proxies (`proxyVertexAISpeech`, `proxyOpenAIWhisper`).
+- Mock implementations for external dependencies (Firebase SDKs, AI Client SDKs).
 
 ## 🎯 **Performance Metrics**
 
-### Latency Targets ✅ ACHIEVED
-- **Audio Processing**: <500ms
-- **Speech Recognition**: <2 seconds
-- **AI Analysis**: <1 second
-- **Total End-to-End**: <3 seconds
+### Latency Targets
+- **Audio Processing (Client-side chunking)**: <500ms
+- **Speech Recognition (Per Chunk via Proxy)**: Dependent on chunk size, network, proxy function execution, and AI service response time. Striving for quick display of interim results.
+- **AI Analysis (Post-transcription)**: <1-2 seconds, depending on complexity.
+- **Total End-to-End Latency for Live Segments**: Highly variable; aims for user perception of near real-time with interim results. Specific end-to-end guarantees (e.g., "<3 seconds") are qualified by the factors above.
 
 ### Scalability Features
-- WebSocket connection pooling
-- Efficient audio chunk processing
-- Optimized Firebase queries
-- Memory-efficient component updates
+- Serverless Firebase Functions for AI proxying.
+- Efficient audio chunk processing.
+- Optimized Firebase queries.
+- Memory-efficient component updates.
 
 ## 🔒 **Security & Privacy**
 
 ### Data Protection
-- ✅ Secure audio transmission via WebSocket
-- ✅ Encrypted storage in Firebase
-- ✅ Permission-based access control
-- ✅ User consent for audio recording
+- ✅ Secure audio transmission via HTTPS to Firebase Function proxies.
+- ✅ API Keys for AI services are managed as secure environment variables in Firebase Functions, not exposed to the client.
+- ✅ Encrypted storage in Firebase (default Firestore/Storage encryption).
+- ✅ Permission-based access control (Firebase Auth).
+- ✅ User consent for audio recording.
 
 ### Privacy Features
-- ✅ Local audio processing options
-- ✅ Configurable data retention
-- ✅ User-controlled transcription sharing
-- ✅ GDPR compliance considerations
+- ✅ Local audio processing options (not directly applicable when using cloud STT, but client manages audio capture).
+- ✅ Configurable data retention (manual data deletion, Firestore TTL policies can be explored).
+- ✅ User-controlled transcription sharing.
+- ✅ GDPR compliance considerations.
 
 ## 🧪 **Testing Strategy**
 
 ### Unit Tests
-- Component rendering and interaction tests
-- Service method validation
-- Error handling scenarios
-- Mock implementation verification
+- Component rendering and interaction tests (React Testing Library).
+- Service method validation for frontend services.
+- Firebase Function unit tests (Vitest, `firebase-functions-test`), mocking AI SDKs.
+- Error handling scenarios.
+- Mock implementation verification.
 
-### Integration Tests
-- End-to-end transcription workflow
-- Firebase integration validation
-- Speech recognition service testing
-- Timeline integration verification
+### Integration Tests (Area for Future Expansion)
+- End-to-end transcription workflow (Client → Firebase Function → AI Service → Client).
+- Firebase integration validation (Firestore rules, complex queries).
 
-### Performance Tests
-- Audio processing latency measurement
-- Memory usage optimization
-- Concurrent user handling
-- Real-time update performance
+### Performance Tests (Area for Future Expansion)
+- Audio processing latency measurement under various conditions.
+- Memory usage optimization.
+- Concurrent user handling for proxy functions.
+- Real-time update performance.
 
 ## 🚀 **Deployment Readiness**
 
 ### Production Requirements Met
-- ✅ Zero TypeScript compilation errors
-- ✅ Comprehensive error handling
-- ✅ Performance optimization
-- ✅ Security best practices
-- ✅ Accessibility compliance
-- ✅ Mobile responsiveness
+- ✅ Zero TypeScript compilation errors.
+- ✅ Enhanced error handling and retry mechanisms for core transcription services.
+- ✅ Security best practices for API key management implemented.
+- ✅ Accessibility compliance (WCAG 2.1 AA).
+- ✅ Mobile responsiveness.
 
 ### Configuration Requirements
-- Firebase project setup with Firestore
-- Vertex AI Speech-to-Text API credentials
-- OpenAI API key for Whisper fallback
-- WebSocket server configuration
-- Audio device permissions
+- Firebase project setup with Firestore and Firebase Functions.
+- **Firebase Functions Environment Variables:**
+    - Vertex AI API key (e.g., `vertexai.key="YOUR_VERTEX_AI_KEY"`)
+    - OpenAI API key (e.g., `openai.key="YOUR_OPENAI_KEY"`)
+    *Set using `firebase functions:config:set ...`*
+- (Optional) WebSocket server configuration if used for other real-time features.
+- Audio device permissions from users.
 
 ## 📚 **Documentation**
 
@@ -185,7 +193,7 @@ Live Session → Real-time Processing → Firebase Storage → UI Components →
 
 ### Developer Documentation
 - API reference documentation
-- Integration patterns
+- Integration patterns (including proxy function usage)
 - Extension guidelines
 - Performance optimization tips
 
@@ -200,22 +208,22 @@ Live Session → Real-time Processing → Firebase Storage → UI Components →
 - Advanced audio processing filters
 
 ### Scalability Considerations
-- Microservice architecture migration
-- CDN integration for audio streaming
+- Microservice architecture migration (if needed beyond Firebase Functions)
+- CDN integration for audio streaming (if client-side uploads become very large before proxying)
 - Advanced caching strategies
-- Load balancing for high-traffic scenarios
+- Load balancing for high-traffic scenarios (Firebase Functions scale automatically to a degree)
 
 ## ✅ **Conclusion**
 
-The Live Session Transcription feature has been successfully implemented with all planned functionality. The system provides a robust, scalable, and user-friendly solution for real-time transcription in RPG sessions, with comprehensive AI integration and collaborative features.
+The Live Session Transcription feature has been successfully implemented and refactored with all planned functionality. The system provides a robust, scalable, and user-friendly solution for real-time transcription in RPG sessions, with comprehensive AI integration, improved security for API key handling, and collaborative features.
 
 **Key Success Metrics:**
 - 🎯 All 5 implementation phases completed
-- 🚀 Performance targets achieved (<3s latency)
+- 🚀 Performance targets are now qualified by the proxy architecture, aiming for near real-time perception.
 - 🔧 Zero TypeScript compilation errors
-- 🧪 Comprehensive test coverage
+- 🧪 Unit test coverage for core transcription services, components, and backend proxies.
 - ♿ WCAG 2.1 AA accessibility compliance
 - 📱 Mobile-responsive design
 - 🤖 Full AI integration with timeline system
 
-The implementation is production-ready and can be deployed immediately with proper configuration of the required external services (Firebase, Vertex AI, OpenAI).
+The implementation is production-ready and can be deployed immediately with proper configuration of the required external services (Firebase, AI Service API Keys for Functions).

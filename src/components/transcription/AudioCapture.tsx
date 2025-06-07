@@ -349,9 +349,11 @@ export function AudioCapture({
         config
       });
       logger.logPerformance('Start audio recording', duration, { success: false });
-      handleError(new Error(`Failed to start recording: ${error}`));
+      // Ensure cleanup if startRecording fails at any point
+      stopRecording(); // Call stopRecording to clean up any partially acquired resources
+      handleError(new Error(`Failed to start recording: ${error.message || error}`)); // Pass original error message
     }
-  }, [selectedDeviceId, config, updateState, handleError, onAudioChunk, initializeAudioContext, logger]);
+  }, [selectedDeviceId, config, updateState, handleError, onAudioChunk, initializeAudioContext, logger, stopRecording]);
 
   // Pause recording
   const pauseRecording = useCallback(() => {
@@ -380,8 +382,17 @@ export function AudioCapture({
 
   // Stop recording
   const stopRecording = useCallback(() => {
+    logger.debug(LogCategory.AUDIO, 'stopRecording called', {
+      mediaRecorderState: mediaRecorderRef.current?.state,
+      mediaStreamExists: !!mediaStreamRef.current,
+      audioContextExists: !!audioContextRef.current,
+    });
+
     if (mediaRecorderRef.current) {
-      mediaRecorderRef.current.stop();
+      if (mediaRecorderRef.current.state === 'recording' || mediaRecorderRef.current.state === 'paused') {
+        mediaRecorderRef.current.stop();
+      }
+      mediaRecorderRef.current = null; // Nullify after stopping
     }
     
     if (mediaStreamRef.current) {
@@ -390,8 +401,15 @@ export function AudioCapture({
     }
     
     if (audioContextRef.current) {
-      audioContextRef.current.close();
+      if (audioContextRef.current.state !== 'closed') {
+        audioContextRef.current.close();
+      }
       audioContextRef.current = null;
+    }
+
+    // Nullify analyserRef as it's tied to audioContext
+    if (analyserRef.current) {
+      analyserRef.current = null;
     }
     
     if (durationIntervalRef.current) {

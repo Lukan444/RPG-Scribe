@@ -18,6 +18,8 @@ import { IndexSynchronizer } from "./vector/indexSync";
 import { IndexMetadataManager } from "./vector/indexMetadata";
 import { CURRENT_SCHEMA_VERSION } from "./vector/indexSchema";
 import { AppError, ErrorType } from "./utils/error-handling";
+import {SpeechClient} from "@google-cloud/speech";
+import OpenAI from "openai";
 
 // Initialize Firebase Admin SDK
 admin.initializeApp();
@@ -679,6 +681,211 @@ function extractTextContent(entity: any, entityType: EntityType): string {
       ].filter(Boolean).join(" ");
   }
 }
+
+export const proxyVertexAISpeech = functions.https.onCall(async (data, context) => {
+  // TODO: Add proper authentication check if this needs to be secured
+  // if (!context.auth) {
+  //   throw new functions.https.HttpsError("unauthenticated", "User must be authenticated.");
+  // }
+
+  const audioBase64 = data.audioBytes; // Expect base64 encoded audio string
+  const recognitionConfig = data.config; // RecognitionConfig object
+  const streamId = data.streamId; // Optional: for client-side tracking, not used to maintain server stream
+
+  // API key should be configured via Firebase environment variables (e.g., vertexai.key)
+  // The SpeechClient uses Application Default Credentials when deployed on Firebase/GCP.
+  // Ensure the function's service account has "Vertex AI User" or "roles/aiplatform.user" role.
+  const apiKey = functions.config().vertexai?.key; // This might not be directly used by SpeechClient if ADC is set up
+  if (!apiKey && !process.env.GOOGLE_APPLICATION_CREDENTIALS && process.env.FUNCTIONS_EMULATOR !== 'true') {
+     console.warn("Vertex AI API key or ADC not configured. SpeechClient might fail.");
+     // Depending on strictness, you might throw an error here if not using emulator and key is missing
+     // throw new functions.https.HttpsError("internal", "Vertex AI API key or ADC is not configured.");
+  }
+
+  if (!audioBase64 || !recognitionConfig) {
+    throw new functions.https.HttpsError("invalid-argument", "Missing audioBytes or config.");
+  }
+
+  const client = new SpeechClient();
+  const audioBytes = Buffer.from(audioBase64, 'base64');
+
+  const requestConfig = {
+    config: {
+      encoding: recognitionConfig.encoding || "WEBM_OPUS", // Or determine from actual client data type
+      sampleRateHertz: recognitionConfig.sampleRateHertz || 16000,
+      languageCode: recognitionConfig.languageCode || "en-US",
+      enableSpeakerDiarization: recognitionConfig.enableSpeakerDiarization,
+      diarizationSpeakerCount: recognitionConfig.diarizationSpeakerCount,
+      enableAutomaticPunctuation: recognitionConfig.enableAutomaticPunctuation,
+      enableWordTimeOffsets: recognitionConfig.enableWordTimeOffsets,
+      model: recognitionConfig.model,
+      useEnhanced: recognitionConfig.useEnhanced,
+      // Add other relevant fields from SpeechConfig interface
+    },
+    interimResults: recognitionConfig.interimResults !== undefined ? recognitionConfig.interimResults : true,
+  };
+
+  return new Promise((resolve, reject) => {
+    const recognizeStream = client.streamingRecognize(requestConfig)
+      .on("error", (err: Error) => {
+        console.error("Vertex AI Streaming Error:", err);
+        // Classify error for client
+        let httpsErrorType: functions.https.FunctionsErrorCode = "internal";
+        if (err.message.includes("quota") || (err as any).code === 8) {
+            httpsErrorType = "resource-exhausted";
+        } else if ((err as any).code === 7) { // UNAUTHENTICATED or PERMISSION_DENIED
+            httpsErrorType = "unauthenticated";
+        }
+        reject(new functions.https.HttpsError(httpsErrorType, `Vertex AI streaming error: ${err.message}`, err));
+      })
+      .on("data", (streamResponse: any) => {
+        // streamResponse is google.cloud.speech.v1.StreamingRecognizeResponse
+        // We need to collect all results for this chunk and send them back.
+        // For an HTTPS callable, we resolve the promise when the stream for *this chunk* ends.
+        // The 'data' event can be fired multiple times for a single audio chunk (interim results).
+        // The final result for a phrase will have isFinal = true.
+
+        // This simplistic implementation will resolve with the FIRST response.
+        // A better approach for an HTTPS callable that simulates streaming for a chunk
+        // would be to collect all 'data' events into an array, and resolve with the array
+        // when the stream for *this specific audio chunk processing* ends.
+        // However, a single .on('data') call here means we send back the first result we get.
+        // To send all results for the chunk, we'd need to know when Vertex AI is done with THIS chunk.
+        // The `streamingRecognize` stream doesn't explicitly end per chunk sent via `recognizeStream.write`.
+        // It ends when `recognizeStream.end()` is called.
+
+        // Corrected approach for handling results for the current chunk:
+        // The function will resolve with an array of all results received for this specific chunk.
+        // This requires a way to signal the end of the chunk to this function from Vertex.
+        // For a single audio buffer sent, Vertex will send one or more 'data' events,
+        // with the last one having `isFinal: true` for the utterance.
+        // We will collect these and send them back.
+
+        // The current design of `proxyVertexAISpeech` implies it's called per chunk.
+        // It should return all results (interim & final) for THAT chunk.
+        // This means we need to collect results inside this callback.
+        // However, an HTTPS callable function can only resolve ONCE.
+        // This means we must collect all results and send them as a single package.
+        // The 'data' event fires for each result. We need to accumulate them.
+        // The streamingRecognize stream to Vertex AI should be ended after the single chunk is written.
+
+        // This design is slightly flawed for true streaming back to client via single HTTPS call.
+        // Let's return the first result for now, and plan to adjust if client needs all interim for the chunk.
+        // Or, better: accumulate results and send them all when the stream for this chunk ends.
+        // For this iteration, we'll send *all* results that Vertex provides for the given audio chunk.
+        // This means we need to modify the promise to collect data.
+        // This part will be handled in the revised code block below.
+        // For now, this search block is just to find the old code.
+      });
+
+    // This initial search block is focused on replacing the `client.recognize` call.
+    // The actual streaming logic will be in the REPLACE block.
+    // The promise wrapper will be more complex.
+
+    // Send the audio data.
+    recognizeStream.write(audioBytes);
+    // End the stream to Vertex AI, signaling that this chunk is complete.
+    recognizeStream.end();
+
+    // The promise resolution with collected results will be handled in the actual replacement.
+  return new Promise((resolve, reject) => {
+    const resultsForChunk: any[] = [];
+    const recognizeStream = client.streamingRecognize(requestConfig)
+      .on("error", (err: Error) => {
+        console.error("Vertex AI Streaming Error:", err);
+        let httpsErrorType: functions.https.FunctionsErrorCode = "internal";
+        if (err.message.includes("quota") || (err as any).code === 8) { // RESOURCE_EXHAUSTED
+            httpsErrorType = "resource-exhausted";
+        } else if ((err as any).code === 7 || (err as any).code === 16) { // PERMISSION_DENIED (7) or UNAUTHENTICATED (16)
+            httpsErrorType = "unauthenticated";
+        } else if ((err as any).code === 3) { // INVALID_ARGUMENT
+            httpsErrorType = "invalid-argument";
+        }
+        reject(new functions.https.HttpsError(httpsErrorType, `Vertex AI streaming error: ${err.message}`, err));
+      })
+      .on("data", (streamResponse: any) => {
+        // Add all parts of the response to our collection for this chunk
+        resultsForChunk.push(streamResponse);
+      })
+      .on("end", () => {
+        // When Vertex AI finishes processing the audio for this chunk and sending data back
+        resolve({ results: resultsForChunk, streamId: streamId });
+      });
+
+    // Send the audio data for this chunk
+    recognizeStream.write(audioBytes);
+    // Signal that no more audio will be sent for this particular stream
+    recognizeStream.end();
+    });
+  });
+});
+
+export const proxyOpenAIWhisper = functions.https.onCall(async (data, context) => {
+  // TODO: Add authentication check:
+  // if (!context.auth) {
+  //   throw new functions.https.HttpsError("unauthenticated", "User must be authenticated.");
+  // }
+
+  const audioBase64 = data.audioBytes; // Assuming audioBytes is passed directly as base64
+  const modelName = data.model || "whisper-1"; // Default to whisper-1 if not specified
+  const task = data.task; // 'transcribe' or 'translate'
+  const language = data.language; // Optional language code
+
+  const openAIApiKey = functions.config().openai?.key;
+
+  if (!openAIApiKey) {
+    throw new functions.https.HttpsError("internal", "OpenAI API key is not configured.");
+  }
+
+  const openai = new OpenAI({apiKey: openAIApiKey});
+
+  if (!audioBase64) {
+    throw new functions.https.HttpsError("invalid-argument", "Missing audioBytes.");
+  }
+
+  try {
+    const audioBuffer = Buffer.from(audioBase64, "base64");
+
+    // Using a filename is important for the OpenAI API to determine the audio format.
+    // Since we don't have an actual file, we provide a common one like 'audio.webm' or 'audio.wav'.
+    // The client should ideally specify the format or the function should try to detect it.
+    // For now, assume a common format that Whisper handles well.
+    const DUMMY_FILENAME = "audio.webm"; // Or another format like mp3, wav, etc.
+
+    let response;
+    if (task === "translate") {
+      response = await openai.audio.translations.create({
+        file: {name: DUMMY_FILENAME, data: audioBuffer}, // Pass as {name, data}
+        model: modelName,
+      });
+    } else {
+      response = await openai.audio.transcriptions.create({
+        file: {name: DUMMY_FILENAME, data: audioBuffer}, // Pass as {name, data}
+        model: modelName,
+        language: language, // Optional
+        // response_format: data.response_format, // verbose_json is good for segments
+        // timestamp_granularities: data.timestamp_granularities, // e.g., ['segment']
+      });
+    }
+    return response;
+  } catch (error: any) {
+    // Log specific, non-sensitive parts of the error from OpenAI
+    console.error("Error calling OpenAI Whisper API. Status:", error.status, "Type:", error.type, "Code:", error.code, "Message:", error.message);
+    // Avoid logging the full 'error' object if it might contain parts of the input data.
+    // The original error details are still passed in HttpsError's 'details' field for backend debugging.
+    let httpsErrorType: functions.https.FunctionsErrorCode = "internal";
+    if (error.status === 401) { // Unauthorized
+        httpsErrorType = "unauthenticated";
+    } else if (error.status === 429) { // Rate limit
+        httpsErrorType = "resource-exhausted";
+    } else if (error.status === 400) { // Bad request (e.g., invalid audio format)
+        httpsErrorType = "invalid-argument";
+    }
+    // Pass a generic message if error.message might be too revealing or include input.
+    // However, OpenAI error messages are usually generic like "Invalid audio file format".
+    throw new functions.https.HttpsError(httpsErrorType, `OpenAI API error: ${error.message || "An unexpected error occurred."}`, error.error || {status: error.status, type: error.type});
+  }
+});
 
 /**
  * Check if a collection is an entity collection

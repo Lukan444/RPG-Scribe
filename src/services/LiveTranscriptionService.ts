@@ -109,6 +109,13 @@ export class LiveTranscriptionService {
   private segmentBuffer: TranscriptionSegment[] = [];
   private lastProcessedTime = 0;
 
+  // State for error handling and fallback
+  private isVertexAIPersistentlyFailing: boolean = false;
+  private vertexConsecutiveFailures: number = 0;
+  private static readonly MAX_VERTEX_CONSECUTIVE_FAILURES = 3;
+  private static readonly RETRY_DELAY_MS = 1000;
+
+
   constructor(
     config: Partial<LiveTranscriptionConfig> = {},
     events: LiveTranscriptionEvents = {}
@@ -161,32 +168,33 @@ export class LiveTranscriptionService {
 
     try {
       this.logger.info(LogCategory.SERVICE, 'Starting service initialization', {
-        vertexAIAvailable: !!(process.env.REACT_APP_VERTEX_AI_API_KEY && process.env.REACT_APP_VERTEX_AI_PROJECT_ID),
-        openAIAvailable: !!process.env.REACT_APP_OPENAI_API_KEY,
+        // API keys are no longer checked here for availability,
+        // the services themselves will rely on backend configuration.
+        projectIdAvailable: !!process.env.REACT_APP_VERTEX_AI_PROJECT_ID,
         webSocketEnabled: this.config.enableRealTimeStreaming
       });
 
       // Initialize Vertex AI service
-      if (process.env.REACT_APP_VERTEX_AI_API_KEY && process.env.REACT_APP_VERTEX_AI_PROJECT_ID) {
+      // It's assumed REACT_APP_VERTEX_AI_PROJECT_ID is necessary for client-side logic or is passed to the proxy.
+      if (process.env.REACT_APP_VERTEX_AI_PROJECT_ID) {
         this.logger.debug(LogCategory.SERVICE, 'Initializing Vertex AI Speech service');
         this.vertexAIService = new VertexAISpeechService({
-          apiKey: process.env.REACT_APP_VERTEX_AI_API_KEY,
+          // apiKey is no longer passed
           projectId: process.env.REACT_APP_VERTEX_AI_PROJECT_ID,
-          location: process.env.REACT_APP_VERTEX_AI_LOCATION
+          location: process.env.REACT_APP_VERTEX_AI_LOCATION // Optional, service has a default
         });
-        this.logger.info(LogCategory.SERVICE, 'Vertex AI Speech service initialized successfully');
+        this.logger.info(LogCategory.SERVICE, 'Vertex AI Speech service instance created');
+        // Availability will be checked by the service itself if needed.
       } else {
-        this.logger.warn(LogCategory.SERVICE, 'Vertex AI credentials not found, service unavailable');
+        this.logger.warn(LogCategory.SERVICE, 'Vertex AI Project ID not found, Vertex AI service may be limited or unavailable');
       }
 
       // Initialize OpenAI Whisper service
-      if (process.env.REACT_APP_OPENAI_API_KEY) {
-        this.logger.debug(LogCategory.SERVICE, 'Initializing OpenAI Whisper service');
-        this.whisperService = new OpenAIWhisperService(process.env.REACT_APP_OPENAI_API_KEY);
-        this.logger.info(LogCategory.SERVICE, 'OpenAI Whisper service initialized successfully');
-      } else {
-        this.logger.warn(LogCategory.SERVICE, 'OpenAI API key not found, Whisper service unavailable');
-      }
+      // No API key needed for constructor anymore.
+      this.logger.debug(LogCategory.SERVICE, 'Initializing OpenAI Whisper service');
+      this.whisperService = new OpenAIWhisperService();
+      this.logger.info(LogCategory.SERVICE, 'OpenAI Whisper service instance created');
+      // Availability will be checked by the service itself if needed.
 
       // Initialize WebSocket service for real-time streaming (optional)
       const enableRealTime = this.config.enableRealTimeStreaming &&
@@ -282,6 +290,10 @@ export class LiveTranscriptionService {
 
     this.updateState(SessionState.STARTING);
     this.logger.setSessionId(sessionId);
+
+    // Reset failure state for the new session
+    this.isVertexAIPersistentlyFailing = false;
+    this.vertexConsecutiveFailures = 0;
 
     try {
       // Create transcription record
@@ -408,16 +420,49 @@ export class LiveTranscriptionService {
     });
 
     try {
-      // Send to WebSocket for real-time processing
+      // Send to WebSocket for real-time processing (if configured and connected)
       if (this.webSocketService?.isConnected()) {
         this.logger.debug(LogCategory.WEBSOCKET, 'Sending audio chunk to WebSocket');
         this.webSocketService.sendAudioChunk(audioChunk, timestamp);
       }
 
-      // Send to speech recognition service
-      if (this.activeStreamId && this.vertexAIService) {
-        this.logger.debug(LogCategory.TRANSCRIPTION, 'Sending audio chunk to speech recognition service');
-        await this.vertexAIService.sendAudioChunk(this.activeStreamId, audioChunk);
+      // Send to speech recognition service (Vertex AI) if not persistently failing
+      if (this.activeStreamId && this.vertexAIService && !this.isVertexAIPersistentlyFailing) {
+        this.logger.debug(LogCategory.TRANSCRIPTION, 'Attempting to send audio chunk to Vertex AI service');
+
+        let attempts = 0;
+        let success = false;
+        while (attempts < LiveTranscriptionService.MAX_VERTEX_CONSECUTIVE_FAILURES && !success) {
+          try {
+            await this.vertexAIService.sendAudioChunk(this.activeStreamId, audioChunk);
+            success = true;
+            this.vertexConsecutiveFailures = 0; // Reset on success
+            this.logger.debug(LogCategory.TRANSCRIPTION, `Successfully sent audio chunk to Vertex AI on attempt ${attempts + 1}`);
+          } catch (error) {
+            attempts++;
+            const recognitionError = error as RecognitionError; // Assuming sendAudioChunk throws RecognitionError
+            this.logger.warn(LogCategory.TRANSCRIPTION, `Attempt ${attempts} failed for sending audio chunk to Vertex AI`, recognitionError);
+
+            if (attempts >= LiveTranscriptionService.MAX_VERTEX_CONSECUTIVE_FAILURES || !this.isRetryableError(recognitionError.type)) {
+              this.logger.error(LogCategory.TRANSCRIPTION, 'Max retries reached or non-retryable error for Vertex AI sendAudioChunk.', recognitionError);
+              // The error will be caught by the stream's onError handler (handleSpeechError)
+              // which will then decide on persistent failure.
+              // We re-throw here so handleSpeechError gets it.
+              throw error;
+            }
+
+            this.events.onError?.({
+              code: "LIVE_TX_RETRYING",
+              message: `Real-time transcription: Attempt ${attempts} failed. Retrying...`,
+              originalError: recognitionError,
+              isRetryable: true,
+              retryCount: attempts,
+            });
+            await new Promise(resolve => setTimeout(resolve, LiveTranscriptionService.RETRY_DELAY_MS));
+          }
+        }
+      } else if (this.isVertexAIPersistentlyFailing) {
+        this.logger.warn(LogCategory.TRANSCRIPTION, 'Skipping audio chunk for Vertex AI - service persistently failing.', { streamId: this.activeStreamId });
       }
 
       this.logger.logAudioMetrics({
@@ -432,14 +477,28 @@ export class LiveTranscriptionService {
       });
 
     } catch (error) {
-      this.logger.error(LogCategory.AUDIO, 'Failed to process audio chunk', error as Error, {
+      this.logger.error(LogCategory.AUDIO, 'Error during processAudioChunk (outer catch)', error as Error, {
         chunkSize: audioChunk.byteLength,
         timestamp,
         sessionId: this.currentSessionId
       });
       this.logger.endTiming(operationId, { success: false });
-      this.events.onError?.(error as Error);
+      // If the error came from vertexAIService.sendAudioChunk retries, it's already handled by handleSpeechError.
+      // This outer catch is for other unexpected errors in processAudioChunk.
+      if (!(error instanceof RecognitionError)) { // Avoid double-reporting if already handled by stream.onError
+         this.events.onError?.({
+            code: "PROCESS_AUDIO_CHUNK_FAILED",
+            message: (error as Error).message || "Unknown error processing audio chunk.",
+            originalError: error as Error
+        });
+      }
     }
+  }
+
+  private isRetryableError(errorType: RecognitionErrorType): boolean {
+    return errorType === RecognitionErrorType.NETWORK_ERROR ||
+           errorType === RecognitionErrorType.TIMEOUT ||
+           errorType === RecognitionErrorType.UNKNOWN; // Some unknown errors might be transient
   }
 
   /**
@@ -481,14 +540,32 @@ export class LiveTranscriptionService {
       
       try {
         segments = await this.transcribeWithProvider(audioFile, this.config.provider);
-      } catch (error) {
-        console.warn(`Primary provider ${this.config.provider} failed, trying fallback:`, error);
+      } catch (error: any) {
+        this.logger.warn(LogCategory.SERVICE, `Primary transcription provider ${this.config.provider} failed for file ${audioFile.name}. Attempting fallback.`, {
+          provider: this.config.provider,
+          fileName: audioFile.name,
+          fileSize: audioFile.size,
+          errorMessage: error.message,
+          errorType: error instanceof RecognitionError ? error.type : undefined,
+        });
         
         // Try fallback provider
         if (this.config.fallbackProvider) {
-          segments = await this.transcribeWithProvider(audioFile, this.config.fallbackProvider);
+          try {
+            segments = await this.transcribeWithProvider(audioFile, this.config.fallbackProvider);
+            this.logger.info(LogCategory.SERVICE, `Fallback provider ${this.config.fallbackProvider} succeeded for file ${audioFile.name}.`);
+          } catch (fallbackError: any) {
+            this.logger.error(LogCategory.SERVICE, `Fallback transcription provider ${this.config.fallbackProvider} also failed for file ${audioFile.name}.`, {
+              provider: this.config.fallbackProvider,
+              fileName: audioFile.name,
+              errorMessage: fallbackError.message,
+              errorType: fallbackError instanceof RecognitionError ? fallbackError.type : undefined,
+            });
+            throw fallbackError; // Re-throw the error from the fallback provider
+          }
         } else {
-          throw error;
+          this.logger.error(LogCategory.SERVICE, `Primary transcription provider ${this.config.provider} failed and no fallback is configured for file ${audioFile.name}.`);
+          throw error; // Re-throw the original error
         }
       }
 
@@ -500,9 +577,14 @@ export class LiveTranscriptionService {
       );
 
       return transcriptionId;
-    } catch (error) {
-      console.error('Failed to process audio file:', error);
-      throw error;
+    } catch (error: any) {
+      this.logger.error(LogCategory.SERVICE, `Failed to process audio file ${audioFile.name} entirely.`, {
+        fileName: audioFile.name,
+        errorMessage: error.message,
+        errorType: error instanceof RecognitionError ? error.type : undefined,
+        originalError: error instanceof RecognitionError ? error.details : error
+      });
+      throw error; // Re-throw to be handled by the caller
     }
   }
 
@@ -548,11 +630,28 @@ export class LiveTranscriptionService {
 
       // Finalize transcription
       if (this.currentTranscriptionId) {
-        await this.transcriptionService.addTranscriptionSegments(
-          this.currentTranscriptionId,
-          this.segmentBuffer,
-          true
-        );
+        if (this.isVertexAIPersistentlyFailing) {
+          this.logger.warn(LogCategory.SERVICE, `Live transcription for session ${this.currentSessionId} failed. Marking session record.`, { transcriptionId: this.currentTranscriptionId });
+          await this.transcriptionService.update(this.currentTranscriptionId, {
+            status: TranscriptionStatus.ERROR,
+            notes: (this.segmentBuffer.length > 0 ? "Partial results saved. " : "") + "Live transcription failed due to persistent errors with Vertex AI. Full audio may need manual processing if available.",
+            // Add any custom fields to indicate this state if your model supports it
+          });
+          // Still save any buffered segments that might have been collected before failure
+          if (this.segmentBuffer.length > 0) {
+             await this.transcriptionService.addTranscriptionSegments(
+                this.currentTranscriptionId,
+                this.segmentBuffer,
+                true // Mark as final set of segments for this attempt
+             );
+          }
+        } else {
+          await this.transcriptionService.addTranscriptionSegments(
+            this.currentTranscriptionId,
+            this.segmentBuffer,
+            true
+          );
+        }
       }
 
       this.cleanup();
@@ -684,12 +783,59 @@ export class LiveTranscriptionService {
    * Handle speech recognition errors
    */
   private handleSpeechError(error: RecognitionError): void {
-    this.logger.error(LogCategory.TRANSCRIPTION, 'Speech recognition error occurred', error, {
+    this.logger.error(LogCategory.TRANSCRIPTION, 'Speech recognition error from service', error, {
       sessionId: this.currentSessionId,
       activeStreamId: this.activeStreamId,
-      provider: this.config.provider
+      provider: this.config.provider,
+      consecutiveFailures: this.vertexConsecutiveFailures,
+      isPersistentFailure: this.isVertexAIPersistentlyFailing,
     });
-    this.events.onError?.(error);
+
+    // Check if this error type contributes to persistent failure
+    if (this.isCriticalOrNonRetryableForPersistentTracking(error.type)) {
+      this.vertexConsecutiveFailures++;
+    }
+
+    if (this.vertexConsecutiveFailures >= LiveTranscriptionService.MAX_VERTEX_CONSECUTIVE_FAILURES && !this.isVertexAIPersistentlyFailing) {
+      this.isVertexAIPersistentlyFailing = true;
+      this.logger.error(LogCategory.SERVICE, 'Vertex AI live transcription persistently failing. No more real-time attempts for this session.', {
+        sessionId: this.currentSessionId,
+        activeStreamId: this.activeStreamId,
+        failures: this.vertexConsecutiveFailures
+      });
+      this.events.onError?.({
+        code: "LIVE_TX_FATAL_ERROR",
+        message: "Real-time transcription has failed for this session. Audio processing may be attempted after the session ends if the recording is available.",
+        originalError: error,
+        isRetryable: false,
+      });
+    } else if (!this.isVertexAIPersistentlyFailing) {
+      // For non-persistent, but still significant errors from the speech service stream
+      this.events.onError?.({
+        code: "LIVE_TX_STREAM_ERROR",
+        message: `Real-time transcription encountered an error: ${error.message}`,
+        originalError: error,
+        isRetryable: this.isRetryableError(error.type), // The stream itself won't retry, but indicates if type is generally retryable
+      });
+    }
+    // If already persistently failing, further errors from the (now unused) stream are not sent to client via onError.
+  }
+
+  private isCriticalOrNonRetryableForPersistentTracking(errorType: RecognitionErrorType): boolean {
+    // Errors that, if they happen repeatedly, indicate a persistent issue with this stream.
+    // AUTHENTICATION_ERROR or QUOTA_EXCEEDED might immediately be considered persistent once they occur.
+    switch (errorType) {
+      case RecognitionErrorType.AUTHENTICATION_ERROR:
+      case RecognitionErrorType.QUOTA_EXCEEDED:
+      case RecognitionErrorType.INVALID_AUDIO: // If config is bad, it will keep failing
+        return true; // These might make it persistently fail faster
+      case RecognitionErrorType.NETWORK_ERROR:
+      case RecognitionErrorType.TIMEOUT:
+      case RecognitionErrorType.UNKNOWN:
+        return true; // Track consecutive for these
+      default:
+        return false;
+    }
   }
 
   /**

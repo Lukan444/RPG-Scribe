@@ -183,6 +183,10 @@ npm run lint:fix       # Fix ESLint issues
 npm run format         # Format code with Prettier
 ```
 
+### Logging Guidelines
+
+Please refer to the [Logging Guidelines](docs/LOGGING_GUIDELINES.md) for details on how to implement logging responsibly, with a focus on PII protection and effective debugging.
+
 ### 📁 Project Structure
 
 ```
@@ -245,6 +249,37 @@ RPG-Scribe/
 - **GitHub Actions** - CI/CD pipeline
 - **Firebase Hosting** - Static site hosting
 - **npm/yarn** - Package management
+
+## Configuring API Keys for Speech-to-Text Services
+
+To enable speech-to-text functionalities that rely on Vertex AI and OpenAI, you need to configure API keys as environment variables for the Firebase Functions. These keys are not stored in the repository for security reasons.
+
+Follow these steps to set them up:
+
+1.  **Obtain API Keys:**
+    *   **Vertex AI:** Create or use an existing API key from your Google Cloud Platform project that has the Vertex AI API enabled.
+    *   **OpenAI:** Obtain an API key from your OpenAI account dashboard.
+
+2.  **Set Firebase Functions Configuration:**
+    Use the Firebase CLI to set these keys. Replace `YOUR_VERTEX_AI_KEY` and `YOUR_OPENAI_KEY` with your actual API keys.
+
+    ```bash
+    firebase functions:config:set vertexai.key="YOUR_VERTEX_AI_KEY" openai.key="YOUR_OPENAI_KEY"
+    ```
+
+3.  **Access in Functions:**
+    The backend proxy functions (`proxyVertexAISpeech` and `proxyOpenAIWhisper`) are already configured to access these keys via `functions.config().vertexai.key` and `functions.config().openai.key`.
+
+4.  **Deployment:**
+    After setting the configuration, deploy your Firebase Functions for the changes to take effect:
+
+    ```bash
+    firebase deploy --only functions
+    ```
+
+    Ensure that your Firebase project is correctly set up (`firebase use <project_id>`) before deploying.
+
+**Important:** Keep your API keys confidential. Do not commit them to your repository. The `.env.example` file should only contain placeholders for non-sensitive configuration variables.
 
 ## 🗺️ Roadmap
 

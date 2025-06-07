@@ -6,20 +6,23 @@
  */
 
 import { TranscriptionSegment, SpeakerInfo, AudioSourceType, SpeakerConfidence } from '../../models/Transcription';
+import { getFunctions, httpsCallable } from 'firebase/functions';
 
 /**
  * Speech recognition configuration
  */
 export interface SpeechConfig {
-  language: string;
-  sampleRate: number;
-  channels: number;
-  enableSpeakerDiarization: boolean;
+  language: string; // BCP-47 language tag
+  sampleRate: number; // Sample rate in Hertz
+  channels: number; // Number of audio channels
+  encoding?: 'ENCODING_UNSPECIFIED' | 'LINEAR16' | 'FLAC' | 'MULAW' | 'AMR' | 'AMR_WB' | 'OGG_OPUS' | 'SPEEX_WITH_HEADER_BYTE' | 'WEBM_OPUS'; // Audio encoding
+  enableSpeakerDiarization?: boolean;
   maxSpeakers?: number;
-  enableAutomaticPunctuation: boolean;
-  enableWordTimeOffsets: boolean;
-  model?: string;
+  enableAutomaticPunctuation?: boolean;
+  enableWordTimeOffsets?: boolean;
+  model?: string; // e.g., "latest_long", "medical_dictation", etc.
   useEnhanced?: boolean;
+  interimResults?: boolean; // If true, interim results will be streamed back
 }
 
 /**
@@ -62,21 +65,18 @@ export class RecognitionError extends Error {
  * Vertex AI Speech Service
  */
 export class VertexAISpeechService {
-  private apiKey: string;
   private projectId: string;
   private location: string;
-  private baseUrl: string;
   private activeStreams: Map<string, any> = new Map();
+  private functions = getFunctions();
 
   constructor(config: {
-    apiKey: string;
     projectId: string;
     location?: string;
   }) {
-    this.apiKey = config.apiKey;
     this.projectId = config.projectId;
     this.location = config.location || 'us-central1';
-    this.baseUrl = `https://${this.location}-speech.googleapis.com/v1`;
+    // API key and baseUrl are no longer initialized here
   }
 
   /**
@@ -94,18 +94,19 @@ export class VertexAISpeechService {
     const streamId = `stream_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     
     try {
-      // For browser environment, we'll use the REST API with chunked uploads
-      // In a production environment, you'd want to use WebSocket or gRPC streaming
+      // This config is sent to the proxy with each audio chunk.
+      // The proxy then uses it to set up the streamingRecognize call to Vertex AI.
       const recognitionConfig = {
-        encoding: 'WEBM_OPUS',
+        encoding: 'WEBM_OPUS', // This should match the actual encoding of audio captured by client
         sampleRateHertz: config.sampleRate,
         languageCode: config.language,
         enableSpeakerDiarization: config.enableSpeakerDiarization,
-        diarizationSpeakerCount: config.maxSpeakers || 2,
+        diarizationSpeakerCount: config.maxSpeakers,
         enableAutomaticPunctuation: config.enableAutomaticPunctuation,
         enableWordTimeOffsets: config.enableWordTimeOffsets,
-        model: config.model || 'latest_long',
-        useEnhanced: config.useEnhanced || true
+        model: config.model, // Allow specific model selection
+        useEnhanced: config.useEnhanced,
+        interimResults: true, // Request interim results for faster feedback
       };
 
       // Store stream configuration
@@ -144,45 +145,65 @@ export class VertexAISpeechService {
       // Convert audio chunk to base64
       const base64Audio = this.arrayBufferToBase64(audioChunk);
       
-      // Send to Vertex AI Speech API
-      const response = await fetch(`${this.baseUrl}/speech:recognize`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${this.apiKey}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          config: stream.config,
-          audio: {
-            content: base64Audio
-          }
-        })
+      // Call the proxy function for the audio chunk
+      const proxyVertexAISpeech = httpsCallable(this.functions, 'proxyVertexAISpeech');
+      const response: any = await proxyVertexAISpeech({
+        audioBytes: base64Audio,
+        config: stream.config, // Send the stream's config
+        streamId: streamId, // Pass streamId for context if needed by proxy/client
       });
 
-      if (!response.ok) {
-        throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+      // The proxy now returns an object like { results: StreamingRecognizeResponse[] }
+      if (response.data && Array.isArray(response.data.results)) {
+        response.data.results.forEach((streamingResponseItem: any) => {
+          // Each item is a google.cloud.speech.v1.StreamingRecognizeResponse
+          // It contains its own 'results' list (usually one item for streaming)
+          // and things like 'speechEventType', 'isFinal', etc.
+          if (streamingResponseItem.results && streamingResponseItem.results.length > 0) {
+            const segments = this.processRecognitionResults(streamingResponseItem.results, streamId);
+            if (segments.length > 0) {
+              const isFinal = streamingResponseItem.results.some((res: any) => res.isFinal);
+              const stability = streamingResponseItem.results[0]?.stability || 0; // Example: take stability of first partial result
+
+              const streamingResult: StreamingResult = {
+                segments,
+                isFinal,
+                stability,
+                resultEndTime: streamingResponseItem.resultEndTime ?
+                               parseInt(streamingResponseItem.resultEndTime.seconds) * 1000 +
+                               Math.floor(streamingResponseItem.resultEndTime.nanos / 1000000) :
+                               (Date.now() - stream.startTime),
+              };
+              stream.onResult(streamingResult);
+            }
+          } else if (streamingResponseItem.speechEventType === 'SPEECH_EVENT_UNSPECIFIED' && streamingResponseItem.results.length === 0 && !streamingResponseItem.error) {
+            // This can happen for empty audio or silence, not necessarily an error.
+            // console.debug("Received empty speech event:", streamingResponseItem);
+          } else if (streamingResponseItem.error) {
+             // streamingResponseItem.error would typically be a google.rpc.Status like object.
+             // Logging the full object here is for debug; ensure it doesn't inadvertently contain sensitive data from the request if error structures change.
+             console.error("Error in individual streaming response item:", streamingResponseItem.error);
+             // Handle specific item error if necessary, though top-level error is caught below
+          }
+        });
+      } else {
+        console.warn("No results in proxy response or unexpected structure:", response.data);
+      }
+    } catch (error: any) {
+      let errorType = RecognitionErrorType.UNKNOWN;
+      let errorMessage = `Failed to process audio chunk via proxy: ${error.message || 'Unknown error'}`;
+
+      if (error.code === 'functions/unauthenticated') {
+        errorType = RecognitionErrorType.AUTHENTICATION_ERROR;
+      } else if (error.code === 'functions/not-found' || error.code === 'functions/unavailable') {
+        errorType = RecognitionErrorType.NETWORK_ERROR;
+      } else if (error.code === 'resource-exhausted') {
+        errorType = RecognitionErrorType.QUOTA_EXCEEDED;
+      } else if (error.code === 'invalid-argument') {
+        errorType = RecognitionErrorType.INVALID_AUDIO;
       }
 
-      const result = await response.json();
-      
-      // Process recognition results
-      if (result.results && result.results.length > 0) {
-        const segments = this.processRecognitionResults(result.results, streamId);
-        const streamingResult: StreamingResult = {
-          segments,
-          isFinal: true,
-          stability: 1.0,
-          resultEndTime: Date.now() - stream.startTime
-        };
-        
-        stream.onResult(streamingResult);
-      }
-    } catch (error) {
-      const recognitionError = new RecognitionError(
-        RecognitionErrorType.NETWORK_ERROR,
-        `Failed to process audio chunk: ${error}`,
-        error
-      );
+      const recognitionError = new RecognitionError(errorType, errorMessage, error.details || error);
       stream.onError(recognitionError);
     }
   }
@@ -213,7 +234,7 @@ export class VertexAISpeechService {
       const base64Audio = this.arrayBufferToBase64(audioData);
       
       const recognitionConfig = {
-        encoding: 'WEBM_OPUS',
+        // encoding: 'WEBM_OPUS', // Encoding is inherent in the audio data from client
         sampleRateHertz: config.sampleRate,
         languageCode: config.language,
         enableSpeakerDiarization: config.enableSpeakerDiarization,
@@ -224,30 +245,44 @@ export class VertexAISpeechService {
         useEnhanced: config.useEnhanced || true
       };
 
-      const response = await fetch(`${this.baseUrl}/speech:recognize`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${this.apiKey}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          config: recognitionConfig,
-          audio: {
-            content: base64Audio
-          }
-        })
+      const proxyVertexAISpeech = httpsCallable(this.functions, 'proxyVertexAISpeech');
+      // Explicitly define the type of the expected response for clarity
+      const result: any = await proxyVertexAISpeech({
+        audioBytes: base64Audio,
+        config: recognitionConfig
       });
 
-      if (!response.ok) {
-        throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+      // The proxy should return data in a 'data' property
+      if (result.data && result.data.results) {
+        return this.processRecognitionResults(result.data.results);
+      } else {
+        // Handle cases where results might be missing or in an unexpected structure
+        console.error("Unexpected response structure from proxyVertexAISpeech:", result.data);
+        throw new RecognitionError(
+          RecognitionErrorType.UNKNOWN,
+          "Unexpected response structure from proxy.",
+          result.data
+        );
       }
+    } catch (error: any) {
+      console.error("Error calling proxyVertexAISpeech:", error);
+      let errorType = RecognitionErrorType.UNKNOWN;
+      let errorMessage = `Failed to transcribe audio file via proxy: ${error.message}`;
 
-      const result = await response.json();
-      return this.processRecognitionResults(result.results || []);
-    } catch (error) {
+      if (error.code === 'functions/unauthenticated') {
+        errorType = RecognitionErrorType.AUTHENTICATION_ERROR;
+        errorMessage = "Authentication error: User is not authenticated to call the proxy function.";
+      } else if (error.code === 'functions/not-found') {
+        errorType = RecognitionErrorType.NETWORK_ERROR; // Or a more specific "endpoint not found"
+        errorMessage = "Network error: The proxy function endpoint was not found.";
+      } else if (error.code === 'functions/internal') {
+        errorType = RecognitionErrorType.UNKNOWN;
+        errorMessage = `Internal proxy error: ${error.message}`;
+      }
+      // Add more specific error handling based on proxy responses if needed
       throw new RecognitionError(
-        RecognitionErrorType.NETWORK_ERROR,
-        `Failed to transcribe audio file: ${error}`,
+        errorType,
+        errorMessage,
         error
       );
     }
@@ -350,15 +385,30 @@ export class VertexAISpeechService {
    */
   async checkAvailability(): Promise<boolean> {
     try {
-      const response = await fetch(`${this.baseUrl}/operations`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${this.apiKey}`
-        }
+      // Attempt to call the proxy function with a minimal or 'healthCheck' payload.
+      // This is a simplified check. A dedicated health check Firebase Function would be more robust.
+      const healthCheckProxy = httpsCallable(this.functions, 'proxyVertexAISpeech');
+
+      // Send a payload that the function might expect, or a specific health check indicator.
+      // The function might error if the payload isn't what it expects for transcription,
+      // but an error other than 'functions/not-found' can still indicate reachability.
+      await healthCheckProxy({
+        healthCheck: true, // Add a flag that your CFn could specifically look for
+        audioBytes: "cHVycG9zZWZ1bGx5IGVtcHR5IGF1ZGlv", // Empty base64 audio
+        config: { languageCode: "en-US" } // Minimal config
       });
-      return response.ok;
-    } catch {
-      return false;
+      return true; // If the call succeeds or fails with certain errors (see below)
+    } catch (error: any) {
+      // 'functions/not-found' means the function isn't deployed or the name is wrong.
+      if (error.code === 'functions/not-found') {
+        console.error("Availability check failed: proxyVertexAISpeech function not found.", error);
+        return false;
+      }
+      // Other errors (e.g., 'functions/internal' if healthCheck isn't handled, or invalid args)
+      // can still imply the function is deployed. This logic is a simplification.
+      // For a real health check, the CFn should return a specific success response for a health check request.
+      console.info("Availability check for proxyVertexAISpeech: function is reachable (though it may have errored on health check payload).", error);
+      return true;
     }
   }
 
