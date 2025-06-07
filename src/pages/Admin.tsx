@@ -30,8 +30,10 @@ import {
   IconMail,
   IconCheck,
   IconDatabase,
+  IconMicrophone,
 } from '@tabler/icons-react';
 import { SampleDataCreator } from '../components/admin/SampleDataCreator';
+import { LiveTranscriptionSettings } from '../components/admin/LiveTranscriptionSettings';
 import { useAuth } from '../contexts/AuthContext';
 import ActivityLogs from './admin/ActivityLogs';
 import { UserService } from '../services/user.service';
@@ -973,6 +975,9 @@ function Admin() {
             <Tabs.Tab value="settings" leftSection={<IconSettings size="0.8rem" />}>
               Settings
             </Tabs.Tab>
+            <Tabs.Tab value="transcription" leftSection={<IconMicrophone size="0.8rem" />}>
+              Live Transcription
+            </Tabs.Tab>
             <Tabs.Tab value="sampledata" leftSection={<IconDatabase size="0.8rem" />}>
               Sample Data
             </Tabs.Tab>
@@ -982,6 +987,7 @@ function Admin() {
         {activeTab === 'users' && <UserManagement />}
         {activeTab === 'logs' && <ActivityLogs />}
         {activeTab === 'settings' && <SystemSettings />}
+        {activeTab === 'transcription' && <LiveTranscriptionSettings />}
         {activeTab === 'sampledata' && <SampleDataCreator />}
       </Paper>
     </Container>

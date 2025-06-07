@@ -8,6 +8,7 @@
 import { TranscriptionService } from './transcription.service';
 import { VertexAISpeechService, SpeechConfig, RecognitionError } from './speech/VertexAISpeechService';
 import { OpenAIWhisperService } from './speech/OpenAIWhisperService';
+import { LiveTranscriptionConfigService } from './liveTranscriptionConfig.service';
 import { TranscriptionWebSocketService, ConnectionState } from './websocket/TranscriptionWebSocketService';
 import { 
   SessionTranscription, 
@@ -95,6 +96,7 @@ export class LiveTranscriptionService {
   private transcriptionService: TranscriptionService;
   private vertexAIService: VertexAISpeechService | null = null;
   private whisperService: OpenAIWhisperService | null = null;
+  private configService: LiveTranscriptionConfigService;
   private webSocketService: TranscriptionWebSocketService | null = null;
   
   private currentState: SessionState = SessionState.IDLE;
@@ -111,7 +113,8 @@ export class LiveTranscriptionService {
     this.config = { ...DEFAULT_CONFIG, ...config };
     this.events = events;
     this.transcriptionService = new TranscriptionService();
-    
+    this.configService = LiveTranscriptionConfigService.getInstance();
+
     this.initializeServices();
   }
 
