@@ -23,6 +23,12 @@ export interface UserPreferences {
     layout: string;
     widgets: string[];
   };
+  livePlay?: {
+    lastSelectedWorldId?: string;
+    lastSelectedCampaignId?: string;
+    autoSelectLastWorld?: boolean;
+    autoSelectLastCampaign?: boolean;
+  };
   ai?: AISettings;
   createdAt?: any; // Timestamp
   updatedAt?: any; // Timestamp
@@ -93,6 +99,93 @@ export class UserPreferencesService {
   }
 
   /**
+   * Set last selected world for Live Play
+   * @param userId User ID
+   * @param worldId World ID
+   * @returns True if successful
+   */
+  async setLastSelectedWorld(userId: string, worldId: string): Promise<boolean> {
+    try {
+      const currentPrefs = await this.getUserPreferences(userId);
+      return await this.updateUserPreferences(userId, {
+        livePlay: {
+          ...currentPrefs.livePlay,
+          lastSelectedWorldId: worldId,
+        }
+      });
+    } catch (error) {
+      console.error('Error setting last selected world:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Set last selected campaign for Live Play
+   * @param userId User ID
+   * @param campaignId Campaign ID
+   * @returns True if successful
+   */
+  async setLastSelectedCampaign(userId: string, campaignId: string): Promise<boolean> {
+    try {
+      const currentPrefs = await this.getUserPreferences(userId);
+      return await this.updateUserPreferences(userId, {
+        livePlay: {
+          ...currentPrefs.livePlay,
+          lastSelectedCampaignId: campaignId,
+        }
+      });
+    } catch (error) {
+      console.error('Error setting last selected campaign:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Get last selected world ID for Live Play
+   * @param userId User ID
+   * @returns World ID or null if not found
+   */
+  async getLastSelectedWorldId(userId: string): Promise<string | null> {
+    try {
+      const preferences = await this.getUserPreferences(userId);
+      return preferences.livePlay?.lastSelectedWorldId || null;
+    } catch (error) {
+      console.error('Error getting last selected world:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Get last selected campaign ID for Live Play
+   * @param userId User ID
+   * @returns Campaign ID or null if not found
+   */
+  async getLastSelectedCampaignId(userId: string): Promise<string | null> {
+    try {
+      const preferences = await this.getUserPreferences(userId);
+      return preferences.livePlay?.lastSelectedCampaignId || null;
+    } catch (error) {
+      console.error('Error getting last selected campaign:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Check if auto-select last world is enabled
+   * @param userId User ID
+   * @returns True if auto-select is enabled
+   */
+  async shouldAutoSelectLastWorld(userId: string): Promise<boolean> {
+    try {
+      const preferences = await this.getUserPreferences(userId);
+      return preferences.livePlay?.autoSelectLastWorld ?? true; // Default to true
+    } catch (error) {
+      console.error('Error checking auto-select setting:', error);
+      return true; // Default to true on error
+    }
+  }
+
+  /**
    * Get default user preferences
    * @param userId User ID
    * @returns Default user preferences
@@ -109,6 +202,10 @@ export class UserPreferencesService {
       dashboard: {
         layout: 'grid',
         widgets: ['recentCampaigns', 'recentCharacters', 'upcomingSessions']
+      },
+      livePlay: {
+        autoSelectLastWorld: true,
+        autoSelectLastCampaign: true,
       }
     };
   }
