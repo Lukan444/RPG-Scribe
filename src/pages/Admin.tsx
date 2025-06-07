@@ -23,9 +23,7 @@ import {
   IconSearch,
   IconEdit,
   IconTrash,
-  IconUserCheck,
   IconUsers,
-  IconClipboardList,
   IconSettings,
   IconMail,
   IconCheck,
@@ -37,7 +35,6 @@ import { SampleDataCreator } from '../components/admin/SampleDataCreator';
 import { LiveTranscriptionSettings } from '../components/admin/LiveTranscriptionSettings';
 import { SystemLogsDashboard } from '../components/admin/SystemLogsDashboard';
 import { useAuth } from '../contexts/AuthContext';
-import ActivityLogs from './admin/ActivityLogs';
 import { UserService } from '../services/user.service';
 import { User } from '../types/user';
 import { modals } from '@mantine/modals';
@@ -971,9 +968,6 @@ function Admin() {
             <Tabs.Tab value="users" leftSection={<IconUsers size="0.8rem" />}>
               Users
             </Tabs.Tab>
-            <Tabs.Tab value="logs" leftSection={<IconClipboardList size="0.8rem" />}>
-              Activity Logs
-            </Tabs.Tab>
             <Tabs.Tab value="systemlogs" leftSection={<IconBug size="0.8rem" />}>
               System Logs
             </Tabs.Tab>
@@ -990,7 +984,6 @@ function Admin() {
         </Tabs>
 
         {activeTab === 'users' && <UserManagement />}
-        {activeTab === 'logs' && <ActivityLogs />}
         {activeTab === 'systemlogs' && <SystemLogsDashboard />}
         {activeTab === 'settings' && <SystemSettings />}
         {activeTab === 'transcription' && <LiveTranscriptionSettings />}

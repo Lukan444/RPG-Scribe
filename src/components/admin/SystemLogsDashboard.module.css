@@ -1,0 +1,174 @@
+/**
+ * System Logs Dashboard CSS Module
+ * Provides enhanced visual styling for the admin logging interface
+ */
+
+/* Main dashboard container */
+.dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--mantine-spacing-md);
+}
+
+/* Header section */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--mantine-spacing-md);
+}
+
+/* Statistics cards container */
+.statsContainer {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: var(--mantine-spacing-md);
+  margin-bottom: var(--mantine-spacing-lg);
+}
+
+/* Filters section */
+.filtersSection {
+  background: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6));
+  border: 1px solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4));
+  border-radius: var(--mantine-radius-md);
+  padding: var(--mantine-spacing-md);
+  margin-bottom: var(--mantine-spacing-md);
+}
+
+/* Logs table container */
+.logsTableContainer {
+  background: light-dark(var(--mantine-color-white), var(--mantine-color-dark-7));
+  border: 1px solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4));
+  border-radius: var(--mantine-radius-md);
+  overflow: hidden;
+}
+
+/* Enhanced table styling with alternating rows */
+.logsTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+/* Table header styling */
+.logsTable thead tr {
+  background: light-dark(var(--mantine-color-gray-1), var(--mantine-color-dark-6));
+  border-bottom: 2px solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4));
+}
+
+.logsTable th {
+  padding: var(--mantine-spacing-sm) var(--mantine-spacing-md);
+  text-align: left;
+  font-weight: 600;
+  color: light-dark(var(--mantine-color-gray-7), var(--mantine-color-gray-3));
+  font-size: var(--mantine-font-size-sm);
+}
+
+/* Alternating row backgrounds */
+.logsTable tbody tr:nth-child(odd) {
+  background: light-dark(var(--mantine-color-white), var(--mantine-color-dark-7));
+}
+
+.logsTable tbody tr:nth-child(even) {
+  background: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6));
+}
+
+/* Row hover effects */
+.logsTable tbody tr:hover {
+  background: light-dark(var(--mantine-color-blue-0), var(--mantine-color-dark-5)) !important;
+  transition: background-color 0.15s ease;
+}
+
+/* Table cell styling */
+.logsTable td {
+  padding: var(--mantine-spacing-sm) var(--mantine-spacing-md);
+  border-bottom: 1px solid light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-5));
+  vertical-align: top;
+}
+
+/* Error row highlighting (overrides alternating colors) */
+.errorRow {
+  background: light-dark(var(--mantine-color-red-0), color-mix(in lch, var(--mantine-color-red-9) 20%, var(--mantine-color-dark-7))) !important;
+  border-left: 4px solid light-dark(var(--mantine-color-red-5), var(--mantine-color-red-6));
+}
+
+.errorRow:hover {
+  background: light-dark(var(--mantine-color-red-1), color-mix(in lch, var(--mantine-color-red-9) 30%, var(--mantine-color-dark-6))) !important;
+}
+
+/* Warning row highlighting (overrides alternating colors) */
+.warningRow {
+  background: light-dark(var(--mantine-color-yellow-0), color-mix(in lch, var(--mantine-color-yellow-9) 20%, var(--mantine-color-dark-7))) !important;
+  border-left: 4px solid light-dark(var(--mantine-color-yellow-5), var(--mantine-color-yellow-6));
+}
+
+.warningRow:hover {
+  background: light-dark(var(--mantine-color-yellow-1), color-mix(in lch, var(--mantine-color-yellow-9) 30%, var(--mantine-color-dark-6))) !important;
+}
+
+/* Expanded row details */
+.expandedRow {
+  background: light-dark(var(--mantine-color-gray-1), var(--mantine-color-dark-8)) !important;
+}
+
+/* Mock detection indicator */
+.mockIndicator {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--mantine-spacing-xs);
+  padding: 2px 8px;
+  background: light-dark(var(--mantine-color-orange-1), color-mix(in lch, var(--mantine-color-orange-9) 30%, var(--mantine-color-dark-7)));
+  color: light-dark(var(--mantine-color-orange-8), var(--mantine-color-orange-4));
+  border: 1px solid light-dark(var(--mantine-color-orange-3), var(--mantine-color-orange-7));
+  border-radius: var(--mantine-radius-sm);
+  font-size: var(--mantine-font-size-xs);
+  font-weight: 500;
+}
+
+/* Pagination container */
+.paginationContainer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--mantine-spacing-md);
+  background: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6));
+  border-top: 1px solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4));
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .logsTable {
+    font-size: var(--mantine-font-size-xs);
+  }
+  
+  .logsTable th,
+  .logsTable td {
+    padding: var(--mantine-spacing-xs);
+  }
+  
+  .statsContainer {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Accessibility improvements */
+.logsTable tbody tr:focus-within {
+  outline: 2px solid var(--mantine-color-blue-5);
+  outline-offset: -2px;
+}
+
+/* Loading state */
+.loadingOverlay {
+  position: relative;
+}
+
+.loadingOverlay::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: light-dark(rgba(255, 255, 255, 0.7), rgba(0, 0, 0, 0.7));
+  backdrop-filter: blur(2px);
+  z-index: 1;
+}

@@ -30,7 +30,8 @@ import {
   Menu,
   Loader,
   Center,
-  Pagination
+  Pagination,
+  Tabs
 } from '@mantine/core';
 import { DatePickerInput } from '@mantine/dates';
 import {
@@ -51,7 +52,10 @@ import {
   IconFileSpreadsheet,
   IconJson,
   IconEye,
-  IconCalendar
+  IconCalendar,
+  IconDatabaseOff,
+  IconCpu,
+  IconUser
 } from '@tabler/icons-react';
 import { useDisclosure } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
@@ -65,7 +69,43 @@ import {
   systemLogger
 } from '../../services/systemLogger.service';
 import { LiveTranscriptionLogLevel, LogCategory } from '../../utils/liveTranscriptionLogger';
-import { LogTestGenerator } from './LogTestGenerator';
+import { ActivityLogService } from '../../services/activityLog.service';
+import { ActivityLog, ActivityAction } from '../../models/ActivityLog';
+import classes from './SystemLogsDashboard.module.css';
+
+/**
+ * Log types for unified dashboard
+ */
+export enum LogType {
+  SYSTEM = 'SYSTEM',
+  ACTIVITY = 'ACTIVITY'
+}
+
+/**
+ * Unified log entry interface
+ */
+export interface UnifiedLogEntry {
+  id: string;
+  type: LogType;
+  timestamp: string;
+  level?: LiveTranscriptionLogLevel;
+  module?: SystemModule;
+  category?: LogCategory;
+  action?: ActivityAction;
+  message: string;
+  userId?: string;
+  userName?: string;
+  userEmail?: string;
+  ipAddress?: string;
+  sessionId?: string;
+  metadata?: Record<string, any>;
+  error?: Error;
+  details?: string;
+  // Additional properties for compatibility
+  component?: string;
+  worldId?: string;
+  campaignId?: string;
+}
 
 /**
  * Props for the System Logs Dashboard
@@ -114,63 +154,209 @@ const CATEGORY_COLORS: Record<LogCategory, string> = {
 };
 
 /**
+ * Activity Action colors
+ */
+const ACTIVITY_ACTION_COLORS: Record<ActivityAction, string> = {
+  [ActivityAction.LOGIN]: 'green',
+  [ActivityAction.LOGOUT]: 'red',
+  [ActivityAction.REGISTER]: 'blue',
+  [ActivityAction.PASSWORD_RESET]: 'orange',
+  [ActivityAction.PROFILE_UPDATE]: 'cyan',
+  [ActivityAction.EMAIL_VERIFICATION_REQUESTED]: 'yellow',
+  [ActivityAction.EMAIL_VERIFIED]: 'green',
+  [ActivityAction.SOCIAL_LOGIN]: 'grape',
+  [ActivityAction.ADMIN_ACTION]: 'violet',
+  [ActivityAction.DATA_CREATE]: 'teal',
+  [ActivityAction.DATA_UPDATE]: 'blue',
+  [ActivityAction.DATA_DELETE]: 'red',
+  [ActivityAction.DATA_VIEW]: 'gray'
+};
+
+/**
  * Items per page for pagination
  */
 const ITEMS_PER_PAGE = 50;
+
+/**
+ * Convert SystemLogEntry to UnifiedLogEntry
+ */
+const systemLogToUnified = (log: SystemLogEntry): UnifiedLogEntry => ({
+  id: `system-${log.timestamp}-${log.component}`,
+  type: LogType.SYSTEM,
+  timestamp: log.timestamp,
+  level: log.level,
+  module: log.module,
+  category: log.category,
+  message: log.message,
+  sessionId: log.sessionId,
+  userId: log.userId,
+  userName: log.userName,
+  metadata: log.metadata,
+  error: log.error,
+  component: log.component,
+  worldId: log.worldId,
+  campaignId: log.campaignId
+});
+
+/**
+ * Convert ActivityLog to UnifiedLogEntry
+ */
+const activityLogToUnified = (log: ActivityLog): UnifiedLogEntry => ({
+  id: `activity-${log.id}`,
+  type: LogType.ACTIVITY,
+  timestamp: log.timestamp instanceof Date ? log.timestamp.toISOString() : log.timestamp,
+  action: log.action,
+  message: log.details,
+  userId: log.userId,
+  userName: log.userName || undefined,
+  userEmail: log.userEmail || undefined,
+  ipAddress: log.ipAddress || undefined,
+  details: log.details
+});
+
+/**
+ * Detect if we're using mock database services
+ */
+const detectMockServices = (): boolean => {
+  // Check if we're in test environment
+  if (process.env.NODE_ENV === 'test') {
+    return true;
+  }
+
+  // Check for demo/mock Firebase configuration
+  const isDemoConfig = process.env.REACT_APP_FIREBASE_PROJECT_ID === 'demo-project' ||
+                      process.env.REACT_APP_FIREBASE_PROJECT_ID?.includes('test') ||
+                      process.env.REACT_APP_FIREBASE_PROJECT_ID?.includes('mock');
+
+  // Check if Firebase is using emulator
+  const isEmulator = window.location.hostname === 'localhost' &&
+                    (process.env.REACT_APP_USE_FIREBASE_EMULATOR === 'true');
+
+  return isDemoConfig || isEmulator;
+};
 
 /**
  * System Logs Dashboard Component
  */
 export function SystemLogsDashboard({ className }: SystemLogsDashboardProps) {
   // State
-  const [logs, setLogs] = useState<SystemLogEntry[]>([]);
-  const [filteredLogs, setFilteredLogs] = useState<SystemLogEntry[]>([]);
+  const [activeLogType, setActiveLogType] = useState<LogType>(LogType.SYSTEM);
+  const [systemLogs, setSystemLogs] = useState<SystemLogEntry[]>([]);
+  const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
+  const [unifiedLogs, setUnifiedLogs] = useState<UnifiedLogEntry[]>([]);
+  const [filteredLogs, setFilteredLogs] = useState<UnifiedLogEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [filters, setFilters] = useState<LogFilterOptions>({});
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
-  const [selectedLog, setSelectedLog] = useState<SystemLogEntry | null>(null);
+  const [selectedLog, setSelectedLog] = useState<UnifiedLogEntry | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  
+  const [isMockMode] = useState(detectMockServices());
+
+  // Services
+  const activityLogService = ActivityLogService.getInstance();
+
   // Modals
   const [detailModalOpened, { open: openDetailModal, close: closeDetailModal }] = useDisclosure(false);
 
   // Load logs on component mount
   useEffect(() => {
     loadLogs();
-    
-    // Subscribe to real-time log updates
-    const unsubscribe = systemLogger.subscribe((updatedLogs) => {
-      setLogs(updatedLogs);
+
+    // Log mock detection status
+    if (isMockMode) {
+      systemLogger.log(
+        SystemModule.DATABASE,
+        LiveTranscriptionLogLevel.WARN,
+        LogCategory.SERVICE,
+        'Mock database services detected - application is running in development/test mode',
+        {
+          environment: process.env.NODE_ENV,
+          projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID,
+          hostname: window.location.hostname,
+          useEmulator: process.env.REACT_APP_USE_FIREBASE_EMULATOR
+        }
+      );
+    } else {
+      systemLogger.log(
+        SystemModule.DATABASE,
+        LiveTranscriptionLogLevel.INFO,
+        LogCategory.SERVICE,
+        'Production database services active',
+        {
+          environment: process.env.NODE_ENV,
+          projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID
+        }
+      );
+    }
+
+    // Subscribe to real-time system log updates
+    const unsubscribe = systemLogger.subscribe((updatedSystemLogs) => {
+      setSystemLogs(updatedSystemLogs);
     });
 
     return unsubscribe;
-  }, []);
+  }, [isMockMode]);
 
-  // Apply filters when logs or filters change
+  // Combine logs when system logs or activity logs change
   useEffect(() => {
-    const filtered = systemLogger.getLogs(filters);
+    const combinedLogs: UnifiedLogEntry[] = [];
+
+    // Always include system logs
+    combinedLogs.push(...systemLogs.map(systemLogToUnified));
+
+    // Always include activity logs
+    combinedLogs.push(...activityLogs.map(activityLogToUnified));
+
+    // Sort by timestamp (newest first)
+    combinedLogs.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+
+    setUnifiedLogs(combinedLogs);
+  }, [systemLogs, activityLogs]);
+
+  // Apply filters when unified logs or filters change
+  useEffect(() => {
+    let filtered = unifiedLogs;
+
+    // Filter by log type
+    filtered = filtered.filter(log => log.type === activeLogType);
+
+    // Apply other filters based on log type
+    if (filters.searchText) {
+      const searchLower = filters.searchText.toLowerCase();
+      filtered = filtered.filter(log =>
+        log.message.toLowerCase().includes(searchLower) ||
+        (log.userName && log.userName.toLowerCase().includes(searchLower)) ||
+        (log.userEmail && log.userEmail.toLowerCase().includes(searchLower))
+      );
+    }
+
     setFilteredLogs(filtered);
     setCurrentPage(1); // Reset to first page when filters change
-  }, [logs, filters]);
+  }, [unifiedLogs, filters, activeLogType]);
 
   /**
-   * Load logs from the system logger
+   * Load logs from both system logger and activity log service
    */
   const loadLogs = useCallback(async () => {
     setLoading(true);
     try {
-      const allLogs = systemLogger.getLogs();
-      setLogs(allLogs);
+      // Load system logs
+      const allSystemLogs = systemLogger.getLogs();
+      setSystemLogs(allSystemLogs);
+
+      // Load activity logs
+      const activityResult = await activityLogService.getRecentLogs(100);
+      setActivityLogs(activityResult.data);
     } catch (error) {
       notifications.show({
         title: 'Error',
-        message: 'Failed to load system logs',
+        message: 'Failed to load logs',
         color: 'red'
       });
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [activityLogService]);
 
   /**
    * Clear all logs with confirmation
@@ -199,15 +385,21 @@ export function SystemLogsDashboard({ className }: SystemLogsDashboardProps) {
   /**
    * Copy logs to clipboard
    */
-  const copyLogs = useCallback(async (selectedLogs?: SystemLogEntry[]) => {
+  const copyLogs = useCallback(async (selectedLogs?: UnifiedLogEntry[]) => {
     try {
       const logsToCopy = selectedLogs || filteredLogs;
-      const logText = systemLogger.exportLogs(LogExportFormat.TXT, {
-        ...filters,
-        // If specific logs provided, don't apply additional filters
-        ...(selectedLogs ? {} : filters)
-      });
-      
+
+      // Convert unified logs to text format
+      const logText = logsToCopy.map(log => {
+        const timestamp = new Date(log.timestamp).toLocaleString();
+        const type = log.type;
+        const level = log.level ? LOG_LEVEL_CONFIG[log.level].label : log.action || 'INFO';
+        const module = log.module || log.userName || 'UNKNOWN';
+        const message = log.message;
+
+        return `[${timestamp}] [${type}] [${level}] [${module}] ${message}`;
+      }).join('\n');
+
       await navigator.clipboard.writeText(logText);
       notifications.show({
         title: 'Success',
@@ -221,7 +413,7 @@ export function SystemLogsDashboard({ className }: SystemLogsDashboardProps) {
         color: 'red'
       });
     }
-  }, [filteredLogs, filters]);
+  }, [filteredLogs]);
 
   /**
    * Export logs to file
@@ -277,7 +469,7 @@ export function SystemLogsDashboard({ className }: SystemLogsDashboardProps) {
   /**
    * Open log detail modal
    */
-  const openLogDetail = useCallback((log: SystemLogEntry) => {
+  const openLogDetail = useCallback((log: UnifiedLogEntry) => {
     setSelectedLog(log);
     openDetailModal();
   }, [openDetailModal]);
@@ -301,7 +493,7 @@ export function SystemLogsDashboard({ className }: SystemLogsDashboardProps) {
    */
   const logStats = useMemo(() => {
     return systemLogger.getLogStatistics(filters);
-  }, [filters, logs]);
+  }, [filters, systemLogs]);
 
   /**
    * Get paginated logs
@@ -318,12 +510,20 @@ export function SystemLogsDashboard({ className }: SystemLogsDashboardProps) {
   const totalPages = Math.ceil(filteredLogs.length / ITEMS_PER_PAGE);
 
   return (
-    <div className={className}>
+    <div className={`${classes.dashboard} ${className || ''}`}>
       <Paper p="md" withBorder>
         <Stack gap="md">
           {/* Header */}
-          <Group justify="space-between">
-            <Title order={3}>System Logs Dashboard</Title>
+          <div className={classes.header}>
+            <Group align="center" gap="md">
+              <Title order={3}>System Logs Dashboard</Title>
+              {isMockMode && (
+                <div className={classes.mockIndicator}>
+                  <IconDatabaseOff size={14} />
+                  Mock Mode
+                </div>
+              )}
+            </Group>
             <Group gap="xs">
               <Tooltip label="Refresh logs">
                 <ActionIcon
@@ -384,12 +584,23 @@ export function SystemLogsDashboard({ className }: SystemLogsDashboardProps) {
                 </Menu.Dropdown>
               </Menu>
             </Group>
-          </Group>
+          </div>
+
+          {/* Log Type Tabs */}
+          <Tabs value={activeLogType} onChange={(value) => setActiveLogType(value as LogType)}>
+            <Tabs.List>
+              <Tabs.Tab value={LogType.SYSTEM} leftSection={<IconCpu size={16} />}>
+                System Logs
+              </Tabs.Tab>
+              <Tabs.Tab value={LogType.ACTIVITY} leftSection={<IconUser size={16} />}>
+                Activity Logs
+              </Tabs.Tab>
+            </Tabs.List>
+          </Tabs>
 
           {/* Statistics Cards */}
-          <Grid>
-            <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
-              <Card withBorder>
+          <div className={classes.statsContainer}>
+            <Card withBorder>
                 <Group justify="space-between">
                   <div>
                     <Text size="xs" tt="uppercase" fw={700} c="dimmed">
@@ -413,10 +624,8 @@ export function SystemLogsDashboard({ className }: SystemLogsDashboardProps) {
                   />
                 </Group>
               </Card>
-            </Grid.Col>
 
-            <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
-              <Card withBorder>
+            <Card withBorder>
                 <Group justify="space-between">
                   <div>
                     <Text size="xs" tt="uppercase" fw={700} c="dimmed">
@@ -448,10 +657,8 @@ export function SystemLogsDashboard({ className }: SystemLogsDashboardProps) {
                   />
                 </Group>
               </Card>
-            </Grid.Col>
 
-            <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
-              <Card withBorder>
+            <Card withBorder>
                 <Group justify="space-between">
                   <div>
                     <Text size="xs" tt="uppercase" fw={700} c="dimmed">
@@ -464,10 +671,8 @@ export function SystemLogsDashboard({ className }: SystemLogsDashboardProps) {
                   <IconExclamationMark size={24} color="orange" />
                 </Group>
               </Card>
-            </Grid.Col>
 
-            <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
-              <Card withBorder>
+            <Card withBorder>
                 <Group justify="space-between">
                   <div>
                     <Text size="xs" tt="uppercase" fw={700} c="dimmed">
@@ -480,8 +685,7 @@ export function SystemLogsDashboard({ className }: SystemLogsDashboardProps) {
                   <IconInfoCircle size={24} color="blue" />
                 </Group>
               </Card>
-            </Grid.Col>
-          </Grid>
+          </div>
 
           {/* Recent Errors Alert */}
           {logStats.recentErrors.length > 0 && (
@@ -498,13 +702,10 @@ export function SystemLogsDashboard({ className }: SystemLogsDashboardProps) {
             </Alert>
           )}
 
-          {/* Log Test Generator (Development Only) */}
-          {process.env.NODE_ENV === 'development' && (
-            <LogTestGenerator />
-          )}
+
 
           {/* Filters */}
-          <Paper p="md" withBorder>
+          <div className={classes.filtersSection}>
             <Group justify="space-between" mb="md">
               <Text fw={500}>Filters</Text>
               <Button
@@ -606,11 +807,11 @@ export function SystemLogsDashboard({ className }: SystemLogsDashboardProps) {
                 />
               </Grid.Col>
             </Grid>
-          </Paper>
+          </div>
 
           {/* Logs Table */}
-          <Paper withBorder>
-            <Group justify="space-between" p="md" pb={0}>
+          <div className={classes.logsTableContainer}>
+            <div className={classes.paginationContainer}>
               <Text fw={500}>
                 Logs ({filteredLogs.length.toLocaleString()})
               </Text>
@@ -619,7 +820,7 @@ export function SystemLogsDashboard({ className }: SystemLogsDashboardProps) {
                   Page {currentPage} of {totalPages}
                 </Text>
               </Group>
-            </Group>
+            </div>
 
             {loading ? (
               <Center p="xl">
@@ -635,38 +836,40 @@ export function SystemLogsDashboard({ className }: SystemLogsDashboardProps) {
             ) : (
               <>
                 <ScrollArea>
-                  <Table striped highlightOnHover>
-                    <Table.Thead>
-                      <Table.Tr>
-                        <Table.Th style={{ width: 40 }}></Table.Th>
-                        <Table.Th style={{ width: 160 }}>Timestamp</Table.Th>
-                        <Table.Th style={{ width: 80 }}>Level</Table.Th>
-                        <Table.Th style={{ width: 120 }}>Module</Table.Th>
-                        <Table.Th style={{ width: 100 }}>Category</Table.Th>
-                        <Table.Th>Message</Table.Th>
-                        <Table.Th style={{ width: 100 }}>Session</Table.Th>
-                        <Table.Th style={{ width: 60 }}>Actions</Table.Th>
-                      </Table.Tr>
-                    </Table.Thead>
-                    <Table.Tbody>
+                  <table className={classes.logsTable}>
+                    <thead>
+                      <tr>
+                        <th style={{ width: 40 }}></th>
+                        <th style={{ width: 160 }}>Timestamp</th>
+                        <th style={{ width: 80 }}>{activeLogType === LogType.ACTIVITY ? 'Action' : 'Level'}</th>
+                        <th style={{ width: 120 }}>{activeLogType === LogType.ACTIVITY ? 'User' : 'Module'}</th>
+                        <th style={{ width: 100 }}>{activeLogType === LogType.ACTIVITY ? 'IP Address' : 'Category'}</th>
+                        <th>Message</th>
+                        <th style={{ width: 100 }}>Session</th>
+                        <th style={{ width: 60 }}>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
                       {paginatedLogs.map((log) => {
-                        const logId = `${log.timestamp}-${log.component}-${log.message}`;
+                        const logId = log.id;
                         const isExpanded = expandedRows.has(logId);
-                        const levelConfig = LOG_LEVEL_CONFIG[log.level];
-                        const LevelIcon = levelConfig.icon;
+
+                        // Handle different log types
+                        const isSystemLog = log.type === LogType.SYSTEM;
+                        const isActivityLog = log.type === LogType.ACTIVITY;
+
+                        // Get appropriate styling
+                        let rowClassName = '';
+                        if (isSystemLog && log.level === LiveTranscriptionLogLevel.ERROR) {
+                          rowClassName = classes.errorRow;
+                        } else if (isSystemLog && log.level === LiveTranscriptionLogLevel.WARN) {
+                          rowClassName = classes.warningRow;
+                        }
 
                         return (
                           <React.Fragment key={logId}>
-                            <Table.Tr
-                              style={{
-                                backgroundColor: log.level === LiveTranscriptionLogLevel.ERROR
-                                  ? 'var(--mantine-color-red-0)'
-                                  : log.level === LiveTranscriptionLogLevel.WARN
-                                  ? 'var(--mantine-color-yellow-0)'
-                                  : undefined
-                              }}
-                            >
-                              <Table.Td>
+                            <tr className={rowClassName}>
+                              <td>
                                 <ActionIcon
                                   variant="subtle"
                                   size="sm"
@@ -678,56 +881,78 @@ export function SystemLogsDashboard({ className }: SystemLogsDashboardProps) {
                                     <IconChevronRight size={14} />
                                   )}
                                 </ActionIcon>
-                              </Table.Td>
+                              </td>
 
-                              <Table.Td>
+                              <td>
                                 <Text size="xs" c="dimmed">
                                   {new Date(log.timestamp).toLocaleString()}
                                 </Text>
-                              </Table.Td>
+                              </td>
 
-                              <Table.Td>
-                                <Badge
-                                  color={levelConfig.color}
-                                  variant="light"
-                                  leftSection={<LevelIcon size={12} />}
-                                  size="sm"
-                                >
-                                  {levelConfig.label}
-                                </Badge>
-                              </Table.Td>
+                              <td>
+                                {isSystemLog && log.level ? (
+                                  <Badge
+                                    color={LOG_LEVEL_CONFIG[log.level].color}
+                                    variant="light"
+                                    leftSection={React.createElement(LOG_LEVEL_CONFIG[log.level].icon, { size: 12 })}
+                                    size="sm"
+                                  >
+                                    {LOG_LEVEL_CONFIG[log.level].label}
+                                  </Badge>
+                                ) : isActivityLog && log.action ? (
+                                  <Badge
+                                    color={ACTIVITY_ACTION_COLORS[log.action]}
+                                    variant="light"
+                                    size="sm"
+                                  >
+                                    {log.action}
+                                  </Badge>
+                                ) : null}
+                              </td>
 
-                              <Table.Td>
-                                <Badge variant="outline" size="sm">
-                                  {log.module}
-                                </Badge>
-                              </Table.Td>
+                              <td>
+                                {isSystemLog && log.module ? (
+                                  <Badge variant="outline" size="sm">
+                                    {log.module}
+                                  </Badge>
+                                ) : isActivityLog && log.userName ? (
+                                  <Text size="sm" truncate>
+                                    {log.userName}
+                                  </Text>
+                                ) : null}
+                              </td>
 
-                              <Table.Td>
-                                <Badge
-                                  color={CATEGORY_COLORS[log.category]}
-                                  variant="dot"
-                                  size="sm"
-                                >
-                                  {log.category}
-                                </Badge>
-                              </Table.Td>
+                              <td>
+                                {isSystemLog && log.category ? (
+                                  <Badge
+                                    color={CATEGORY_COLORS[log.category]}
+                                    variant="dot"
+                                    size="sm"
+                                  >
+                                    {log.category}
+                                  </Badge>
+                                ) : isActivityLog && log.ipAddress ? (
+                                  <Text size="xs" c="dimmed">
+                                    {log.ipAddress}
+                                  </Text>
+                                ) : null}
+                              </td>
 
-                              <Table.Td>
+                              <td>
                                 <Text size="sm" lineClamp={2}>
                                   {log.message}
                                 </Text>
-                              </Table.Td>
+                              </td>
 
-                              <Table.Td>
+                              <td>
                                 {log.sessionId && (
                                   <Code>
                                     {log.sessionId.slice(0, 8)}...
                                   </Code>
                                 )}
-                              </Table.Td>
+                              </td>
 
-                              <Table.Td>
+                              <td>
                                 <Group gap={4}>
                                   <Tooltip label="View details">
                                     <ActionIcon
@@ -749,12 +974,12 @@ export function SystemLogsDashboard({ className }: SystemLogsDashboardProps) {
                                     </ActionIcon>
                                   </Tooltip>
                                 </Group>
-                              </Table.Td>
-                            </Table.Tr>
+                              </td>
+                            </tr>
 
                             {/* Expanded row content */}
-                            <Table.Tr style={{ display: isExpanded ? 'table-row' : 'none' }}>
-                              <Table.Td colSpan={8}>
+                            <tr className={classes.expandedRow} style={{ display: isExpanded ? 'table-row' : 'none' }}>
+                              <td colSpan={8}>
                                 <Collapse in={isExpanded}>
                                   <Paper p="md" bg="gray.0">
                                     <Stack gap="sm">
@@ -810,29 +1035,29 @@ export function SystemLogsDashboard({ className }: SystemLogsDashboardProps) {
                                     </Stack>
                                   </Paper>
                                 </Collapse>
-                              </Table.Td>
-                            </Table.Tr>
+                              </td>
+                            </tr>
                           </React.Fragment>
                         );
                       })}
-                    </Table.Tbody>
-                  </Table>
+                    </tbody>
+                  </table>
                 </ScrollArea>
 
                 {/* Pagination */}
                 {totalPages > 1 && (
-                  <Group justify="center" p="md">
+                  <div className={classes.paginationContainer}>
                     <Pagination
                       value={currentPage}
                       onChange={setCurrentPage}
                       total={totalPages}
                       size="sm"
                     />
-                  </Group>
+                  </div>
                 )}
               </>
             )}
-          </Paper>
+          </div>
         </Stack>
       </Paper>
 
@@ -846,20 +1071,34 @@ export function SystemLogsDashboard({ className }: SystemLogsDashboardProps) {
         {selectedLog && (
           <Stack gap="md">
             <Group>
-              <Badge
-                color={LOG_LEVEL_CONFIG[selectedLog.level].color}
-                variant="light"
-                leftSection={React.createElement(LOG_LEVEL_CONFIG[selectedLog.level].icon, { size: 12 })}
-              >
-                {LOG_LEVEL_CONFIG[selectedLog.level].label}
-              </Badge>
-              <Badge variant="outline">{selectedLog.module}</Badge>
-              <Badge
-                color={CATEGORY_COLORS[selectedLog.category]}
-                variant="dot"
-              >
-                {selectedLog.category}
-              </Badge>
+              {selectedLog.level && (
+                <Badge
+                  color={LOG_LEVEL_CONFIG[selectedLog.level].color}
+                  variant="light"
+                  leftSection={React.createElement(LOG_LEVEL_CONFIG[selectedLog.level].icon, { size: 12 })}
+                >
+                  {LOG_LEVEL_CONFIG[selectedLog.level].label}
+                </Badge>
+              )}
+              {selectedLog.action && (
+                <Badge
+                  color={ACTIVITY_ACTION_COLORS[selectedLog.action]}
+                  variant="light"
+                >
+                  {selectedLog.action}
+                </Badge>
+              )}
+              {selectedLog.module && (
+                <Badge variant="outline">{selectedLog.module}</Badge>
+              )}
+              {selectedLog.category && (
+                <Badge
+                  color={CATEGORY_COLORS[selectedLog.category]}
+                  variant="dot"
+                >
+                  {selectedLog.category}
+                </Badge>
+              )}
             </Group>
 
             <Divider />
@@ -869,10 +1108,12 @@ export function SystemLogsDashboard({ className }: SystemLogsDashboardProps) {
               <Code>{new Date(selectedLog.timestamp).toLocaleString()}</Code>
             </div>
 
-            <div>
-              <Text size="sm" fw={500} mb="xs">Component:</Text>
-              <Code>{selectedLog.component}</Code>
-            </div>
+            {selectedLog.component && (
+              <div>
+                <Text size="sm" fw={500} mb="xs">Component:</Text>
+                <Code>{selectedLog.component}</Code>
+              </div>
+            )}
 
             <div>
               <Text size="sm" fw={500} mb="xs">Message:</Text>
