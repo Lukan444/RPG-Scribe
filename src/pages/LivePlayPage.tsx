@@ -3,6 +3,7 @@ import { Container, Stack, Title, Text, Alert, Button, Group, Modal, Select, Tex
 import { useDisclosure } from '@mantine/hooks';
 import { IconAlertCircle, IconDeviceGamepad2, IconPlus } from '@tabler/icons-react';
 import { LivePlayDashboard } from '../components/transcription/LivePlayDashboard';
+import { TimelineProvider } from '../contexts/TimelineContext';
 import { useRPGWorld } from '../contexts/RPGWorldContext';
 import { CampaignService } from '../services/campaign.service';
 import { SessionService, Session as ServiceSession } from '../services/session.service';
@@ -163,13 +164,22 @@ export default function LivePlayPage() {
   // If dashboard is active, show the LivePlayDashboard
   if (showDashboard && selectedSessionId && selectedCampaignId && currentWorld.id) {
     return (
-      <LivePlayDashboard
-        sessionId={selectedSessionId}
-        campaignId={selectedCampaignId}
-        worldId={currentWorld.id}
-        onSessionEnd={handleSessionEnd}
-        onError={handleError}
-      />
+      <TimelineProvider
+        initialConfig={{
+          worldId: currentWorld.id,
+          campaignId: selectedCampaignId,
+          enableEditing: false,
+          showControls: false
+        }}
+      >
+        <LivePlayDashboard
+          sessionId={selectedSessionId}
+          campaignId={selectedCampaignId}
+          worldId={currentWorld.id}
+          onSessionEnd={handleSessionEnd}
+          onError={handleError}
+        />
+      </TimelineProvider>
     );
   }
 

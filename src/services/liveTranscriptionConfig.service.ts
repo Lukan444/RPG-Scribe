@@ -65,7 +65,8 @@ export class LiveTranscriptionConfigService {
       const docSnap = await getDoc(docRef);
 
       if (docSnap.exists()) {
-        const config = docSnap.data() as LiveTranscriptionConfig;
+        const data = docSnap.data();
+        const config = this.deserializeConfigFromFirestore(data);
         this.updateCache(config);
         return config;
       } else {
@@ -92,9 +93,12 @@ export class LiveTranscriptionConfigService {
         throw new Error(`Configuration validation failed: ${validation.errors.join(', ')}`);
       }
 
+      // Serialize MediaDeviceInfo objects to plain objects for Firestore
+      const serializableConfig = this.serializeConfigForFirestore(config);
+
       const docRef = doc(db, this.COLLECTION_NAME, this.CONFIG_DOC_ID);
       const configWithMetadata = {
-        ...config,
+        ...serializableConfig,
         lastUpdated: serverTimestamp(),
         version: '1.0.0'
       };
@@ -491,6 +495,45 @@ export class LiveTranscriptionConfigService {
   private updateCache(config: LiveTranscriptionConfig): void {
     this.configCache = config;
     this.cacheExpiry = Date.now() + this.CACHE_DURATION;
+  }
+
+  /**
+   * Serialize configuration for Firestore storage
+   * Converts MediaDeviceInfo objects to plain objects
+   */
+  private serializeConfigForFirestore(config: LiveTranscriptionConfig): any {
+    const serialized = JSON.parse(JSON.stringify(config));
+
+    // Convert MediaDeviceInfo objects to plain objects
+    if (config.audioProcessing.availableMicrophones) {
+      serialized.audioProcessing.availableMicrophones = config.audioProcessing.availableMicrophones.map(device => ({
+        deviceId: device.deviceId,
+        kind: device.kind,
+        label: device.label,
+        groupId: device.groupId
+      }));
+    }
+
+    if (config.audioProcessing.availableSpeakers) {
+      serialized.audioProcessing.availableSpeakers = config.audioProcessing.availableSpeakers.map(device => ({
+        deviceId: device.deviceId,
+        kind: device.kind,
+        label: device.label,
+        groupId: device.groupId
+      }));
+    }
+
+    return serialized;
+  }
+
+  /**
+   * Deserialize configuration from Firestore
+   * Converts plain objects back to MediaDeviceInfo-like objects
+   */
+  private deserializeConfigFromFirestore(data: any): LiveTranscriptionConfig {
+    // The data is already in the correct format since we're storing plain objects
+    // MediaDeviceInfo objects will be reconstructed when devices are enumerated
+    return data as LiveTranscriptionConfig;
   }
 
   /**

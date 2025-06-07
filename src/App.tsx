@@ -571,6 +571,18 @@ function App() {
 
             {/* Game Sessions routes - redirect to dashboard if no world selected */}
             <Route path="live-play" element={<Navigate to="/dashboard" replace />} />
+
+            {/* Live Transcription routes */}
+            <Route path="live-transcription/dashboard/:sessionId" element={
+              <ErrorBoundary>
+                <Suspense fallback={<LoadingFallback />}>
+                  <RPGWorldContextWrapper>
+                    <LivePlayPage />
+                  </RPGWorldContextWrapper>
+                </Suspense>
+              </ErrorBoundary>
+            } />
+
             <Route path="session-planner" element={
               <PlaceholderPage
                 title="Session Planner"
