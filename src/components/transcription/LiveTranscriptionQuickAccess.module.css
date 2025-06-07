@@ -1,0 +1,170 @@
+/**
+ * Live Transcription Quick Access Styles
+ * 
+ * CSS animations and styles for the quick access component
+ */
+
+/* Pulsing animation for recording state */
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Recording indicator animation */
+@keyframes recordingPulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(255, 0, 0, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(255, 0, 0, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 0, 0, 0);
+  }
+}
+
+/* Processing spinner animation */
+@keyframes processingRotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Connection status indicator */
+@keyframes connectionBlink {
+  0%, 50% {
+    opacity: 1;
+  }
+  51%, 100% {
+    opacity: 0.3;
+  }
+}
+
+/* Hover effects */
+.quickAccessButton {
+  transition: all 0.2s ease;
+}
+
+.quickAccessButton:hover {
+  transform: translateY(-1px);
+}
+
+/* State-specific styles */
+.recording {
+  animation: recordingPulse 2s infinite;
+}
+
+.processing {
+  animation: processingRotate 1s linear infinite;
+}
+
+.reconnecting {
+  animation: connectionBlink 1s infinite;
+}
+
+/* Badge animations */
+.activeBadge {
+  animation: pulse 3s infinite;
+}
+
+/* Menu transition */
+.menuDropdown {
+  animation: slideDown 0.2s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .quickAccessButton {
+    transform: scale(0.9);
+  }
+  
+  .activeBadge {
+    font-size: 0.7rem;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .recording {
+    border: 2px solid red;
+  }
+  
+  .processing {
+    border: 2px solid blue;
+  }
+  
+  .error {
+    border: 2px solid red;
+    background-color: rgba(255, 0, 0, 0.1);
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .recording,
+  .processing,
+  .reconnecting,
+  .activeBadge {
+    animation: none;
+  }
+  
+  .quickAccessButton {
+    transition: none;
+  }
+}
+
+/* Focus styles for accessibility */
+.quickAccessButton:focus {
+  outline: 2px solid var(--mantine-color-blue-5);
+  outline-offset: 2px;
+}
+
+/* Error state styles */
+.error {
+  position: relative;
+}
+
+.error::after {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  border: 2px solid red;
+  border-radius: inherit;
+  animation: errorBlink 0.5s ease-in-out 3;
+}
+
+@keyframes errorBlink {
+  0%, 100% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+}

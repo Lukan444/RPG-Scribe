@@ -373,6 +373,12 @@ export class LiveTranscriptionConfigService {
           language: 'en',
           prompt: '',
         },
+        ollama: {
+          serverUrl: 'http://localhost:11434',
+          model: '',
+          temperature: 0,
+          enableLocalProcessing: true,
+        },
         fallbackEnabled: true,
         confidenceThreshold: 0.7,
         languageCode: 'en-US',

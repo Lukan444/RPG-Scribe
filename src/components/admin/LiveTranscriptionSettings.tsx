@@ -54,6 +54,9 @@ import { useAuth } from '../../contexts/AuthContext';
 import { ActivityLogService } from '../../services/activityLog.service';
 import { ActivityAction } from '../../models/ActivityLog';
 import { LiveTranscriptionConfigService } from '../../services/liveTranscriptionConfig.service';
+import { AdminAccessGuard } from './transcription/AdminAccessGuard';
+import { ProviderConfigurationCard } from './transcription/ProviderConfigurationCard';
+import { APIConnectivityService } from '../../services/transcription/APIConnectivityService';
 
 /**
  * Live Transcription Configuration Interface
@@ -61,7 +64,7 @@ import { LiveTranscriptionConfigService } from '../../services/liveTranscription
 export interface LiveTranscriptionConfig {
   // Speech Recognition Settings
   speechRecognition: {
-    primaryProvider: 'vertex-ai' | 'openai-whisper';
+    primaryProvider: 'vertex-ai' | 'openai-whisper' | 'ollama';
     vertexAI: {
       projectId: string;
       apiKey: string;
@@ -78,6 +81,12 @@ export interface LiveTranscriptionConfig {
       temperature: number;
       language: string;
       prompt: string;
+    };
+    ollama: {
+      serverUrl: string;
+      model: string;
+      temperature: number;
+      enableLocalProcessing: boolean;
     };
     fallbackEnabled: boolean;
     confidenceThreshold: number;
@@ -204,6 +213,12 @@ const DEFAULT_CONFIG: LiveTranscriptionConfig = {
       language: 'en',
       prompt: '',
     },
+    ollama: {
+      serverUrl: 'http://localhost:11434',
+      model: '',
+      temperature: 0,
+      enableLocalProcessing: true,
+    },
     fallbackEnabled: true,
     confidenceThreshold: 0.7,
     languageCode: 'en-US',
@@ -295,9 +310,9 @@ const DEFAULT_CONFIG: LiveTranscriptionConfig = {
 };
 
 /**
- * Live Transcription Settings Component
+ * Live Transcription Settings Component (Internal)
  */
-export function LiveTranscriptionSettings() {
+function LiveTranscriptionSettingsInternal() {
   const { user } = useAuth();
   const [config, setConfig] = useState<LiveTranscriptionConfig>(DEFAULT_CONFIG);
   const [loading, setLoading] = useState(false);
@@ -613,121 +628,43 @@ export function LiveTranscriptionSettings() {
                   description="Primary provider for speech-to-text processing"
                   data={[
                     { value: 'vertex-ai', label: 'Google Vertex AI Speech-to-Text' },
-                    { value: 'openai-whisper', label: 'OpenAI Whisper' }
+                    { value: 'openai-whisper', label: 'OpenAI Whisper' },
+                    { value: 'ollama', label: 'Ollama (Local)' }
                   ]}
                   value={config.speechRecognition.primaryProvider}
                   onChange={(value) => updateConfig('speechRecognition.primaryProvider', value)}
                 />
               </Card>
 
-              {/* Vertex AI Settings */}
-              <Card withBorder p="md">
-                <Title order={5} mb="md">Vertex AI Configuration</Title>
-                <Grid>
-                  <Grid.Col span={{ base: 12, md: 6 }}>
-                    <TextInput
-                      label="Project ID"
-                      placeholder="your-gcp-project-id"
-                      value={config.speechRecognition.vertexAI.projectId}
-                      onChange={(e) => updateConfig('speechRecognition.vertexAI.projectId', e.currentTarget.value)}
-                    />
-                  </Grid.Col>
-                  <Grid.Col span={{ base: 12, md: 6 }}>
-                    <PasswordInput
-                      label="API Key"
-                      placeholder="Your Vertex AI API key"
-                      value={config.speechRecognition.vertexAI.apiKey}
-                      onChange={(e) => updateConfig('speechRecognition.vertexAI.apiKey', e.currentTarget.value)}
-                      visible={showApiKeys}
-                      onVisibilityChange={toggleShowApiKeys}
-                    />
-                  </Grid.Col>
-                  <Grid.Col span={{ base: 12, md: 6 }}>
-                    <Select
-                      label="Region"
-                      data={[
-                        { value: 'us-central1', label: 'US Central (Iowa)' },
-                        { value: 'us-east1', label: 'US East (South Carolina)' },
-                        { value: 'us-west1', label: 'US West (Oregon)' },
-                        { value: 'europe-west1', label: 'Europe West (Belgium)' },
-                        { value: 'asia-east1', label: 'Asia East (Taiwan)' }
-                      ]}
-                      value={config.speechRecognition.vertexAI.region}
-                      onChange={(value) => updateConfig('speechRecognition.vertexAI.region', value)}
-                    />
-                  </Grid.Col>
-                  <Grid.Col span={{ base: 12, md: 6 }}>
-                    <NumberInput
-                      label="Max Speakers"
-                      description="Maximum number of speakers for diarization"
-                      min={2}
-                      max={10}
-                      value={config.speechRecognition.vertexAI.maxSpeakers}
-                      onChange={(value) => updateConfig('speechRecognition.vertexAI.maxSpeakers', value)}
-                    />
-                  </Grid.Col>
-                </Grid>
-                
-                <Stack gap="sm" mt="md">
-                  <Switch
-                    label="Enable Speaker Diarization"
-                    description="Identify different speakers in the audio"
-                    checked={config.speechRecognition.vertexAI.enableSpeakerDiarization}
-                    onChange={(e) => updateConfig('speechRecognition.vertexAI.enableSpeakerDiarization', e.currentTarget.checked)}
-                  />
-                  <Switch
-                    label="Enable Automatic Punctuation"
-                    description="Automatically add punctuation to transcripts"
-                    checked={config.speechRecognition.vertexAI.enableAutomaticPunctuation}
-                    onChange={(e) => updateConfig('speechRecognition.vertexAI.enableAutomaticPunctuation', e.currentTarget.checked)}
-                  />
-                  <Switch
-                    label="Enable Word Time Offsets"
-                    description="Include timing information for individual words"
-                    checked={config.speechRecognition.vertexAI.enableWordTimeOffsets}
-                    onChange={(e) => updateConfig('speechRecognition.vertexAI.enableWordTimeOffsets', e.currentTarget.checked)}
-                  />
-                </Stack>
-              </Card>
+              {/* Provider Configuration Cards */}
+              <ProviderConfigurationCard
+                provider="vertex-ai"
+                title="Google Vertex AI Speech-to-Text"
+                description="Google Cloud's enterprise-grade speech recognition service with advanced features like speaker diarization and punctuation."
+                config={config.speechRecognition.vertexAI}
+                onConfigChange={(newConfig) => updateConfig('speechRecognition.vertexAI', newConfig)}
+                disabled={loading || saveLoading}
+              />
 
-              {/* OpenAI Whisper Settings */}
-              <Card withBorder p="md">
-                <Title order={5} mb="md">OpenAI Whisper Configuration</Title>
-                <Grid>
-                  <Grid.Col span={{ base: 12, md: 6 }}>
-                    <PasswordInput
-                      label="API Key"
-                      placeholder="Your OpenAI API key"
-                      value={config.speechRecognition.openAIWhisper.apiKey}
-                      onChange={(e) => updateConfig('speechRecognition.openAIWhisper.apiKey', e.currentTarget.value)}
-                      visible={showApiKeys}
-                      onVisibilityChange={toggleShowApiKeys}
-                    />
-                  </Grid.Col>
-                  <Grid.Col span={{ base: 12, md: 6 }}>
-                    <NumberInput
-                      label="Temperature"
-                      description="Sampling temperature (0-1)"
-                      min={0}
-                      max={1}
-                      step={0.1}
-                      decimalScale={1}
-                      value={config.speechRecognition.openAIWhisper.temperature}
-                      onChange={(value) => updateConfig('speechRecognition.openAIWhisper.temperature', value)}
-                    />
-                  </Grid.Col>
-                  <Grid.Col span={12}>
-                    <Textarea
-                      label="Prompt"
-                      description="Optional prompt to guide the transcription"
-                      placeholder="Transcribe this RPG session audio..."
-                      value={config.speechRecognition.openAIWhisper.prompt}
-                      onChange={(e) => updateConfig('speechRecognition.openAIWhisper.prompt', e.currentTarget.value)}
-                      minRows={2}
-                    />
-                  </Grid.Col>
-                </Grid>
-              </Card>
+              <ProviderConfigurationCard
+                provider="openai-whisper"
+                title="OpenAI Whisper"
+                description="OpenAI's robust speech recognition model with multilingual support and high accuracy."
+                config={config.speechRecognition.openAIWhisper}
+                onConfigChange={(newConfig) => updateConfig('speechRecognition.openAIWhisper', newConfig)}
+                disabled={loading || saveLoading}
+              />
+
+              <ProviderConfigurationCard
+                provider="ollama"
+                title="Ollama (Local Processing)"
+                description="Run speech recognition locally using Ollama for complete privacy and offline processing."
+                config={config.speechRecognition.ollama}
+                onConfigChange={(newConfig) => updateConfig('speechRecognition.ollama', newConfig)}
+                disabled={loading || saveLoading}
+              />
+
+
 
               {/* General Settings */}
               <Card withBorder p="md">
@@ -1318,5 +1255,19 @@ export function LiveTranscriptionSettings() {
         </Tabs>
       </Stack>
     </Paper>
+  );
+}
+
+/**
+ * Live Transcription Settings Component with Admin Access Guard
+ */
+export function LiveTranscriptionSettings() {
+  return (
+    <AdminAccessGuard
+      feature="Live Session Transcription Settings"
+      description="Configure speech recognition providers, AI models, and system-wide transcription settings. This feature requires administrator privileges to access API keys and modify system configuration."
+    >
+      <LiveTranscriptionSettingsInternal />
+    </AdminAccessGuard>
   );
 }

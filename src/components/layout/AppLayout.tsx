@@ -7,6 +7,7 @@ import { SafeAppShell } from '../common/SafeAppShell';
 import SimpleNavbar from './SimpleNavbar';
 import UserMenu from './UserMenu';
 import { AIGlobalSearchBar } from '../search/AIGlobalSearchBar';
+import { LiveTranscriptionQuickAccess } from '../transcription/LiveTranscriptionQuickAccess';
 import { Outlet } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
@@ -88,6 +89,9 @@ export function AppLayout() {
 
           {/* AI Global Search Bar */}
           <AIGlobalSearchBar />
+
+          {/* Live Transcription Quick Access */}
+          <LiveTranscriptionQuickAccess />
 
           <UserMenu />
         </Group>
