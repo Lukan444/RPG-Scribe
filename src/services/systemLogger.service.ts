@@ -5,13 +5,14 @@
  * Extends the Live Transcription logger to support all modules
  */
 
-import { 
-  LiveTranscriptionLogger, 
-  LiveTranscriptionLogEntry, 
-  LiveTranscriptionLogLevel, 
+import {
+  LiveTranscriptionLogger,
+  LiveTranscriptionLogEntry,
+  LiveTranscriptionLogLevel,
   LogCategory,
-  createLiveTranscriptionLogger 
+  createLiveTranscriptionLogger
 } from '../utils/liveTranscriptionLogger';
+import { ActivityAction } from '../models/ActivityLog';
 
 /**
  * System modules that can generate logs
@@ -51,6 +52,7 @@ export interface LogFilterOptions {
   modules?: SystemModule[];
   levels?: LiveTranscriptionLogLevel[];
   categories?: LogCategory[];
+  actions?: ActivityAction[];
   sessionIds?: string[];
   userIds?: string[];
   startDate?: Date;

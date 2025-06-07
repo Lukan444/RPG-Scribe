@@ -19,7 +19,8 @@ import {
   serverTimestamp
 } from 'firebase/firestore';
 import { db } from '../../firebase/config';
-import { FirestoreLogger } from '../logging/FirestoreLogger';
+import { systemLogger, SystemModule } from '../systemLogger.service';
+import { LiveTranscriptionLogLevel, LogCategory } from '../../utils/liveTranscriptionLogger';
 
 /**
  * Transaction operation type
@@ -54,7 +55,6 @@ export interface TransactionResult {
  */
 export class TransactionService {
   private static instance: TransactionService;
-  private logger: FirestoreLogger;
   private db: Firestore;
 
   /**
@@ -72,7 +72,6 @@ export class TransactionService {
    * Private constructor to prevent direct instantiation
    */
   private constructor() {
-    this.logger = new FirestoreLogger('TransactionService');
     this.db = db;
   }
 
@@ -136,7 +135,14 @@ export class TransactionService {
         data: result
       };
     } catch (error) {
-      this.logger.error('Transaction failed:', error);
+      systemLogger.log(
+        SystemModule.DATABASE,
+        LiveTranscriptionLogLevel.ERROR,
+        LogCategory.DATABASE,
+        'Transaction failed',
+        { operationCount: operations.length },
+        error as Error
+      );
       return {
         success: false,
         error: error as Error
@@ -190,7 +196,14 @@ export class TransactionService {
         success: true
       };
     } catch (error) {
-      this.logger.error('Batch operation failed:', error);
+      systemLogger.log(
+        SystemModule.DATABASE,
+        LiveTranscriptionLogLevel.ERROR,
+        LogCategory.DATABASE,
+        'Batch operation failed',
+        { operationCount: operations.length },
+        error as Error
+      );
       return {
         success: false,
         error: error as Error
@@ -234,7 +247,14 @@ export class TransactionService {
 
       return null;
     } catch (error) {
-      this.logger.error(`Error getting document ${id} from ${collectionPath}:`, error);
+      systemLogger.log(
+        SystemModule.DATABASE,
+        LiveTranscriptionLogLevel.ERROR,
+        LogCategory.DATABASE,
+        `Error getting document ${id} from ${collectionPath}`,
+        { collectionPath, documentId: id },
+        error as Error
+      );
       return null;
     }
   }

@@ -13,7 +13,8 @@ import { EntityType } from '../../models/EntityType';
 import { RelationshipService } from '../relationship.service';
 import { DEFAULT_WORLD_ID, DEFAULT_CAMPAIGN_ID } from '../../constants/appConstants';
 import { BaseEntity } from '../../models/BaseEntity';
-import { FirestoreLogger } from '../logging/FirestoreLogger';
+import { systemLogger, SystemModule } from '../systemLogger.service';
+import { LiveTranscriptionLogLevel, LogCategory } from '../../utils/liveTranscriptionLogger';
 
 /**
  * Base entity service for all entity types
@@ -27,7 +28,6 @@ export abstract class BaseEntityService<T extends BaseEntity & DocumentData>
   protected campaignId: string;
   protected entityType: EntityType;
   protected relationshipService: RelationshipService;
-  protected logger: FirestoreLogger;
 
   /**
    * Create a new BaseEntityService
@@ -64,12 +64,6 @@ export abstract class BaseEntityService<T extends BaseEntity & DocumentData>
     this.campaignId = effectiveCampaignId;
     this.entityType = entityType;
     this.relationshipService = RelationshipService.getInstance(effectiveWorldId, effectiveCampaignId);
-    
-    // Initialize logger
-    this.logger = new FirestoreLogger(
-      `${entityType.toString()}_Service`,
-      options.loggerEnabled ?? true
-    );
   }
 
   /**
@@ -113,7 +107,14 @@ export abstract class BaseEntityService<T extends BaseEntity & DocumentData>
         options
       );
     } catch (error) {
-      this.logger.error(`Error getting relationship count for entity ${entityId}:`, error);
+      systemLogger.log(
+        SystemModule.DATABASE,
+        LiveTranscriptionLogLevel.ERROR,
+        LogCategory.DATABASE,
+        `Error getting relationship count for entity ${entityId}`,
+        { entityId, entityType: this.entityType, worldId: this.worldId, campaignId: this.campaignId },
+        error as Error
+      );
       return 0;
     }
   }
@@ -147,7 +148,14 @@ export abstract class BaseEntityService<T extends BaseEntity & DocumentData>
 
       return data;
     } catch (error) {
-      this.logger.error('Error listing entities:', error);
+      systemLogger.log(
+        SystemModule.DATABASE,
+        LiveTranscriptionLogLevel.ERROR,
+        LogCategory.DATABASE,
+        'Error listing entities',
+        { entityType: this.entityType, worldId: this.worldId, campaignId: this.campaignId },
+        error as Error
+      );
       return [];
     }
   }
@@ -215,7 +223,14 @@ export abstract class BaseEntityService<T extends BaseEntity & DocumentData>
       );
       return data;
     } catch (error) {
-      this.logger.error(`Error getting entities by world ID ${worldId}:`, error);
+      systemLogger.log(
+        SystemModule.DATABASE,
+        LiveTranscriptionLogLevel.ERROR,
+        LogCategory.DATABASE,
+        `Error getting entities by world ID ${worldId}`,
+        { worldId, entityType: this.entityType, campaignId: this.campaignId },
+        error as Error
+      );
       return [];
     }
   }
@@ -244,7 +259,14 @@ export abstract class BaseEntityService<T extends BaseEntity & DocumentData>
       );
       return data;
     } catch (error) {
-      this.logger.error(`Error getting entities by campaign ID ${campaignId}:`, error);
+      systemLogger.log(
+        SystemModule.DATABASE,
+        LiveTranscriptionLogLevel.ERROR,
+        LogCategory.DATABASE,
+        `Error getting entities by campaign ID ${campaignId}`,
+        { campaignId, entityType: this.entityType, worldId: this.worldId },
+        error as Error
+      );
       return [];
     }
   }

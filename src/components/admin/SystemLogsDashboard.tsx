@@ -33,7 +33,7 @@ import {
   Pagination,
   Tabs
 } from '@mantine/core';
-import { DatePickerInput } from '@mantine/dates';
+import { DateTimePicker } from '@mantine/dates';
 import {
   IconRefresh,
   IconTrash,
@@ -202,18 +202,48 @@ const systemLogToUnified = (log: SystemLogEntry): UnifiedLogEntry => ({
 /**
  * Convert ActivityLog to UnifiedLogEntry
  */
-const activityLogToUnified = (log: ActivityLog): UnifiedLogEntry => ({
-  id: `activity-${log.id}`,
-  type: LogType.ACTIVITY,
-  timestamp: log.timestamp instanceof Date ? log.timestamp.toISOString() : log.timestamp,
-  action: log.action,
-  message: log.details,
-  userId: log.userId,
-  userName: log.userName || undefined,
-  userEmail: log.userEmail || undefined,
-  ipAddress: log.ipAddress || undefined,
-  details: log.details
-});
+const activityLogToUnified = (log: ActivityLog): UnifiedLogEntry => {
+  // Handle timestamp conversion properly
+  let timestamp: string;
+  try {
+    if (log.timestamp instanceof Date) {
+      timestamp = log.timestamp.toISOString();
+    } else if (typeof log.timestamp === 'string') {
+      // Try to parse the string as a date
+      const parsedDate = new Date(log.timestamp);
+      if (isNaN(parsedDate.getTime())) {
+        // If parsing fails, use current time and log warning
+        console.warn('Invalid timestamp in ActivityLog:', log.timestamp);
+        timestamp = new Date().toISOString();
+      } else {
+        timestamp = parsedDate.toISOString();
+      }
+    } else if (log.timestamp && typeof log.timestamp === 'object' && 'toDate' in log.timestamp) {
+      // Handle Firestore Timestamp objects
+      timestamp = (log.timestamp as any).toDate().toISOString();
+    } else {
+      // Fallback to current time
+      console.warn('Unknown timestamp format in ActivityLog:', log.timestamp);
+      timestamp = new Date().toISOString();
+    }
+  } catch (error) {
+    console.error('Error converting ActivityLog timestamp:', error);
+    timestamp = new Date().toISOString();
+  }
+
+  return {
+    id: `activity-${log.id}`,
+    type: LogType.ACTIVITY,
+    timestamp,
+    action: log.action,
+    message: log.details,
+    userId: log.userId,
+    userName: log.userName || undefined,
+    userEmail: log.userEmail || undefined,
+    ipAddress: log.ipAddress || undefined,
+    details: log.details
+  };
+};
 
 /**
  * Detect if we're using mock database services
@@ -318,16 +348,58 @@ export function SystemLogsDashboard({ className }: SystemLogsDashboardProps) {
   useEffect(() => {
     let filtered = unifiedLogs;
 
-    // Filter by log type
+    // Filter by log type FIRST
     filtered = filtered.filter(log => log.type === activeLogType);
 
-    // Apply other filters based on log type
+    // Apply search filter
     if (filters.searchText) {
       const searchLower = filters.searchText.toLowerCase();
       filtered = filtered.filter(log =>
         log.message.toLowerCase().includes(searchLower) ||
         (log.userName && log.userName.toLowerCase().includes(searchLower)) ||
-        (log.userEmail && log.userEmail.toLowerCase().includes(searchLower))
+        (log.userEmail && log.userEmail.toLowerCase().includes(searchLower)) ||
+        (log.component && log.component.toLowerCase().includes(searchLower))
+      );
+    }
+
+    // Apply module filter (only for System logs)
+    if (activeLogType === LogType.SYSTEM && filters.modules && filters.modules.length > 0) {
+      filtered = filtered.filter(log =>
+        log.module && filters.modules!.includes(log.module)
+      );
+    }
+
+    // Apply level filter (only for System logs)
+    if (activeLogType === LogType.SYSTEM && filters.levels && filters.levels.length > 0) {
+      filtered = filtered.filter(log =>
+        log.level !== undefined && filters.levels!.includes(log.level)
+      );
+    }
+
+    // Apply category filter (only for System logs)
+    if (activeLogType === LogType.SYSTEM && filters.categories && filters.categories.length > 0) {
+      filtered = filtered.filter(log =>
+        log.category && filters.categories!.includes(log.category)
+      );
+    }
+
+    // Apply action filter (only for Activity logs)
+    if (activeLogType === LogType.ACTIVITY && filters.actions && filters.actions.length > 0) {
+      filtered = filtered.filter(log =>
+        log.action && filters.actions!.includes(log.action)
+      );
+    }
+
+    // Apply date range filters
+    if (filters.startDate) {
+      filtered = filtered.filter(log =>
+        new Date(log.timestamp) >= filters.startDate!
+      );
+    }
+
+    if (filters.endDate) {
+      filtered = filtered.filter(log =>
+        new Date(log.timestamp) <= filters.endDate!
       );
     }
 
@@ -488,6 +560,22 @@ export function SystemLogsDashboard({ className }: SystemLogsDashboardProps) {
   const clearFilters = useCallback(() => {
     setFilters({});
   }, []);
+
+  /**
+   * Quick filter functions
+   */
+  const applyQuickTimeFilter = useCallback((minutes: number) => {
+    const now = new Date();
+    const startDate = new Date(now.getTime() - (minutes * 60 * 1000));
+    updateFilters({
+      startDate,
+      endDate: now
+    });
+  }, [updateFilters]);
+
+  const applyLastMinute = useCallback(() => applyQuickTimeFilter(1), [applyQuickTimeFilter]);
+  const applyLastHour = useCallback(() => applyQuickTimeFilter(60), [applyQuickTimeFilter]);
+  const applyLast24Hours = useCallback(() => applyQuickTimeFilter(24 * 60), [applyQuickTimeFilter]);
 
   /**
    * Get log statistics
@@ -755,19 +843,35 @@ export function SystemLogsDashboard({ className }: SystemLogsDashboardProps) {
               </Grid.Col>
 
               <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
-                <Select
-                  label="Category"
-                  placeholder="All categories"
-                  data={Object.values(LogCategory).map(category => ({
-                    value: category,
-                    label: category
-                  }))}
-                  value={filters.categories?.[0] || null}
-                  onChange={(value) => updateFilters({
-                    categories: value ? [value as LogCategory] : undefined
-                  })}
-                  clearable
-                />
+                {activeLogType === LogType.SYSTEM ? (
+                  <Select
+                    label="Category"
+                    placeholder="All categories"
+                    data={Object.values(LogCategory).map(category => ({
+                      value: category,
+                      label: category
+                    }))}
+                    value={filters.categories?.[0] || null}
+                    onChange={(value) => updateFilters({
+                      categories: value ? [value as LogCategory] : undefined
+                    })}
+                    clearable
+                  />
+                ) : (
+                  <Select
+                    label="Action"
+                    placeholder="All actions"
+                    data={Object.values(ActivityAction).map(action => ({
+                      value: action,
+                      label: action.replace(/_/g, ' ')
+                    }))}
+                    value={filters.actions?.[0] || null}
+                    onChange={(value) => updateFilters({
+                      actions: value ? [value as ActivityAction] : undefined
+                    })}
+                    clearable
+                  />
+                )}
               </Grid.Col>
 
               <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
@@ -783,9 +887,9 @@ export function SystemLogsDashboard({ className }: SystemLogsDashboardProps) {
               </Grid.Col>
 
               <Grid.Col span={{ base: 12, sm: 6 }}>
-                <DatePickerInput
-                  label="Start Date"
-                  placeholder="Select start date"
+                <DateTimePicker
+                  label="Start Date & Time"
+                  placeholder="Select start date and time"
                   value={filters.startDate || null}
                   onChange={(date) => updateFilters({
                     startDate: date ? new Date(date) : undefined
@@ -796,9 +900,9 @@ export function SystemLogsDashboard({ className }: SystemLogsDashboardProps) {
               </Grid.Col>
 
               <Grid.Col span={{ base: 12, sm: 6 }}>
-                <DatePickerInput
-                  label="End Date"
-                  placeholder="Select end date"
+                <DateTimePicker
+                  label="End Date & Time"
+                  placeholder="Select end date and time"
                   value={filters.endDate || null}
                   onChange={(date) => updateFilters({
                     endDate: date ? new Date(date) : undefined
@@ -806,6 +910,36 @@ export function SystemLogsDashboard({ className }: SystemLogsDashboardProps) {
                   clearable
                   leftSection={<IconCalendar size={16} />}
                 />
+              </Grid.Col>
+
+              {/* Quick Filter Buttons */}
+              <Grid.Col span={12}>
+                <div>
+                  <Text size="sm" fw={500} mb="xs">Quick Time Filters:</Text>
+                  <Group gap="xs">
+                    <Button
+                      variant="light"
+                      size="xs"
+                      onClick={applyLastMinute}
+                    >
+                      Last Minute
+                    </Button>
+                    <Button
+                      variant="light"
+                      size="xs"
+                      onClick={applyLastHour}
+                    >
+                      Last Hour
+                    </Button>
+                    <Button
+                      variant="light"
+                      size="xs"
+                      onClick={applyLast24Hours}
+                    >
+                      Last 24 Hours
+                    </Button>
+                  </Group>
+                </div>
               </Grid.Col>
             </Grid>
           </div>
