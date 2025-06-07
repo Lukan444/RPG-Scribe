@@ -31,9 +31,11 @@ import {
   IconCheck,
   IconDatabase,
   IconMicrophone,
+  IconBug,
 } from '@tabler/icons-react';
 import { SampleDataCreator } from '../components/admin/SampleDataCreator';
 import { LiveTranscriptionSettings } from '../components/admin/LiveTranscriptionSettings';
+import { SystemLogsDashboard } from '../components/admin/SystemLogsDashboard';
 import { useAuth } from '../contexts/AuthContext';
 import ActivityLogs from './admin/ActivityLogs';
 import { UserService } from '../services/user.service';
@@ -972,6 +974,9 @@ function Admin() {
             <Tabs.Tab value="logs" leftSection={<IconClipboardList size="0.8rem" />}>
               Activity Logs
             </Tabs.Tab>
+            <Tabs.Tab value="systemlogs" leftSection={<IconBug size="0.8rem" />}>
+              System Logs
+            </Tabs.Tab>
             <Tabs.Tab value="settings" leftSection={<IconSettings size="0.8rem" />}>
               Settings
             </Tabs.Tab>
@@ -986,6 +991,7 @@ function Admin() {
 
         {activeTab === 'users' && <UserManagement />}
         {activeTab === 'logs' && <ActivityLogs />}
+        {activeTab === 'systemlogs' && <SystemLogsDashboard />}
         {activeTab === 'settings' && <SystemSettings />}
         {activeTab === 'transcription' && <LiveTranscriptionSettings />}
         {activeTab === 'sampledata' && <SampleDataCreator />}
