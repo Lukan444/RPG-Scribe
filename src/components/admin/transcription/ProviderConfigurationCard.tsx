@@ -158,17 +158,13 @@ export function ProviderConfigurationCard({
   const loadProviderInfo = async () => {
     setLoading(true);
     try {
-      // Get provider info with actual config values
-      const info = await connectivityService.getProviderInfo(provider);
-
-      // Override API key status with actual config values
+      // Get actual user credentials
       const actualApiKey = provider === 'ollama' ? '' : config.apiKey;
-      const actualApiKeyStatus = await connectivityService.testAPIKey(provider, actualApiKey);
 
-      setProviderInfo({
-        ...info,
-        apiKeyStatus: actualApiKeyStatus
-      });
+      // Get provider info with actual config values
+      const info = await connectivityService.getProviderInfo(provider, actualApiKey);
+
+      setProviderInfo(info);
       setAvailableModels(info.availableModels);
     } catch (error) {
       console.error('Failed to load provider info:', error);
