@@ -55,6 +55,8 @@ import { useDisclosure } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
 import { TranscriptionSegment, SpeakerInfo, SessionTranscription } from '../../models/Transcription';
 import { TranscriptionService } from '../../services/transcription.service';
+import { useTranscriptionLogger } from '../../hooks/useSystemLogger';
+import { LogCategory } from '../../utils/liveTranscriptionLogger';
 
 /**
  * Transcript Viewer Props
@@ -144,6 +146,7 @@ export function TranscriptViewer({
 
   // Services
   const [transcriptionService] = useState(() => new TranscriptionService());
+  const logger = useTranscriptionLogger(transcriptionId);
 
   // Load transcription data
   useEffect(() => {
@@ -159,16 +162,29 @@ export function TranscriptViewer({
     setError(null);
 
     try {
+      logger.info(LogCategory.DATABASE, 'Loading transcription data', {
+        transcriptionId
+      });
       const data = await transcriptionService.getById(transcriptionId);
       if (data) {
         setTranscription(data);
         setSegments(data.segments || []);
         setSpeakers(data.speakers || []);
+        logger.info(LogCategory.DATABASE, 'Transcription data loaded successfully', {
+          transcriptionId,
+          segmentCount: data.segments?.length || 0,
+          speakerCount: data.speakers?.length || 0
+        });
       } else {
         setError('Transcription not found');
+        logger.warn(LogCategory.DATABASE, 'Transcription not found', {
+          transcriptionId
+        });
       }
     } catch (err) {
-      console.error('Failed to load transcription:', err);
+      logger.error(LogCategory.DATABASE, 'Failed to load transcription', err as Error, {
+        transcriptionId
+      });
       setError('Failed to load transcription');
     } finally {
       setLoading(false);

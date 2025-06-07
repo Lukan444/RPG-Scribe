@@ -17,7 +17,8 @@ import {
   TranscriptionStatus,
   LiveTranscriptionSession
 } from '../models/Transcription';
-import { createLiveTranscriptionLogger, LogCategory } from '../utils/liveTranscriptionLogger';
+import { createLiveTranscriptionLogger, LogCategory, LiveTranscriptionLogLevel } from '../utils/liveTranscriptionLogger';
+import { systemLogger, SystemModule } from './systemLogger.service';
 
 /**
  * Transcription provider types
@@ -112,10 +113,19 @@ export class LiveTranscriptionService {
     config: Partial<LiveTranscriptionConfig> = {},
     events: LiveTranscriptionEvents = {}
   ) {
+    // Log to console logger for immediate debugging
     this.logger.info(LogCategory.SERVICE, 'Initializing LiveTranscriptionService', {
       configOverrides: Object.keys(config),
       hasEvents: Object.keys(events).length > 0
     });
+
+    // Log to system logger for centralized monitoring
+    systemLogger.log(SystemModule.LIVE_TRANSCRIPTION, LiveTranscriptionLogLevel.INFO, LogCategory.SERVICE,
+      'LiveTranscriptionService constructor called', {
+        configOverridesCount: Object.keys(config).length,
+        hasEventListeners: Object.keys(events).length > 0,
+        timestamp: new Date().toISOString()
+      });
 
     this.config = { ...DEFAULT_CONFIG, ...config };
     this.events = events;
@@ -129,6 +139,15 @@ export class LiveTranscriptionService {
       enableRealTimeStreaming: this.config.enableRealTimeStreaming,
       audioConfig: this.config.audioConfig
     });
+
+    systemLogger.log(SystemModule.LIVE_TRANSCRIPTION, LiveTranscriptionLogLevel.DEBUG, LogCategory.CONFIG,
+      'Service configuration merged with defaults', {
+        provider: this.config.provider,
+        fallbackProvider: this.config.fallbackProvider,
+        language: this.config.language,
+        enableRealTimeStreaming: this.config.enableRealTimeStreaming,
+        sampleRate: this.config.audioConfig.sampleRate
+      });
 
     this.initializeServices();
   }
@@ -335,6 +354,19 @@ export class LiveTranscriptionService {
         transcriptionId,
         mode: this.webSocketService ? 'real-time' : 'batch'
       });
+
+      // Log to system logger for monitoring
+      systemLogger.log(SystemModule.LIVE_TRANSCRIPTION, LiveTranscriptionLogLevel.INFO, LogCategory.SERVICE,
+        'Live transcription session started successfully', {
+          transcriptionId,
+          mode: this.webSocketService ? 'real-time' : 'batch',
+          provider: this.config.provider,
+          language: this.config.language,
+          webSocketConnected: !!this.webSocketService,
+          speechRecognitionActive: !!this.activeStreamId
+        }, undefined, {
+          sessionId
+        });
 
       return transcriptionId;
     } catch (error) {

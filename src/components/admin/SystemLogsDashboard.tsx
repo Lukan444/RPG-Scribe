@@ -150,7 +150,8 @@ const CATEGORY_COLORS: Record<LogCategory, string> = {
   [LogCategory.DATABASE]: 'orange',
   [LogCategory.UI]: 'cyan',
   [LogCategory.WEBSOCKET]: 'pink',
-  [LogCategory.PERFORMANCE]: 'teal'
+  [LogCategory.PERFORMANCE]: 'teal',
+  [LogCategory.CONFIG]: 'indigo'
 };
 
 /**

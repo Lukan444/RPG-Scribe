@@ -27,7 +27,8 @@ export enum LogCategory {
   DATABASE = 'DATABASE',
   UI = 'UI',
   WEBSOCKET = 'WEBSOCKET',
-  PERFORMANCE = 'PERFORMANCE'
+  PERFORMANCE = 'PERFORMANCE',
+  CONFIG = 'CONFIG'
 }
 
 /**

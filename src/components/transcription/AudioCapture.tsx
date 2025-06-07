@@ -37,7 +37,8 @@ import {
 } from '@tabler/icons-react';
 import { Dropzone } from '@mantine/dropzone';
 import { AudioSourceType } from '../../models/Transcription';
-import { createLiveTranscriptionLogger, LogCategory } from '../../utils/liveTranscriptionLogger';
+import { useTranscriptionLogger } from '../../hooks/useSystemLogger';
+import { LogCategory } from '../../utils/liveTranscriptionLogger';
 
 /**
  * Audio capture configuration
@@ -105,7 +106,7 @@ export function AudioCapture({
   showAdvancedSettings = false
 }: AudioCaptureProps) {
   // Logger
-  const logger = createLiveTranscriptionLogger('AudioCapture');
+  const logger = useTranscriptionLogger();
 
   // State
   const [state, setState] = useState<CaptureState>(CaptureState.IDLE);
@@ -165,8 +166,7 @@ export function AudioCapture({
 
   // Get available audio devices
   const getAudioDevices = useCallback(async () => {
-    const operationId = `enumerate-devices-${Date.now()}`;
-    logger.startTiming(operationId, 'Enumerate audio devices');
+    const startTime = performance.now();
 
     try {
       logger.debug(LogCategory.AUDIO, 'Enumerating audio devices');
@@ -194,14 +194,16 @@ export function AudioCapture({
         });
       }
 
-      logger.endTiming(operationId, {
+      const duration = performance.now() - startTime;
+      logger.logPerformance('Enumerate audio devices', duration, {
         success: true,
         deviceCount: audioInputs.length
       });
 
     } catch (error) {
+      const duration = performance.now() - startTime;
       logger.error(LogCategory.AUDIO, 'Failed to enumerate audio devices', error as Error);
-      logger.endTiming(operationId, { success: false });
+      logger.logPerformance('Enumerate audio devices', duration, { success: false });
     }
   }, [selectedDeviceId, logger]);
 
@@ -240,8 +242,7 @@ export function AudioCapture({
 
   // Start recording
   const startRecording = useCallback(async () => {
-    const operationId = `start-recording-${Date.now()}`;
-    logger.startTiming(operationId, 'Start audio recording');
+    const startTime = performance.now();
 
     try {
       logger.info(LogCategory.AUDIO, 'Starting audio recording', {
@@ -276,7 +277,7 @@ export function AudioCapture({
       const audioTrack = stream.getAudioTracks()[0];
       if (audioTrack) {
         const settings = audioTrack.getSettings();
-        logger.logAudioMetrics({
+        logger.info(LogCategory.AUDIO, 'Audio track settings captured', {
           sampleRate: settings.sampleRate,
           channels: settings.channelCount,
           deviceId: settings.deviceId
@@ -308,7 +309,7 @@ export function AudioCapture({
 
           event.data.arrayBuffer().then(buffer => {
             const timestamp = Date.now() - recordingStartTimeRef.current;
-            logger.logAudioMetrics({
+            logger.debug(LogCategory.AUDIO, 'Audio buffer processed', {
               bufferSize: buffer.byteLength,
               duration: timestamp
             });
@@ -334,18 +335,20 @@ export function AudioCapture({
         setRecordingDuration(Date.now() - recordingStartTimeRef.current);
       }, 100);
 
-      logger.endTiming(operationId, {
+      const duration = performance.now() - startTime;
+      logger.logPerformance('Start audio recording', duration, {
         success: true,
         chunkInterval,
         audioTracks: stream.getAudioTracks().length
       });
 
     } catch (error) {
+      const duration = performance.now() - startTime;
       logger.error(LogCategory.AUDIO, 'Failed to start recording', error as Error, {
         selectedDeviceId,
         config
       });
-      logger.endTiming(operationId, { success: false });
+      logger.logPerformance('Start audio recording', duration, { success: false });
       handleError(new Error(`Failed to start recording: ${error}`));
     }
   }, [selectedDeviceId, config, updateState, handleError, onAudioChunk, initializeAudioContext, logger]);

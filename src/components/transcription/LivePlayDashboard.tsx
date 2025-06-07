@@ -57,6 +57,8 @@ import { LiveTranscriptionService, SessionState } from '../../services/LiveTrans
 import { TranscriptionSegment, ExtractedEntity, TimelineEventSuggestion } from '../../models/Transcription';
 import { DualTimelineWidget } from '../timeline/DualTimelineWidget';
 import { useTimeline } from '../../contexts/TimelineContext';
+import { useTranscriptionLogger } from '../../hooks/useSystemLogger';
+import { LogCategory } from '../../utils/liveTranscriptionLogger';
 
 /**
  * Live Play Dashboard Props
@@ -125,6 +127,7 @@ export function LivePlayDashboard({
   // Services
   const [transcriptionService] = useState(() => new LiveTranscriptionService());
   const { state: timelineState, actions: timelineActions } = useTimeline();
+  const logger = useTranscriptionLogger(sessionId);
 
   // Initialize transcription service
   useEffect(() => {
@@ -146,7 +149,13 @@ export function LivePlayDashboard({
     };
 
     const handleError = (error: Error) => {
-      console.error('Transcription error:', error);
+      logger.error(LogCategory.TRANSCRIPTION, 'Transcription error occurred', error, {
+        sessionId,
+        campaignId,
+        worldId,
+        sessionState,
+        captureState
+      });
       onError?.(error);
     };
 
@@ -175,36 +184,63 @@ export function LivePlayDashboard({
   // Start live session
   const startLiveSession = useCallback(async () => {
     try {
+      logger.info(LogCategory.SERVICE, 'Starting live transcription session', {
+        sessionId,
+        campaignId,
+        worldId
+      });
       const id = await transcriptionService.startLiveSession(sessionId, campaignId, worldId);
       setTranscriptionId(id);
+      logger.info(LogCategory.SERVICE, 'Live transcription session started successfully', {
+        transcriptionId: id
+      });
     } catch (error) {
-      console.error('Failed to start live session:', error);
+      logger.error(LogCategory.SERVICE, 'Failed to start live session', error as Error, {
+        sessionId,
+        campaignId,
+        worldId
+      });
       onError?.(error as Error);
     }
-  }, [transcriptionService, sessionId, campaignId, worldId, onError]);
+  }, [transcriptionService, sessionId, campaignId, worldId, onError, logger]);
 
   // Stop live session
   const stopLiveSession = useCallback(async () => {
     try {
+      logger.info(LogCategory.SERVICE, 'Stopping live transcription session', {
+        transcriptionId
+      });
       await transcriptionService.stopSession();
       setTranscriptionId(null);
       onSessionEnd?.();
+      logger.info(LogCategory.SERVICE, 'Live transcription session stopped successfully');
     } catch (error) {
-      console.error('Failed to stop live session:', error);
+      logger.error(LogCategory.SERVICE, 'Failed to stop live session', error as Error, {
+        transcriptionId
+      });
       onError?.(error as Error);
     }
-  }, [transcriptionService, onSessionEnd, onError]);
+  }, [transcriptionService, onSessionEnd, onError, transcriptionId, logger]);
 
   // Handle audio chunk processing
   const handleAudioChunk = useCallback(async (chunk: ArrayBuffer, timestamp: number) => {
     if (sessionState === SessionState.ACTIVE) {
       try {
+        logger.debug(LogCategory.AUDIO, 'Processing audio chunk', {
+          chunkSize: chunk.byteLength,
+          timestamp,
+          sessionState
+        });
         await transcriptionService.processAudioChunk(chunk, timestamp);
       } catch (error) {
-        console.error('Failed to process audio chunk:', error);
+        logger.error(LogCategory.AUDIO, 'Failed to process audio chunk', error as Error, {
+          chunkSize: chunk.byteLength,
+          timestamp,
+          sessionState
+        });
       }
     }
-  }, [transcriptionService, sessionState]);
+  }, [transcriptionService, sessionState, logger]);
 
   // Handle audio capture state changes
   const handleCaptureStateChange = useCallback((state: CaptureState) => {

@@ -53,6 +53,8 @@ import { notifications } from '@mantine/notifications';
 import { useAuth } from '../../contexts/AuthContext';
 import { ActivityLogService } from '../../services/activityLog.service';
 import { ActivityAction } from '../../models/ActivityLog';
+import { useTranscriptionLogger } from '../../hooks/useSystemLogger';
+import { LogCategory } from '../../utils/liveTranscriptionLogger';
 import { LiveTranscriptionConfigService } from '../../services/liveTranscriptionConfig.service';
 import { AdminAccessGuard } from './transcription/AdminAccessGuard';
 import { ProviderConfigurationCard } from './transcription/ProviderConfigurationCard';
@@ -336,6 +338,7 @@ function LiveTranscriptionSettingsInternal() {
   const [importError, setImportError] = useState<string | null>(null);
   const [devicesLoading, setDevicesLoading] = useState(false);
   const configService = LiveTranscriptionConfigService.getInstance();
+  const logger = useTranscriptionLogger();
 
   // Load configuration on component mount (but not audio devices due to permission restrictions)
   useEffect(() => {
@@ -348,10 +351,21 @@ function LiveTranscriptionSettingsInternal() {
   const loadConfiguration = async () => {
     setLoading(true);
     try {
+      logger.debug(LogCategory.CONFIG, 'Loading Live Transcription configuration', {
+        userId: user?.id
+      });
       const loadedConfig = await configService.getConfig();
       setConfig(loadedConfig);
+      logger.info(LogCategory.CONFIG, 'Live Transcription configuration loaded successfully', {
+        userId: user?.id,
+        primaryProvider: loadedConfig.speechRecognition.primaryProvider,
+        fallbackEnabled: loadedConfig.speechRecognition.fallbackEnabled,
+        language: loadedConfig.speechRecognition.languageCode
+      });
     } catch (error) {
-      console.error('Error loading configuration:', error);
+      logger.error(LogCategory.CONFIG, 'Failed to load Live Transcription configuration', error as Error, {
+        userId: user?.id
+      });
       notifications.show({
         title: 'Error',
         message: 'Failed to load transcription configuration',
@@ -367,9 +381,19 @@ function LiveTranscriptionSettingsInternal() {
   const saveConfiguration = async () => {
     setSaveLoading(true);
     try {
+      logger.info(LogCategory.CONFIG, 'Starting Live Transcription configuration save', {
+        userId: user?.id,
+        userName: user?.name,
+        configSections: Object.keys(config)
+      });
+
       // Validate configuration using service
       const validation = configService.validateConfig(config);
       if (!validation.isValid) {
+        logger.warn(LogCategory.CONFIG, 'Configuration validation failed', {
+          errors: validation.errors,
+          userId: user?.id
+        });
         notifications.show({
           title: 'Validation Error',
           message: validation.errors.join(', '),
@@ -385,7 +409,7 @@ function LiveTranscriptionSettingsInternal() {
         throw new Error('Failed to save configuration');
       }
 
-      // Log the activity
+      // Log the user activity (for audit purposes)
       if (user && user.id && user.name && user.email) {
         const activityLogService = ActivityLogService.getInstance();
         await activityLogService.logActivity(
@@ -399,6 +423,16 @@ function LiveTranscriptionSettingsInternal() {
         );
       }
 
+      // Log the technical operation (for system monitoring)
+      logger.info(LogCategory.CONFIG, 'Live Transcription configuration saved successfully', {
+        userId: user?.id,
+        userName: user?.name,
+        configSections: Object.keys(config),
+        primaryProvider: config.speechRecognition.primaryProvider,
+        fallbackEnabled: config.speechRecognition.fallbackEnabled,
+        language: config.speechRecognition.languageCode
+      });
+
       notifications.show({
         title: 'Success',
         message: 'Live Transcription configuration saved successfully',
@@ -406,7 +440,11 @@ function LiveTranscriptionSettingsInternal() {
         icon: <IconCheck size={16} />
       });
     } catch (error) {
-      console.error('Error saving configuration:', error);
+      logger.error(LogCategory.CONFIG, 'Failed to save Live Transcription configuration', error as Error, {
+        userId: user?.id,
+        userName: user?.name,
+        configSections: Object.keys(config)
+      });
       notifications.show({
         title: 'Error',
         message: 'Failed to save configuration',
