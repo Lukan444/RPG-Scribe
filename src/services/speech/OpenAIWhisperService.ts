@@ -7,6 +7,7 @@
 
 import { TranscriptionSegment, SpeakerInfo, SpeakerConfidence } from '../../models/Transcription';
 import { RecognitionError, RecognitionErrorType, SpeechConfig, StreamingResult } from './VertexAISpeechService';
+import { createLiveTranscriptionLogger, LogCategory } from '../../utils/liveTranscriptionLogger';
 
 /**
  * Whisper API response format
@@ -40,9 +41,15 @@ export class OpenAIWhisperService {
   private apiKey: string;
   private baseUrl: string = 'https://api.openai.com/v1';
   private model: string = 'whisper-1';
+  private logger = createLiveTranscriptionLogger('OpenAIWhisperService');
 
   constructor(apiKey: string) {
     this.apiKey = apiKey;
+    this.logger.info(LogCategory.SERVICE, 'OpenAI Whisper service initialized', {
+      model: this.model,
+      baseUrl: this.baseUrl,
+      hasApiKey: !!apiKey
+    });
   }
 
   /**
@@ -55,13 +62,38 @@ export class OpenAIWhisperService {
     audioFile: File | Blob,
     config: SpeechConfig
   ): Promise<TranscriptionSegment[]> {
+    const operationId = `whisper-transcribe-${Date.now()}`;
+    this.logger.startTiming(operationId, 'OpenAI Whisper transcription');
+
+    const fileSize = audioFile.size;
+    const fileName = audioFile instanceof File ? audioFile.name : 'blob';
+    const languageCode = this.extractLanguageCode(config.language);
+
+    this.logger.info(LogCategory.TRANSCRIPTION, 'Starting Whisper transcription', {
+      fileName,
+      fileSize,
+      language: languageCode,
+      model: this.model,
+      config: {
+        enableSpeakerDiarization: config.enableSpeakerDiarization,
+        maxSpeakers: config.maxSpeakers
+      }
+    });
+
     try {
       const formData = new FormData();
       formData.append('file', audioFile);
       formData.append('model', this.model);
-      formData.append('language', this.extractLanguageCode(config.language));
+      formData.append('language', languageCode);
       formData.append('response_format', 'verbose_json');
       formData.append('timestamp_granularities[]', 'segment');
+
+      this.logger.debug(LogCategory.TRANSCRIPTION, 'Sending request to Whisper API', {
+        url: `${this.baseUrl}/audio/transcriptions`,
+        model: this.model,
+        language: languageCode,
+        fileSize
+      });
 
       const response = await fetch(`${this.baseUrl}/audio/transcriptions`, {
         method: 'POST',
@@ -71,14 +103,62 @@ export class OpenAIWhisperService {
         body: formData
       });
 
+      this.logger.debug(LogCategory.TRANSCRIPTION, 'Received response from Whisper API', {
+        status: response.status,
+        statusText: response.statusText,
+        headers: Object.fromEntries(response.headers.entries())
+      });
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(`Whisper API error: ${response.status} - ${errorData.error?.message || response.statusText}`);
+        const errorMessage = `Whisper API error: ${response.status} - ${errorData.error?.message || response.statusText}`;
+
+        this.logger.error(LogCategory.TRANSCRIPTION, 'Whisper API request failed', new Error(errorMessage), {
+          status: response.status,
+          statusText: response.statusText,
+          errorData,
+          fileName,
+          fileSize
+        });
+
+        throw new Error(errorMessage);
       }
 
       const result: WhisperResponse = await response.json();
-      return this.processWhisperResponse(result);
+
+      this.logger.info(LogCategory.TRANSCRIPTION, 'Whisper API response received', {
+        hasText: !!result.text,
+        textLength: result.text?.length || 0,
+        segmentCount: result.segments?.length || 0,
+        detectedLanguage: result.language
+      });
+
+      const segments = this.processWhisperResponse(result);
+
+      this.logger.endTiming(operationId, {
+        success: true,
+        segmentCount: segments.length,
+        totalTextLength: segments.reduce((sum, s) => sum + s.text.length, 0),
+        averageConfidence: segments.reduce((sum, s) => sum + s.confidence, 0) / segments.length
+      });
+
+      this.logger.info(LogCategory.TRANSCRIPTION, 'Whisper transcription completed successfully', {
+        fileName,
+        segmentCount: segments.length,
+        totalDuration: segments.length > 0 ? segments[segments.length - 1].endTime : 0
+      });
+
+      return segments;
     } catch (error) {
+      this.logger.error(LogCategory.TRANSCRIPTION, 'Whisper transcription failed', error as Error, {
+        fileName,
+        fileSize,
+        language: languageCode,
+        model: this.model
+      });
+
+      this.logger.endTiming(operationId, { success: false });
+
       throw new RecognitionError(
         RecognitionErrorType.NETWORK_ERROR,
         `Whisper transcription failed: ${error}`,

@@ -1,6 +1,6 @@
 /**
  * Live Transcription Service
- * 
+ *
  * Main orchestration service for live session transcription
  * Coordinates audio capture, speech recognition, and real-time streaming
  */
@@ -10,13 +10,14 @@ import { VertexAISpeechService, SpeechConfig, RecognitionError } from './speech/
 import { OpenAIWhisperService } from './speech/OpenAIWhisperService';
 import { LiveTranscriptionConfigService } from './liveTranscriptionConfig.service';
 import { TranscriptionWebSocketService, ConnectionState } from './websocket/TranscriptionWebSocketService';
-import { 
-  SessionTranscription, 
-  TranscriptionSegment, 
-  AudioSourceType, 
+import {
+  SessionTranscription,
+  TranscriptionSegment,
+  AudioSourceType,
   TranscriptionStatus,
   LiveTranscriptionSession
 } from '../models/Transcription';
+import { createLiveTranscriptionLogger, LogCategory } from '../utils/liveTranscriptionLogger';
 
 /**
  * Transcription provider types
@@ -98,7 +99,8 @@ export class LiveTranscriptionService {
   private whisperService: OpenAIWhisperService | null = null;
   private configService: LiveTranscriptionConfigService;
   private webSocketService: TranscriptionWebSocketService | null = null;
-  
+  private logger = createLiveTranscriptionLogger('LiveTranscriptionService');
+
   private currentState: SessionState = SessionState.IDLE;
   private currentSessionId: string | null = null;
   private currentTranscriptionId: string | null = null;
@@ -110,10 +112,23 @@ export class LiveTranscriptionService {
     config: Partial<LiveTranscriptionConfig> = {},
     events: LiveTranscriptionEvents = {}
   ) {
+    this.logger.info(LogCategory.SERVICE, 'Initializing LiveTranscriptionService', {
+      configOverrides: Object.keys(config),
+      hasEvents: Object.keys(events).length > 0
+    });
+
     this.config = { ...DEFAULT_CONFIG, ...config };
     this.events = events;
     this.transcriptionService = new TranscriptionService();
     this.configService = LiveTranscriptionConfigService.getInstance();
+
+    this.logger.debug(LogCategory.SERVICE, 'Service configuration loaded', {
+      provider: this.config.provider,
+      fallbackProvider: this.config.fallbackProvider,
+      language: this.config.language,
+      enableRealTimeStreaming: this.config.enableRealTimeStreaming,
+      audioConfig: this.config.audioConfig
+    });
 
     this.initializeServices();
   }
@@ -122,19 +137,36 @@ export class LiveTranscriptionService {
    * Initialize speech recognition services
    */
   private async initializeServices(): Promise<void> {
+    const operationId = `init-services-${Date.now()}`;
+    this.logger.startTiming(operationId, 'Initialize transcription services');
+
     try {
+      this.logger.info(LogCategory.SERVICE, 'Starting service initialization', {
+        vertexAIAvailable: !!(process.env.REACT_APP_VERTEX_AI_API_KEY && process.env.REACT_APP_VERTEX_AI_PROJECT_ID),
+        openAIAvailable: !!process.env.REACT_APP_OPENAI_API_KEY,
+        webSocketEnabled: this.config.enableRealTimeStreaming
+      });
+
       // Initialize Vertex AI service
       if (process.env.REACT_APP_VERTEX_AI_API_KEY && process.env.REACT_APP_VERTEX_AI_PROJECT_ID) {
+        this.logger.debug(LogCategory.SERVICE, 'Initializing Vertex AI Speech service');
         this.vertexAIService = new VertexAISpeechService({
           apiKey: process.env.REACT_APP_VERTEX_AI_API_KEY,
           projectId: process.env.REACT_APP_VERTEX_AI_PROJECT_ID,
           location: process.env.REACT_APP_VERTEX_AI_LOCATION
         });
+        this.logger.info(LogCategory.SERVICE, 'Vertex AI Speech service initialized successfully');
+      } else {
+        this.logger.warn(LogCategory.SERVICE, 'Vertex AI credentials not found, service unavailable');
       }
 
       // Initialize OpenAI Whisper service
       if (process.env.REACT_APP_OPENAI_API_KEY) {
+        this.logger.debug(LogCategory.SERVICE, 'Initializing OpenAI Whisper service');
         this.whisperService = new OpenAIWhisperService(process.env.REACT_APP_OPENAI_API_KEY);
+        this.logger.info(LogCategory.SERVICE, 'OpenAI Whisper service initialized successfully');
+      } else {
+        this.logger.warn(LogCategory.SERVICE, 'OpenAI API key not found, Whisper service unavailable');
       }
 
       // Initialize WebSocket service for real-time streaming (optional)
@@ -142,8 +174,19 @@ export class LiveTranscriptionService {
                              process.env.REACT_APP_ENABLE_REALTIME_TRANSCRIPTION === 'true' &&
                              process.env.REACT_APP_TRANSCRIPTION_WEBSOCKET_URL;
 
+      this.logger.debug(LogCategory.WEBSOCKET, 'Evaluating WebSocket initialization', {
+        configEnabled: this.config.enableRealTimeStreaming,
+        envEnabled: process.env.REACT_APP_ENABLE_REALTIME_TRANSCRIPTION === 'true',
+        urlProvided: !!process.env.REACT_APP_TRANSCRIPTION_WEBSOCKET_URL,
+        finalDecision: enableRealTime
+      });
+
       if (enableRealTime) {
         try {
+          this.logger.info(LogCategory.WEBSOCKET, 'Initializing WebSocket service for real-time streaming', {
+            url: process.env.REACT_APP_TRANSCRIPTION_WEBSOCKET_URL
+          });
+
           this.webSocketService = new TranscriptionWebSocketService(
             {
               url: process.env.REACT_APP_TRANSCRIPTION_WEBSOCKET_URL
@@ -154,20 +197,30 @@ export class LiveTranscriptionService {
               onError: this.handleWebSocketError.bind(this)
             }
           );
-          console.log('WebSocket service initialized for real-time streaming');
+          this.logger.info(LogCategory.WEBSOCKET, 'WebSocket service initialized successfully');
         } catch (error) {
-          console.warn('WebSocket service initialization failed, falling back to batch mode:', error);
+          this.logger.warn(LogCategory.WEBSOCKET, 'WebSocket service initialization failed, falling back to batch mode', { error });
           this.webSocketService = null;
           // Update config to reflect actual capabilities
           this.config.enableRealTimeStreaming = false;
         }
       } else {
-        console.log('Real-time streaming disabled, using batch mode transcription');
+        this.logger.info(LogCategory.SERVICE, 'Real-time streaming disabled, using batch mode transcription');
         this.webSocketService = null;
         this.config.enableRealTimeStreaming = false;
       }
+
+      this.logger.endTiming(operationId, {
+        vertexAIInitialized: !!this.vertexAIService,
+        whisperInitialized: !!this.whisperService,
+        webSocketInitialized: !!this.webSocketService,
+        finalMode: this.config.enableRealTimeStreaming ? 'real-time' : 'batch'
+      });
+
     } catch (error) {
-      console.error('Failed to initialize transcription services:', error);
+      this.logger.error(LogCategory.SERVICE, 'Failed to initialize transcription services', error as Error);
+      this.logger.endTiming(operationId, { success: false });
+      throw error;
     }
   }
 
@@ -183,14 +236,37 @@ export class LiveTranscriptionService {
     campaignId: string,
     worldId: string
   ): Promise<string> {
+    const operationId = `start-session-${sessionId}`;
+    this.logger.startTiming(operationId, 'Start live transcription session', {
+      sessionId,
+      campaignId,
+      worldId
+    });
+
+    this.logger.info(LogCategory.SERVICE, 'Starting live transcription session', {
+      sessionId,
+      campaignId,
+      worldId,
+      currentState: this.currentState,
+      provider: this.config.provider,
+      language: this.config.language
+    });
+
     if (this.currentState !== SessionState.IDLE) {
-      throw new Error('Session already active');
+      const error = new Error(`Session already active. Current state: ${this.currentState}`);
+      this.logger.error(LogCategory.SERVICE, 'Cannot start session - already active', error, {
+        sessionId,
+        currentState: this.currentState
+      });
+      throw error;
     }
 
     this.updateState(SessionState.STARTING);
+    this.logger.setSessionId(sessionId);
 
     try {
       // Create transcription record
+      this.logger.debug(LogCategory.DATABASE, 'Creating transcription record in database');
       const transcriptionId = await this.transcriptionService.createSessionTranscription({
         sessionId,
         campaignId,
@@ -203,13 +279,27 @@ export class LiveTranscriptionService {
         description: `Live transcription for session ${sessionId}`
       });
 
+      this.logger.logDatabaseOperation('CREATE', 'transcriptions', transcriptionId, {
+        sessionId,
+        audioSource: AudioSourceType.MICROPHONE,
+        provider: this.config.provider
+      });
+
       this.currentSessionId = sessionId;
       this.currentTranscriptionId = transcriptionId;
+
+      this.logger.info(LogCategory.SERVICE, 'Transcription record created successfully', {
+        transcriptionId,
+        sessionId
+      });
 
       // Connect WebSocket if enabled
       if (this.webSocketService) {
         try {
+          this.logger.debug(LogCategory.WEBSOCKET, 'Connecting WebSocket for real-time streaming');
           await this.webSocketService.connect();
+
+          this.logger.debug(LogCategory.WEBSOCKET, 'Starting WebSocket session');
           await this.webSocketService.startSession({
             campaignId,
             worldId,
@@ -218,20 +308,43 @@ export class LiveTranscriptionService {
               format: 'webm'
             }
           });
+
+          this.logger.info(LogCategory.WEBSOCKET, 'WebSocket session started successfully');
         } catch (error) {
-          console.warn('WebSocket connection failed, continuing with batch transcription:', error);
+          this.logger.warn(LogCategory.WEBSOCKET, 'WebSocket connection failed, continuing with batch transcription', { error });
           // Don't throw error - continue with batch mode transcription
           this.webSocketService = null;
         }
       }
 
       // Start speech recognition
+      this.logger.debug(LogCategory.TRANSCRIPTION, 'Starting speech recognition');
       await this.startSpeechRecognition();
 
       this.updateState(SessionState.ACTIVE);
+
+      this.logger.endTiming(operationId, {
+        success: true,
+        transcriptionId,
+        webSocketConnected: !!this.webSocketService,
+        speechRecognitionActive: !!this.activeStreamId
+      });
+
+      this.logger.info(LogCategory.SERVICE, 'Live transcription session started successfully', {
+        sessionId,
+        transcriptionId,
+        mode: this.webSocketService ? 'real-time' : 'batch'
+      });
+
       return transcriptionId;
     } catch (error) {
       this.updateState(SessionState.ERROR);
+      this.logger.error(LogCategory.SERVICE, 'Failed to start live transcription session', error as Error, {
+        sessionId,
+        campaignId,
+        worldId
+      });
+      this.logger.endTiming(operationId, { success: false });
       throw error;
     }
   }
@@ -243,21 +356,56 @@ export class LiveTranscriptionService {
    */
   async processAudioChunk(audioChunk: ArrayBuffer, timestamp: number): Promise<void> {
     if (this.currentState !== SessionState.ACTIVE) {
+      this.logger.debug(LogCategory.AUDIO, 'Skipping audio chunk - session not active', {
+        currentState: this.currentState,
+        chunkSize: audioChunk.byteLength,
+        timestamp
+      });
       return;
     }
+
+    const operationId = `process-chunk-${timestamp}`;
+    this.logger.startTiming(operationId, 'Process audio chunk');
+
+    this.logger.debug(LogCategory.AUDIO, 'Processing audio chunk', {
+      chunkSize: audioChunk.byteLength,
+      timestamp,
+      sessionId: this.currentSessionId,
+      webSocketConnected: this.webSocketService?.isConnected(),
+      speechStreamActive: !!this.activeStreamId
+    });
 
     try {
       // Send to WebSocket for real-time processing
       if (this.webSocketService?.isConnected()) {
+        this.logger.debug(LogCategory.WEBSOCKET, 'Sending audio chunk to WebSocket');
         this.webSocketService.sendAudioChunk(audioChunk, timestamp);
       }
 
       // Send to speech recognition service
       if (this.activeStreamId && this.vertexAIService) {
+        this.logger.debug(LogCategory.TRANSCRIPTION, 'Sending audio chunk to speech recognition service');
         await this.vertexAIService.sendAudioChunk(this.activeStreamId, audioChunk);
       }
+
+      this.logger.logAudioMetrics({
+        bufferSize: audioChunk.byteLength,
+        duration: timestamp
+      });
+
+      this.logger.endTiming(operationId, {
+        success: true,
+        sentToWebSocket: this.webSocketService?.isConnected(),
+        sentToSpeechService: !!(this.activeStreamId && this.vertexAIService)
+      });
+
     } catch (error) {
-      console.error('Failed to process audio chunk:', error);
+      this.logger.error(LogCategory.AUDIO, 'Failed to process audio chunk', error as Error, {
+        chunkSize: audioChunk.byteLength,
+        timestamp,
+        sessionId: this.currentSessionId
+      });
+      this.logger.endTiming(operationId, { success: false });
       this.events.onError?.(error as Error);
     }
   }
@@ -456,19 +604,45 @@ export class LiveTranscriptionService {
    * Handle speech recognition results
    */
   private handleSpeechResult(result: any): void {
+    this.logger.debug(LogCategory.TRANSCRIPTION, 'Received speech recognition result', {
+      hasSegments: !!(result.segments && result.segments.length > 0),
+      segmentCount: result.segments?.length || 0,
+      sessionId: this.currentSessionId
+    });
+
     if (result.segments && result.segments.length > 0) {
-      const segments = result.segments.filter((segment: TranscriptionSegment) => 
+      const segments = result.segments.filter((segment: TranscriptionSegment) =>
         segment.confidence >= this.config.confidenceThreshold
       );
 
+      const filteredCount = segments.length;
+      const rejectedCount = result.segments.length - filteredCount;
+
+      this.logger.info(LogCategory.TRANSCRIPTION, 'Processing speech recognition segments', {
+        totalSegments: result.segments.length,
+        acceptedSegments: filteredCount,
+        rejectedSegments: rejectedCount,
+        confidenceThreshold: this.config.confidenceThreshold,
+        sessionId: this.currentSessionId
+      });
+
       this.segmentBuffer.push(...segments);
-      
+
       segments.forEach((segment: TranscriptionSegment) => {
+        this.logger.logTranscriptionSegment({
+          id: segment.id,
+          text: segment.text,
+          confidence: segment.confidence,
+          startTime: segment.startTime,
+          endTime: segment.endTime,
+          provider: this.config.provider
+        });
         this.events.onSegmentReceived?.(segment);
       });
 
       // Periodically save segments to database
       if (Date.now() - this.lastProcessedTime > 5000) { // Every 5 seconds
+        this.logger.debug(LogCategory.DATABASE, 'Triggering periodic segment save');
         this.saveBufferedSegments();
       }
     }
@@ -478,7 +652,11 @@ export class LiveTranscriptionService {
    * Handle speech recognition errors
    */
   private handleSpeechError(error: RecognitionError): void {
-    console.error('Speech recognition error:', error);
+    this.logger.error(LogCategory.TRANSCRIPTION, 'Speech recognition error occurred', error, {
+      sessionId: this.currentSessionId,
+      activeStreamId: this.activeStreamId,
+      provider: this.config.provider
+    });
     this.events.onError?.(error);
   }
 
@@ -486,6 +664,22 @@ export class LiveTranscriptionService {
    * Handle WebSocket segments
    */
   private handleWebSocketSegment(segment: TranscriptionSegment): void {
+    this.logger.info(LogCategory.WEBSOCKET, 'Received WebSocket transcription segment', {
+      segmentId: segment.id,
+      textLength: segment.text.length,
+      confidence: segment.confidence,
+      sessionId: this.currentSessionId
+    });
+
+    this.logger.logTranscriptionSegment({
+      id: segment.id,
+      text: segment.text,
+      confidence: segment.confidence,
+      startTime: segment.startTime,
+      endTime: segment.endTime,
+      provider: 'websocket'
+    });
+
     this.events.onSegmentReceived?.(segment);
   }
 
@@ -493,14 +687,19 @@ export class LiveTranscriptionService {
    * Handle WebSocket errors
    */
   private handleWebSocketError(error: Error): void {
-    console.error('WebSocket error:', error);
+    this.logger.error(LogCategory.WEBSOCKET, 'WebSocket error occurred', error, {
+      sessionId: this.currentSessionId,
+      connectionState: this.webSocketService?.getConnectionState()
+    });
 
     // Provide more user-friendly error messages
     let userFriendlyError = error;
     if (error.message.includes('No local transcription server running')) {
       userFriendlyError = new Error('Real-time transcription requires a WebSocket server. Transcription will continue in batch mode.');
+      this.logger.warn(LogCategory.WEBSOCKET, 'WebSocket server not available, falling back to batch mode');
     } else if (error.message.includes('WebSocket connection error')) {
       userFriendlyError = new Error('Connection to transcription server failed. Check your network connection.');
+      this.logger.warn(LogCategory.WEBSOCKET, 'WebSocket connection failed - network issue');
     }
 
     this.events.onError?.(userFriendlyError);
@@ -511,17 +710,49 @@ export class LiveTranscriptionService {
    */
   private async saveBufferedSegments(): Promise<void> {
     if (this.segmentBuffer.length > 0 && this.currentTranscriptionId) {
+      const operationId = `save-segments-${Date.now()}`;
+      this.logger.startTiming(operationId, 'Save buffered segments to database');
+
+      this.logger.info(LogCategory.DATABASE, 'Saving buffered transcription segments', {
+        segmentCount: this.segmentBuffer.length,
+        transcriptionId: this.currentTranscriptionId,
+        sessionId: this.currentSessionId
+      });
+
       try {
         await this.transcriptionService.addTranscriptionSegments(
           this.currentTranscriptionId,
           [...this.segmentBuffer],
           false
         );
+
+        this.logger.logDatabaseOperation('BATCH_INSERT', 'transcription_segments', undefined, {
+          segmentCount: this.segmentBuffer.length,
+          transcriptionId: this.currentTranscriptionId
+        });
+
         this.segmentBuffer = [];
         this.lastProcessedTime = Date.now();
+
+        this.logger.endTiming(operationId, {
+          success: true,
+          segmentsSaved: this.segmentBuffer.length
+        });
+
+        this.logger.info(LogCategory.DATABASE, 'Successfully saved buffered segments');
       } catch (error) {
-        console.error('Failed to save segments:', error);
+        this.logger.error(LogCategory.DATABASE, 'Failed to save buffered segments', error as Error, {
+          segmentCount: this.segmentBuffer.length,
+          transcriptionId: this.currentTranscriptionId,
+          sessionId: this.currentSessionId
+        });
+        this.logger.endTiming(operationId, { success: false });
       }
+    } else {
+      this.logger.debug(LogCategory.DATABASE, 'Skipping segment save - no segments or transcription ID', {
+        segmentCount: this.segmentBuffer.length,
+        hasTranscriptionId: !!this.currentTranscriptionId
+      });
     }
   }
 
@@ -530,7 +761,16 @@ export class LiveTranscriptionService {
    */
   private updateState(state: SessionState): void {
     if (this.currentState !== state) {
+      const previousState = this.currentState;
       this.currentState = state;
+
+      this.logger.info(LogCategory.SERVICE, 'Session state changed', {
+        previousState,
+        newState: state,
+        sessionId: this.currentSessionId,
+        timestamp: new Date().toISOString()
+      });
+
       this.events.onStateChange?.(state);
     }
   }
@@ -539,11 +779,20 @@ export class LiveTranscriptionService {
    * Cleanup resources
    */
   private cleanup(): void {
+    this.logger.info(LogCategory.SERVICE, 'Cleaning up session resources', {
+      sessionId: this.currentSessionId,
+      transcriptionId: this.currentTranscriptionId,
+      bufferedSegments: this.segmentBuffer.length
+    });
+
     this.currentSessionId = null;
     this.currentTranscriptionId = null;
     this.activeStreamId = null;
     this.segmentBuffer = [];
     this.lastProcessedTime = 0;
+
+    this.logger.clearSessionId();
+    this.logger.debug(LogCategory.SERVICE, 'Session cleanup completed');
   }
 
   /**

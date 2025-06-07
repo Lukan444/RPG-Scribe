@@ -37,6 +37,7 @@ import {
 } from '@tabler/icons-react';
 import { Dropzone } from '@mantine/dropzone';
 import { AudioSourceType } from '../../models/Transcription';
+import { createLiveTranscriptionLogger, LogCategory } from '../../utils/liveTranscriptionLogger';
 
 /**
  * Audio capture configuration
@@ -103,6 +104,9 @@ export function AudioCapture({
   showFileUpload = true,
   showAdvancedSettings = false
 }: AudioCaptureProps) {
+  // Logger
+  const logger = createLiveTranscriptionLogger('AudioCapture');
+
   // State
   const [state, setState] = useState<CaptureState>(CaptureState.IDLE);
   const [config, setConfig] = useState<AudioCaptureConfig>({ ...DEFAULT_CONFIG, ...configOverrides });
@@ -111,6 +115,18 @@ export function AudioCapture({
   const [availableDevices, setAvailableDevices] = useState<MediaDeviceInfo[]>([]);
   const [selectedDeviceId, setSelectedDeviceId] = useState<string>('');
   const [showSettings, setShowSettings] = useState(false);
+
+  // Log component initialization
+  useEffect(() => {
+    logger.info(LogCategory.UI, 'AudioCapture component initialized', {
+      hasAudioChunkCallback: !!onAudioChunk,
+      hasAudioFileCallback: !!onAudioFile,
+      disabled,
+      showFileUpload,
+      showAdvancedSettings,
+      config
+    });
+  }, []);
 
   // Refs
   const mediaStreamRef = useRef<MediaStream | null>(null);
@@ -123,31 +139,71 @@ export function AudioCapture({
 
   // Update state and notify parent
   const updateState = useCallback((newState: CaptureState) => {
+    const previousState = state;
     setState(newState);
+
+    logger.info(LogCategory.UI, 'Audio capture state changed', {
+      previousState,
+      newState,
+      timestamp: new Date().toISOString()
+    });
+
     onStateChange?.(newState);
-  }, [onStateChange]);
+  }, [onStateChange, state, logger]);
 
   // Handle errors
   const handleError = useCallback((error: Error) => {
-    console.error('Audio capture error:', error);
+    logger.error(LogCategory.AUDIO, 'Audio capture error occurred', error, {
+      currentState: state,
+      selectedDeviceId,
+      config
+    });
+
     updateState(CaptureState.ERROR);
     onError?.(error);
-  }, [updateState, onError]);
+  }, [updateState, onError, state, selectedDeviceId, config, logger]);
 
   // Get available audio devices
   const getAudioDevices = useCallback(async () => {
+    const operationId = `enumerate-devices-${Date.now()}`;
+    logger.startTiming(operationId, 'Enumerate audio devices');
+
     try {
+      logger.debug(LogCategory.AUDIO, 'Enumerating audio devices');
       const devices = await navigator.mediaDevices.enumerateDevices();
       const audioInputs = devices.filter(device => device.kind === 'audioinput');
+
+      logger.info(LogCategory.AUDIO, 'Audio devices enumerated successfully', {
+        totalDevices: devices.length,
+        audioInputDevices: audioInputs.length,
+        devices: audioInputs.map(device => ({
+          deviceId: device.deviceId.slice(0, 8) + '...',
+          label: device.label || 'Unknown Device',
+          groupId: device.groupId
+        }))
+      });
+
       setAvailableDevices(audioInputs);
-      
+
       if (audioInputs.length > 0 && !selectedDeviceId) {
-        setSelectedDeviceId(audioInputs[0].deviceId);
+        const defaultDevice = audioInputs[0];
+        setSelectedDeviceId(defaultDevice.deviceId);
+        logger.info(LogCategory.AUDIO, 'Auto-selected default audio device', {
+          deviceId: defaultDevice.deviceId.slice(0, 8) + '...',
+          label: defaultDevice.label || 'Unknown Device'
+        });
       }
+
+      logger.endTiming(operationId, {
+        success: true,
+        deviceCount: audioInputs.length
+      });
+
     } catch (error) {
-      console.warn('Failed to enumerate audio devices:', error);
+      logger.error(LogCategory.AUDIO, 'Failed to enumerate audio devices', error as Error);
+      logger.endTiming(operationId, { success: false });
     }
-  }, [selectedDeviceId]);
+  }, [selectedDeviceId, logger]);
 
   // Initialize audio context and analyser
   const initializeAudioContext = useCallback((stream: MediaStream) => {
@@ -184,9 +240,17 @@ export function AudioCapture({
 
   // Start recording
   const startRecording = useCallback(async () => {
+    const operationId = `start-recording-${Date.now()}`;
+    logger.startTiming(operationId, 'Start audio recording');
+
     try {
+      logger.info(LogCategory.AUDIO, 'Starting audio recording', {
+        selectedDeviceId: selectedDeviceId ? selectedDeviceId.slice(0, 8) + '...' : 'default',
+        config
+      });
+
       updateState(CaptureState.REQUESTING_PERMISSION);
-      
+
       const constraints: MediaStreamConstraints = {
         audio: {
           deviceId: selectedDeviceId ? { exact: selectedDeviceId } : undefined,
@@ -198,9 +262,27 @@ export function AudioCapture({
         }
       };
 
+      logger.debug(LogCategory.AUDIO, 'Requesting microphone permission', { constraints });
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
       mediaStreamRef.current = stream;
-      
+
+      logger.info(LogCategory.AUDIO, 'Microphone permission granted, stream acquired', {
+        streamId: stream.id,
+        audioTracks: stream.getAudioTracks().length,
+        trackSettings: stream.getAudioTracks()[0]?.getSettings()
+      });
+
+      // Log actual audio metrics
+      const audioTrack = stream.getAudioTracks()[0];
+      if (audioTrack) {
+        const settings = audioTrack.getSettings();
+        logger.logAudioMetrics({
+          sampleRate: settings.sampleRate,
+          channels: settings.channelCount,
+          deviceId: settings.deviceId
+        });
+      }
+
       // Initialize audio context for level monitoring
       initializeAudioContext(stream);
 
@@ -208,14 +290,28 @@ export function AudioCapture({
       const mediaRecorder = new MediaRecorder(stream, {
         mimeType: 'audio/webm;codecs=opus'
       });
-      
+
       mediaRecorderRef.current = mediaRecorder;
-      
+
+      logger.debug(LogCategory.AUDIO, 'MediaRecorder created', {
+        mimeType: mediaRecorder.mimeType,
+        state: mediaRecorder.state
+      });
+
       // Handle data available
       mediaRecorder.ondataavailable = (event) => {
         if (event.data.size > 0 && onAudioChunk) {
+          logger.debug(LogCategory.AUDIO, 'Audio chunk available', {
+            chunkSize: event.data.size,
+            timestamp: Date.now() - recordingStartTimeRef.current
+          });
+
           event.data.arrayBuffer().then(buffer => {
             const timestamp = Date.now() - recordingStartTimeRef.current;
+            logger.logAudioMetrics({
+              bufferSize: buffer.byteLength,
+              duration: timestamp
+            });
             onAudioChunk(buffer, timestamp);
           });
         }
@@ -224,19 +320,35 @@ export function AudioCapture({
       // Start recording with chunks
       const chunkInterval = config.chunkDuration * 1000;
       mediaRecorder.start(chunkInterval);
-      
+
       recordingStartTimeRef.current = Date.now();
       updateState(CaptureState.RECORDING);
-      
+
+      logger.info(LogCategory.AUDIO, 'Recording started successfully', {
+        chunkInterval,
+        startTime: recordingStartTimeRef.current
+      });
+
       // Start duration tracking
       durationIntervalRef.current = setInterval(() => {
         setRecordingDuration(Date.now() - recordingStartTimeRef.current);
       }, 100);
-      
+
+      logger.endTiming(operationId, {
+        success: true,
+        chunkInterval,
+        audioTracks: stream.getAudioTracks().length
+      });
+
     } catch (error) {
+      logger.error(LogCategory.AUDIO, 'Failed to start recording', error as Error, {
+        selectedDeviceId,
+        config
+      });
+      logger.endTiming(operationId, { success: false });
       handleError(new Error(`Failed to start recording: ${error}`));
     }
-  }, [selectedDeviceId, config, updateState, handleError, onAudioChunk, initializeAudioContext]);
+  }, [selectedDeviceId, config, updateState, handleError, onAudioChunk, initializeAudioContext, logger]);
 
   // Pause recording
   const pauseRecording = useCallback(() => {
