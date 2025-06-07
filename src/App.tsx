@@ -66,6 +66,9 @@ const ForgotPassword = lazy(() => import('./pages/auth/ForgotPassword'));
 const ResetPassword = lazy(() => import('./pages/auth/ResetPassword'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 
+// Live Play component
+const LivePlayPage = lazy(() => import('./pages/LivePlayPage'));
+
 // RPG World components
 const RPGWorldHome = lazy(() => import('./pages/rpg-world/RPGWorldHome'));
 const CampaignsPage = lazy(() => import('./pages/rpg-world/CampaignsPage'));
@@ -566,14 +569,8 @@ function App() {
               />
             } />
 
-            {/* Game Sessions routes */}
-            <Route path="live-play" element={
-              <PlaceholderPage
-                title="Live Play"
-                description="Tools for running live game sessions"
-                icon={<IconDeviceGamepad2 size="2rem" />}
-              />
-            } />
+            {/* Game Sessions routes - redirect to dashboard if no world selected */}
+            <Route path="live-play" element={<Navigate to="/dashboard" replace />} />
             <Route path="session-planner" element={
               <PlaceholderPage
                 title="Session Planner"
@@ -915,6 +912,17 @@ function App() {
                 <ErrorBoundary>
                   <Suspense fallback={<LoadingFallback />}>
                     <NoteFormPage />
+                  </Suspense>
+                </ErrorBoundary>
+              } />
+
+              {/* World-specific Live Play route */}
+              <Route path=":worldId/live-play" element={
+                <ErrorBoundary>
+                  <Suspense fallback={<LoadingFallback />}>
+                    <RPGWorldContextWrapper>
+                      <LivePlayPage />
+                    </RPGWorldContextWrapper>
                   </Suspense>
                 </ErrorBoundary>
               } />

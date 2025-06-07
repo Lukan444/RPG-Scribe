@@ -202,10 +202,23 @@ export function LiveTranscriptionQuickAccess({
       });
     } catch (error) {
       console.error('Failed to start transcription:', error);
+
+      // Provide more helpful error messages
+      let errorMessage = 'Could not start live transcription';
+      if (error instanceof Error) {
+        if (error.message.includes('Connection timeout') || error.message.includes('WebSocket')) {
+          errorMessage = 'Live transcription started in batch mode. Real-time features require a WebSocket server.';
+        } else if (error.message.includes('API key') || error.message.includes('credentials')) {
+          errorMessage = 'Transcription service not configured. Please check your API credentials in Admin settings.';
+        } else {
+          errorMessage = error.message;
+        }
+      }
+
       notifications.show({
-        title: 'Failed to Start',
-        message: 'Could not start live transcription',
-        color: 'red',
+        title: 'Transcription Notice',
+        message: errorMessage,
+        color: errorMessage.includes('batch mode') ? 'yellow' : 'red',
         icon: <IconAlertTriangle size={16} />
       });
     }

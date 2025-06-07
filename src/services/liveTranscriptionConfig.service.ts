@@ -195,13 +195,22 @@ export class LiveTranscriptionConfigService {
     const errors: string[] = [];
     const warnings: string[] = [];
 
-    // Validate API keys
+    // Validate primary provider API keys
     if (config.speechRecognition.primaryProvider === 'vertex-ai' && !config.speechRecognition.vertexAI.apiKey) {
       errors.push('Vertex AI API key is required when set as primary provider');
     }
 
-    if (config.speechRecognition.fallbackEnabled && !config.speechRecognition.openAIWhisper.apiKey) {
-      errors.push('OpenAI Whisper API key is required when fallback is enabled');
+    if (config.speechRecognition.primaryProvider === 'openai-whisper' && !config.speechRecognition.openAIWhisper.apiKey) {
+      errors.push('OpenAI Whisper API key is required when set as primary provider');
+    }
+
+    // Only validate fallback provider if fallback is enabled AND a fallback provider is actually needed
+    if (config.speechRecognition.fallbackEnabled) {
+      if (config.speechRecognition.primaryProvider === 'vertex-ai' && !config.speechRecognition.openAIWhisper.apiKey) {
+        warnings.push('OpenAI Whisper API key is recommended for fallback when Vertex AI is primary provider');
+      } else if (config.speechRecognition.primaryProvider === 'openai-whisper' && !config.speechRecognition.vertexAI.apiKey) {
+        warnings.push('Vertex AI API key is recommended for fallback when OpenAI Whisper is primary provider');
+      }
     }
 
     // Validate numeric ranges
@@ -382,7 +391,7 @@ export class LiveTranscriptionConfigService {
         fallbackEnabled: true,
         confidenceThreshold: 0.7,
         languageCode: 'en-US',
-        supportedLanguages: ['en-US', 'es-ES', 'fr-FR', 'de-DE', 'it-IT', 'pt-BR', 'ja-JP', 'ko-KR', 'zh-CN'],
+        supportedLanguages: ['en-US', 'es-ES', 'fr-FR', 'de-DE', 'it-IT', 'pt-BR', 'pl-PL', 'ja-JP', 'ko-KR', 'zh-CN'],
       },
       audioProcessing: {
         sampleRate: 16000,
@@ -393,6 +402,11 @@ export class LiveTranscriptionConfigService {
         enableAutoGainControl: true,
         maxFileSizeMB: 100,
         supportedFormats: ['webm', 'wav', 'mp3', 'ogg', 'm4a'],
+        // Audio Device Selection
+        selectedMicrophoneId: 'default',
+        selectedSpeakerId: 'default',
+        availableMicrophones: [],
+        availableSpeakers: [],
       },
       realTimeFeatures: {
         webSocketServer: {
@@ -408,6 +422,7 @@ export class LiveTranscriptionConfigService {
         bufferSize: 4096,
         enableRealTimeProcessing: true,
         streamingChunkSize: 1024,
+        fallbackToBatchMode: true,
       },
       aiAssistant: {
         entityExtraction: {

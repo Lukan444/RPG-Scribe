@@ -39,6 +39,7 @@ interface NavItem {
   description?: string;
   children?: NavItem[];
   color?: string;
+  requiresWorld?: boolean; // Flag to indicate this navigation requires world context
 }
 
 // NavItem component
@@ -46,7 +47,7 @@ interface NavItemProps {
   item: NavItem;
   isActive: boolean;
   isChildActive: boolean;
-  onClick: (path?: string) => void;
+  onClick: (path?: string, item?: NavItem) => void;
 }
 
 interface NavItemComponentProps extends NavItemProps {
@@ -63,14 +64,14 @@ function NavItemComponent({ item, isActive, isChildActive, onClick, collapsed = 
     if (collapsed) {
       // When collapsed, clicking always navigates to the path
       if (item.path) {
-        onClick(item.path);
+        onClick(item.path, item);
       }
     } else {
       // Normal behavior when not collapsed
       if (hasChildren) {
         setExpanded(!expanded);
       } else if (item.path) {
-        onClick(item.path);
+        onClick(item.path, item);
       }
     }
   };
@@ -164,7 +165,7 @@ function NavItemComponent({ item, isActive, isChildActive, onClick, collapsed = 
                       </ThemeIcon>
                     }
                     active={isPathActive(child.path, currentPath)}
-                    onClick={() => child.path && onClick(child.path)}
+                    onClick={() => child.path && onClick(child.path, child)}
                     variant="light"
                     className="child-nav-link"
                     aria-current={isPathActive(child.path, currentPath) ? "page" : undefined}
@@ -198,9 +199,37 @@ export function SimpleNavbar({ collapsed = false }: SimpleNavbarProps) {
   const isAdmin = user?.role === 'admin';
 
   // Handle navigation
-  const handleNavigation = (path?: string) => {
+  const handleNavigation = (path?: string, item?: NavItem) => {
     if (path) {
-      // Navigate to the path and preserve any state if needed
+      // Special handling for Live Play - check if we're in a world context
+      if (path === '/live-play') {
+        const currentPath = location.pathname;
+        const worldIdMatch = currentPath.match(/\/rpg-worlds\/([^\/]+)/);
+
+        if (worldIdMatch) {
+          // We're in a world context, navigate to world-specific live-play
+          const worldId = worldIdMatch[1];
+          navigate(`/rpg-worlds/${worldId}/live-play`, {
+            state: {
+              from: location.pathname,
+              timestamp: Date.now()
+            }
+          });
+          return;
+        } else {
+          // No world context, redirect to dashboard
+          navigate('/dashboard', {
+            state: {
+              from: location.pathname,
+              timestamp: Date.now(),
+              message: 'Please select an RPG World to use Live Play features.'
+            }
+          });
+          return;
+        }
+      }
+
+      // Normal navigation for other paths
       navigate(path, {
         state: {
           from: location.pathname,
@@ -414,6 +443,7 @@ export function SimpleNavbar({ collapsed = false }: SimpleNavbarProps) {
           icon: <IconDeviceGamepad2 size={ICON_SIZE} />,
           path: '/live-play',
           description: t('navigation.toolsForRunningLiveGameSessions'),
+          requiresWorld: true, // Custom flag to indicate this requires world context
         },
         {
           id: 'media',

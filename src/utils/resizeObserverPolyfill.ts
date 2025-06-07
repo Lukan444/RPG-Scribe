@@ -193,9 +193,14 @@ class SafeResizeObserver {
   const originalConsoleError = console.error;
   console.error = function(...args: any[]) {
     const message = args.join(' ');
-    if (message.includes('ResizeObserver') || 
+    if (message.includes('ResizeObserver') ||
         message.includes('undelivered notifications') ||
-        message.includes('loop completed')) {
+        message.includes('loop completed') ||
+        message.includes('ResizeObserver loop limit exceeded')) {
+      // Log to console in development for debugging, but don't show error to user
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('[ResizeObserver Error Suppressed]:', message);
+      }
       return; // Suppress ResizeObserver errors
     }
     originalConsoleError.apply(console, args);

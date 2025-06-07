@@ -72,9 +72,9 @@ export interface TranscriptionWebSocketHandlers {
  * Default WebSocket configuration
  */
 const DEFAULT_CONFIG: WebSocketConfig = {
-  url: process.env.REACT_APP_WEBSOCKET_URL || 'ws://localhost:8080/transcription',
+  url: process.env.REACT_APP_WEBSOCKET_URL || process.env.REACT_APP_TRANSCRIPTION_WEBSOCKET_URL || 'ws://localhost:8080/transcription',
   reconnectInterval: 5000,
-  maxReconnectAttempts: 5,
+  maxReconnectAttempts: 3, // Reduced to prevent excessive retry attempts
   heartbeatInterval: 30000,
   connectionTimeout: 10000
 };
@@ -118,7 +118,11 @@ export class TranscriptionWebSocketService {
       // Set connection timeout
       this.connectionTimeout = setTimeout(() => {
         if (this.connectionState === ConnectionState.CONNECTING) {
-          this.handleConnectionError(new Error('Connection timeout'));
+          const timeoutError = new Error(
+            `Connection timeout: Unable to connect to transcription server at ${this.config.url}. ` +
+            `This usually means no WebSocket server is running. Live transcription will continue in batch mode.`
+          );
+          this.handleConnectionError(timeoutError);
         }
       }, this.config.connectionTimeout);
 
@@ -313,7 +317,16 @@ export class TranscriptionWebSocketService {
    */
   private handleError(event: Event): void {
     console.error('WebSocket error:', event);
-    this.handleConnectionError(new Error('WebSocket connection error'));
+
+    // Provide more specific error messages
+    let errorMessage = 'WebSocket connection error';
+    if (this.config.url.includes('localhost')) {
+      errorMessage = 'WebSocket connection error: No local transcription server running. Live transcription requires a WebSocket server.';
+    } else {
+      errorMessage = `WebSocket connection error: Unable to connect to ${this.config.url}`;
+    }
+
+    this.handleConnectionError(new Error(errorMessage));
   }
 
   /**
@@ -323,9 +336,12 @@ export class TranscriptionWebSocketService {
     this.clearTimeouts();
     this.updateConnectionState(ConnectionState.ERROR);
     this.handlers.onError?.(error);
-    
+
+    // Only attempt reconnection if we haven't exceeded max attempts
     if (this.reconnectAttempts < this.config.maxReconnectAttempts) {
       this.attemptReconnect();
+    } else {
+      console.warn(`WebSocket: Max reconnection attempts (${this.config.maxReconnectAttempts}) reached. Stopping reconnection attempts.`);
     }
   }
 

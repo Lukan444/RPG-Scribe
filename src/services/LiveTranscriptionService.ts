@@ -139,16 +139,21 @@ export class LiveTranscriptionService {
 
       // Initialize WebSocket service for real-time streaming
       if (this.config.enableRealTimeStreaming) {
-        this.webSocketService = new TranscriptionWebSocketService(
-          {
-            url: process.env.REACT_APP_TRANSCRIPTION_WEBSOCKET_URL
-          },
-          {
-            onConnectionStateChange: this.events.onConnectionStateChange,
-            onTranscriptionSegment: this.handleWebSocketSegment.bind(this),
-            onError: this.handleWebSocketError.bind(this)
-          }
-        );
+        try {
+          this.webSocketService = new TranscriptionWebSocketService(
+            {
+              url: process.env.REACT_APP_TRANSCRIPTION_WEBSOCKET_URL
+            },
+            {
+              onConnectionStateChange: this.events.onConnectionStateChange,
+              onTranscriptionSegment: this.handleWebSocketSegment.bind(this),
+              onError: this.handleWebSocketError.bind(this)
+            }
+          );
+        } catch (error) {
+          console.warn('WebSocket service initialization failed, falling back to non-real-time mode:', error);
+          this.webSocketService = null;
+        }
       }
     } catch (error) {
       console.error('Failed to initialize transcription services:', error);
@@ -192,15 +197,21 @@ export class LiveTranscriptionService {
 
       // Connect WebSocket if enabled
       if (this.webSocketService) {
-        await this.webSocketService.connect();
-        await this.webSocketService.startSession({
-          campaignId,
-          worldId,
-          audioConfig: {
-            ...this.config.audioConfig,
-            format: 'webm'
-          }
-        });
+        try {
+          await this.webSocketService.connect();
+          await this.webSocketService.startSession({
+            campaignId,
+            worldId,
+            audioConfig: {
+              ...this.config.audioConfig,
+              format: 'webm'
+            }
+          });
+        } catch (error) {
+          console.warn('WebSocket connection failed, continuing with batch transcription:', error);
+          // Don't throw error - continue with batch mode transcription
+          this.webSocketService = null;
+        }
       }
 
       // Start speech recognition
@@ -472,7 +483,16 @@ export class LiveTranscriptionService {
    */
   private handleWebSocketError(error: Error): void {
     console.error('WebSocket error:', error);
-    this.events.onError?.(error);
+
+    // Provide more user-friendly error messages
+    let userFriendlyError = error;
+    if (error.message.includes('No local transcription server running')) {
+      userFriendlyError = new Error('Real-time transcription requires a WebSocket server. Transcription will continue in batch mode.');
+    } else if (error.message.includes('WebSocket connection error')) {
+      userFriendlyError = new Error('Connection to transcription server failed. Check your network connection.');
+    }
+
+    this.events.onError?.(userFriendlyError);
   }
 
   /**

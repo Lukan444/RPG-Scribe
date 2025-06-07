@@ -104,6 +104,11 @@ export interface LiveTranscriptionConfig {
     enableAutoGainControl: boolean;
     maxFileSizeMB: number;
     supportedFormats: string[];
+    // Audio Device Selection
+    selectedMicrophoneId: string;
+    selectedSpeakerId: string;
+    availableMicrophones: MediaDeviceInfo[];
+    availableSpeakers: MediaDeviceInfo[];
   };
 
   // Real-time Features
@@ -121,6 +126,7 @@ export interface LiveTranscriptionConfig {
     bufferSize: number;
     enableRealTimeProcessing: boolean;
     streamingChunkSize: number;
+    fallbackToBatchMode: boolean; // Graceful degradation when WebSocket fails
   };
 
   // AI Assistant Settings
@@ -222,7 +228,7 @@ const DEFAULT_CONFIG: LiveTranscriptionConfig = {
     fallbackEnabled: true,
     confidenceThreshold: 0.7,
     languageCode: 'en-US',
-    supportedLanguages: ['en-US', 'es-ES', 'fr-FR', 'de-DE', 'it-IT', 'pt-BR', 'ja-JP', 'ko-KR', 'zh-CN'],
+    supportedLanguages: ['en-US', 'es-ES', 'fr-FR', 'de-DE', 'it-IT', 'pt-BR', 'pl-PL', 'ja-JP', 'ko-KR', 'zh-CN'],
   },
   audioProcessing: {
     sampleRate: 16000,
@@ -233,6 +239,11 @@ const DEFAULT_CONFIG: LiveTranscriptionConfig = {
     enableAutoGainControl: true,
     maxFileSizeMB: 100,
     supportedFormats: ['webm', 'wav', 'mp3', 'ogg', 'm4a'],
+    // Audio Device Selection
+    selectedMicrophoneId: 'default',
+    selectedSpeakerId: 'default',
+    availableMicrophones: [],
+    availableSpeakers: [],
   },
   realTimeFeatures: {
     webSocketServer: {
@@ -248,6 +259,7 @@ const DEFAULT_CONFIG: LiveTranscriptionConfig = {
     bufferSize: 4096,
     enableRealTimeProcessing: true,
     streamingChunkSize: 1024,
+    fallbackToBatchMode: true, // Enable graceful degradation by default
   },
   aiAssistant: {
     entityExtraction: {
@@ -322,11 +334,13 @@ function LiveTranscriptionSettingsInternal() {
   const [showApiKeys, { toggle: toggleShowApiKeys }] = useDisclosure(false);
   const [configJson, setConfigJson] = useState('');
   const [importError, setImportError] = useState<string | null>(null);
+  const [devicesLoading, setDevicesLoading] = useState(false);
   const configService = LiveTranscriptionConfigService.getInstance();
 
-  // Load configuration on component mount
+  // Load configuration and audio devices on component mount
   useEffect(() => {
     loadConfiguration();
+    loadAudioDevices();
   }, []);
 
   // Load configuration from service
@@ -407,13 +421,16 @@ function LiveTranscriptionSettingsInternal() {
   const validateConfiguration = (config: LiveTranscriptionConfig): string[] => {
     const errors: string[] = [];
 
-    // Validate API keys
+    // Validate primary provider API keys
     if (config.speechRecognition.primaryProvider === 'vertex-ai' && !config.speechRecognition.vertexAI.apiKey) {
-      errors.push('Vertex AI API key is required');
+      errors.push('Vertex AI API key is required when set as primary provider');
     }
-    if (config.speechRecognition.fallbackEnabled && !config.speechRecognition.openAIWhisper.apiKey) {
-      errors.push('OpenAI Whisper API key is required for fallback');
+    if (config.speechRecognition.primaryProvider === 'openai-whisper' && !config.speechRecognition.openAIWhisper.apiKey) {
+      errors.push('OpenAI Whisper API key is required when set as primary provider');
     }
+
+    // Note: Fallback provider validation is now handled as warnings, not errors
+    // This allows users to save partial configurations
 
     // Validate numeric ranges
     if (config.speechRecognition.confidenceThreshold < 0 || config.speechRecognition.confidenceThreshold > 1) {
@@ -523,14 +540,49 @@ function LiveTranscriptionSettingsInternal() {
       const newConfig = { ...prev };
       const keys = path.split('.');
       let current: any = newConfig;
-      
+
       for (let i = 0; i < keys.length - 1; i++) {
         current = current[keys[i]];
       }
-      
+
       current[keys[keys.length - 1]] = value;
       return newConfig;
     });
+  };
+
+  // Load available audio devices
+  const loadAudioDevices = async () => {
+    setDevicesLoading(true);
+    try {
+      // Request microphone permission first
+      await navigator.mediaDevices.getUserMedia({ audio: true });
+
+      // Enumerate devices
+      const devices = await navigator.mediaDevices.enumerateDevices();
+
+      const microphones = devices.filter(device => device.kind === 'audioinput');
+      const speakers = devices.filter(device => device.kind === 'audiooutput');
+
+      setConfig(prev => ({
+        ...prev,
+        audioProcessing: {
+          ...prev.audioProcessing,
+          availableMicrophones: microphones,
+          availableSpeakers: speakers
+        }
+      }));
+
+      console.log('Audio devices loaded:', { microphones: microphones.length, speakers: speakers.length });
+    } catch (error) {
+      console.error('Failed to load audio devices:', error);
+      notifications.show({
+        title: 'Audio Device Error',
+        message: 'Failed to load audio devices. Please check microphone permissions.',
+        color: 'red'
+      });
+    } finally {
+      setDevicesLoading(false);
+    }
   };
 
   if (loading) {
@@ -1033,6 +1085,56 @@ function LiveTranscriptionSettingsInternal() {
                     onChange={(e) => updateConfig('audioProcessing.enableAutoGainControl', e.currentTarget.checked)}
                   />
                 </Stack>
+
+                {/* Audio Device Selection */}
+                <Divider my="md" label="Audio Device Selection" labelPosition="center" />
+                <Grid>
+                  <Grid.Col span={{ base: 12, md: 6 }}>
+                    <Select
+                      label="Microphone"
+                      description="Select the microphone for audio capture"
+                      placeholder={devicesLoading ? "Loading devices..." : "Select microphone"}
+                      data={(config.audioProcessing.availableMicrophones || []).map(device => ({
+                        value: device.deviceId,
+                        label: device.label || `Microphone ${device.deviceId.slice(0, 8)}...`
+                      }))}
+                      value={config.audioProcessing.selectedMicrophoneId}
+                      onChange={(value) => updateConfig('audioProcessing.selectedMicrophoneId', value)}
+                      disabled={devicesLoading}
+                      rightSection={devicesLoading ? <Loader size="xs" /> : undefined}
+                    />
+                  </Grid.Col>
+                  <Grid.Col span={{ base: 12, md: 6 }}>
+                    <Select
+                      label="Speaker/Headphones"
+                      description="Select the audio output device"
+                      placeholder={devicesLoading ? "Loading devices..." : "Select speaker"}
+                      data={(config.audioProcessing.availableSpeakers || []).map(device => ({
+                        value: device.deviceId,
+                        label: device.label || `Speaker ${device.deviceId.slice(0, 8)}...`
+                      }))}
+                      value={config.audioProcessing.selectedSpeakerId}
+                      onChange={(value) => updateConfig('audioProcessing.selectedSpeakerId', value)}
+                      disabled={devicesLoading}
+                      rightSection={devicesLoading ? <Loader size="xs" /> : undefined}
+                    />
+                  </Grid.Col>
+                </Grid>
+
+                <Group mt="sm">
+                  <Button
+                    variant="light"
+                    size="sm"
+                    leftSection={<IconRefresh size={14} />}
+                    onClick={loadAudioDevices}
+                    loading={devicesLoading}
+                  >
+                    Refresh Devices
+                  </Button>
+                  <Text size="xs" c="dimmed">
+                    {(config.audioProcessing.availableMicrophones || []).length} microphones, {(config.audioProcessing.availableSpeakers || []).length} speakers detected
+                  </Text>
+                </Group>
               </Card>
 
               <Card withBorder p="md">
