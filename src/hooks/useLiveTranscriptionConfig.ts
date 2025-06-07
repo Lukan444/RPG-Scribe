@@ -249,10 +249,18 @@ export function useLiveTranscriptionAvailability(): {
       reason = 'Live Transcription is disabled by administrator';
     } else if (!config.speechRecognition.vertexAI.apiKey && !config.speechRecognition.openAIWhisper.apiKey) {
       reason = 'No speech recognition providers configured';
-    } else if (!config.realTimeFeatures.webSocketServer.url) {
-      reason = 'WebSocket server not configured';
     } else {
+      // Live transcription is available even without WebSocket (batch mode)
       isAvailable = true;
+
+      // Check if real-time features are available
+      const hasWebSocketConfig = config.realTimeFeatures.webSocketServer.url &&
+                                 config.realTimeFeatures.webSocketServer.url.trim() !== '' &&
+                                 process.env.REACT_APP_ENABLE_REALTIME_TRANSCRIPTION === 'true';
+
+      if (!hasWebSocketConfig) {
+        console.log('Real-time transcription disabled - using batch mode');
+      }
     }
   }
 

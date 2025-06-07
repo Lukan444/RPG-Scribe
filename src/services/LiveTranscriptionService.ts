@@ -137,8 +137,12 @@ export class LiveTranscriptionService {
         this.whisperService = new OpenAIWhisperService(process.env.REACT_APP_OPENAI_API_KEY);
       }
 
-      // Initialize WebSocket service for real-time streaming
-      if (this.config.enableRealTimeStreaming) {
+      // Initialize WebSocket service for real-time streaming (optional)
+      const enableRealTime = this.config.enableRealTimeStreaming &&
+                             process.env.REACT_APP_ENABLE_REALTIME_TRANSCRIPTION === 'true' &&
+                             process.env.REACT_APP_TRANSCRIPTION_WEBSOCKET_URL;
+
+      if (enableRealTime) {
         try {
           this.webSocketService = new TranscriptionWebSocketService(
             {
@@ -150,10 +154,17 @@ export class LiveTranscriptionService {
               onError: this.handleWebSocketError.bind(this)
             }
           );
+          console.log('WebSocket service initialized for real-time streaming');
         } catch (error) {
-          console.warn('WebSocket service initialization failed, falling back to non-real-time mode:', error);
+          console.warn('WebSocket service initialization failed, falling back to batch mode:', error);
           this.webSocketService = null;
+          // Update config to reflect actual capabilities
+          this.config.enableRealTimeStreaming = false;
         }
+      } else {
+        console.log('Real-time streaming disabled, using batch mode transcription');
+        this.webSocketService = null;
+        this.config.enableRealTimeStreaming = false;
       }
     } catch (error) {
       console.error('Failed to initialize transcription services:', error);

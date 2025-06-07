@@ -72,7 +72,9 @@ export interface TranscriptionWebSocketHandlers {
  * Default WebSocket configuration
  */
 const DEFAULT_CONFIG: WebSocketConfig = {
-  url: process.env.REACT_APP_WEBSOCKET_URL || process.env.REACT_APP_TRANSCRIPTION_WEBSOCKET_URL || 'ws://localhost:8080/transcription',
+  url: process.env.REACT_APP_WEBSOCKET_URL ||
+       process.env.REACT_APP_TRANSCRIPTION_WEBSOCKET_URL ||
+       'ws://localhost:8080/transcription',
   reconnectInterval: 5000,
   maxReconnectAttempts: 3, // Reduced to prevent excessive retry attempts
   heartbeatInterval: 30000,
@@ -99,6 +101,14 @@ export class TranscriptionWebSocketService {
   ) {
     this.config = { ...DEFAULT_CONFIG, ...config };
     this.handlers = handlers;
+
+    // Validate WebSocket URL
+    if (!this.config.url || this.config.url === 'undefined' || this.config.url.trim() === '') {
+      throw new Error(
+        'WebSocket URL is not configured. Please set REACT_APP_TRANSCRIPTION_WEBSOCKET_URL ' +
+        'environment variable or disable real-time transcription.'
+      );
+    }
   }
 
   /**
