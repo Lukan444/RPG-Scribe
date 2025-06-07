@@ -337,10 +337,11 @@ function LiveTranscriptionSettingsInternal() {
   const [devicesLoading, setDevicesLoading] = useState(false);
   const configService = LiveTranscriptionConfigService.getInstance();
 
-  // Load configuration and audio devices on component mount
+  // Load configuration on component mount (but not audio devices due to permission restrictions)
   useEffect(() => {
     loadConfiguration();
-    loadAudioDevices();
+    // Note: loadAudioDevices() is not called automatically due to browser permission restrictions
+    // Users must click "Refresh Devices" to trigger microphone permission request
   }, []);
 
   // Load configuration from service
@@ -1093,14 +1094,14 @@ function LiveTranscriptionSettingsInternal() {
                     <Select
                       label="Microphone"
                       description="Select the microphone for audio capture"
-                      placeholder={devicesLoading ? "Loading devices..." : "Select microphone"}
+                      placeholder={devicesLoading ? "Loading devices..." : (config.audioProcessing.availableMicrophones?.length > 0 ? "Select microphone" : "Click 'Refresh Devices' to load microphones")}
                       data={(config.audioProcessing.availableMicrophones || []).map(device => ({
                         value: device.deviceId,
                         label: device.label || `Microphone ${device.deviceId.slice(0, 8)}...`
                       }))}
                       value={config.audioProcessing.selectedMicrophoneId}
                       onChange={(value) => updateConfig('audioProcessing.selectedMicrophoneId', value)}
-                      disabled={devicesLoading}
+                      disabled={devicesLoading || (config.audioProcessing.availableMicrophones?.length === 0)}
                       rightSection={devicesLoading ? <Loader size="xs" /> : undefined}
                     />
                   </Grid.Col>
@@ -1108,14 +1109,14 @@ function LiveTranscriptionSettingsInternal() {
                     <Select
                       label="Speaker/Headphones"
                       description="Select the audio output device"
-                      placeholder={devicesLoading ? "Loading devices..." : "Select speaker"}
+                      placeholder={devicesLoading ? "Loading devices..." : (config.audioProcessing.availableSpeakers?.length > 0 ? "Select speaker" : "Click 'Refresh Devices' to load speakers")}
                       data={(config.audioProcessing.availableSpeakers || []).map(device => ({
                         value: device.deviceId,
                         label: device.label || `Speaker ${device.deviceId.slice(0, 8)}...`
                       }))}
                       value={config.audioProcessing.selectedSpeakerId}
                       onChange={(value) => updateConfig('audioProcessing.selectedSpeakerId', value)}
-                      disabled={devicesLoading}
+                      disabled={devicesLoading || (config.audioProcessing.availableSpeakers?.length === 0)}
                       rightSection={devicesLoading ? <Loader size="xs" /> : undefined}
                     />
                   </Grid.Col>

@@ -142,10 +142,10 @@ export function ProviderConfigurationCard({
 
   const connectivityService = APIConnectivityService.getInstance();
 
-  // Load provider information on mount
+  // Load provider information on mount and when config changes
   useEffect(() => {
     loadProviderInfo();
-  }, [provider]);
+  }, [provider, config.apiKey]);
 
   // Auto-populate from environment variables
   useEffect(() => {
@@ -158,8 +158,17 @@ export function ProviderConfigurationCard({
   const loadProviderInfo = async () => {
     setLoading(true);
     try {
+      // Get provider info with actual config values
       const info = await connectivityService.getProviderInfo(provider);
-      setProviderInfo(info);
+
+      // Override API key status with actual config values
+      const actualApiKey = provider === 'ollama' ? '' : config.apiKey;
+      const actualApiKeyStatus = await connectivityService.testAPIKey(provider, actualApiKey);
+
+      setProviderInfo({
+        ...info,
+        apiKeyStatus: actualApiKeyStatus
+      });
       setAvailableModels(info.availableModels);
     } catch (error) {
       console.error('Failed to load provider info:', error);
