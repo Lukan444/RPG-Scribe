@@ -217,12 +217,11 @@ export function SimpleNavbar({ collapsed = false }: SimpleNavbarProps) {
           });
           return;
         } else {
-          // No world context, redirect to dashboard
-          navigate('/dashboard', {
+          // No world context, navigate to live-play and let it handle auto-selection
+          navigate('/live-play', {
             state: {
               from: location.pathname,
-              timestamp: Date.now(),
-              message: 'Please select an RPG World to use Live Play features.'
+              timestamp: Date.now()
             }
           });
           return;

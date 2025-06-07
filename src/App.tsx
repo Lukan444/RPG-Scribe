@@ -569,8 +569,16 @@ function App() {
               />
             } />
 
-            {/* Game Sessions routes - redirect to dashboard if no world selected */}
-            <Route path="live-play" element={<Navigate to="/dashboard" replace />} />
+            {/* Live Play route - handles auto-selection internally */}
+            <Route path="live-play" element={
+              <ErrorBoundary>
+                <Suspense fallback={<LoadingFallback />}>
+                  <RPGWorldProvider>
+                    <LivePlayPage />
+                  </RPGWorldProvider>
+                </Suspense>
+              </ErrorBoundary>
+            } />
 
             {/* Live Transcription routes */}
             <Route path="live-transcription/dashboard/:sessionId" element={
